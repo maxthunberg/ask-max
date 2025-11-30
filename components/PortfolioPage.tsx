@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import svgPaths from "../imports/svg-da725proeg";
-import imgMaxT12 from "figma:asset/ca9811084fbbbf687eceb2a4e136e80958f1b1e4.png";
-import imgMaxT13 from "figma:asset/ecfad83766f090d70dd01833d9176a81aa74adea.png";
+import { ImageWithFallback } from './figma/ImageWithFallback';
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
 import { Loader2 } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
@@ -394,41 +393,17 @@ export function PortfolioPage() {
               className="absolute right-[140px] top-[207px] w-[526px] h-[701px] hidden lg:block" 
               data-name="Image"
             >
-              {/* Main image container with mask */}
-              <div className="relative w-full h-full">
-                <div 
-                  className="absolute inset-0 overflow-hidden"
-                  style={{ 
-                    maskImage: `url('${imgMaxT12}')`,
-                    WebkitMaskImage: `url('${imgMaxT12}')`,
-                    maskSize: 'contain',
-                    WebkitMaskSize: 'contain',
-                    maskRepeat: 'no-repeat',
-                    WebkitMaskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    WebkitMaskPosition: 'center'
-                  }}
-                >
-                  <img 
-                    alt="Max Thunberg, UX Lead" 
-                    className="w-full h-full object-cover" 
-                    src={imgMaxT13} 
-                  />
-                </div>
+              {/* Main image container */}
+              <div className="relative w-full h-full rounded-2xl overflow-hidden">
+                <ImageWithFallback 
+                  alt="Max Thunberg, UX Lead" 
+                  className="w-full h-full object-cover" 
+                  src="https://images.unsplash.com/photo-1761522002071-67755dc6c820?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMG1hbGUlMjBkZXNpZ25lcnxlbnwxfHx8fDE3NjQ1NDU4NjV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+                />
                 
                 {/* Purple overlay */}
                 <div 
                   className="absolute inset-0 bg-[#7339ff] mix-blend-color opacity-20"
-                  style={{ 
-                    maskImage: `url('${imgMaxT12}')`,
-                    WebkitMaskImage: `url('${imgMaxT12}')`,
-                    maskSize: 'contain',
-                    WebkitMaskSize: 'contain',
-                    maskRepeat: 'no-repeat',
-                    WebkitMaskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    WebkitMaskPosition: 'center'
-                  }}
                   aria-hidden="true" 
                 />
               </div>
