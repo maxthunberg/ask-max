@@ -1,4 +1,4 @@
-import { projectId, publicAnonKey } from './supabase/info.tsx';
+import { projectId, publicAnonKey } from './supabase/info';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
