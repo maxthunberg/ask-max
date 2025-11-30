@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Info } from 'lucide-react';
-import { sendChatMessage, type ChatMessage } from '../utils/chat-api.ts';
+import { sendChatMessage, type ChatMessage } from '../utils/chat-api';
 
 interface ChatInterfaceProps {
   onInfoClick?: () => void;
