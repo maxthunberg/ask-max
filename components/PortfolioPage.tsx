@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-da725proeg";
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
