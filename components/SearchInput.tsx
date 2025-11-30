@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import svgPaths from "../imports/svg-da725proeg";
 import { Loader2 } from 'lucide-react';
