@@ -65,6 +65,7 @@
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --color-gray-100: oklch(.967 .003 264.542);
     --color-black: #000;
     --color-white: #fff;
     --spacing: .25rem;
@@ -75,6 +76,7 @@
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
+    --radius-2xl: 1rem;
     --animate-spin: spin 1s linear infinite;
     --blur-sm: 8px;
     --default-transition-duration: .15s;
@@ -581,6 +583,10 @@
     display: none;
   }
 
+  .inline-block {
+    display: inline-block;
+  }
+
   .size-\[24px\] {
     width: 24px;
     height: 24px;
@@ -802,6 +808,10 @@
     overflow-y: auto;
   }
 
+  .rounded-2xl {
+    border-radius: var(--radius-2xl);
+  }
+
   .rounded-\[8px\] {
     border-radius: 8px;
   }
@@ -913,6 +923,10 @@
     }
   }
 
+  .bg-gray-100 {
+    background-color: var(--color-gray-100);
+  }
+
   .bg-transparent {
     background-color: #0000;
   }
@@ -988,8 +1002,16 @@
     padding-left: 12px;
   }
 
+  .text-center {
+    text-align: center;
+  }
+
   .text-right {
     text-align: right;
+  }
+
+  .align-middle {
+    vertical-align: middle;
   }
 
   .font-\[\'Figtree\:Medium\'\,sans-serif\] {
