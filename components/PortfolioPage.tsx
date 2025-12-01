@@ -393,12 +393,12 @@ export function PortfolioPage() {
               className="absolute right-[140px] top-[207px] w-[526px] h-[701px] hidden lg:block" 
               data-name="Image"
             >
-              {/* Main image container */}
-              <div className="relative w-full h-full rounded-2xl overflow-hidden">
+              {/* Main image container with rounded corners */}
+              <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gradient-to-br from-[#7339ff]/20 to-[#130521]/40">
                 <ImageWithFallback 
                   alt="Max Thunberg, UX Lead" 
                   className="w-full h-full object-cover" 
-                  src="https://images.unsplash.com/photo-1761522002071-67755dc6c820?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMG1hbGUlMjBkZXNpZ25lcnxlbnwxfHx8fDE3NjQ1NDU4NjV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMG1hbGV8ZW58MXx8fHwxNzMzMDgxMDAwfDA&ixlib=rb-4.1.0&q=80&w=1080"
                 />
                 
                 {/* Purple overlay */}
