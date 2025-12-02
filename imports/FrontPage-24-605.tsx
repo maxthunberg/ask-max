@@ -1,6 +1,6 @@
 import svgPaths from "./svg-f7yre9ayrm";
-const imgMaxT12 = "/images/max-thunberg.jpg";
-const imgMaxT13 = "/images/max-thunberg.jpg";
+const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";
+const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";
 
 function TextContainer() {
   return (

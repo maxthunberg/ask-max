@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-sevsv6x2yc";
-// Using local image for production build compatibility
-const imgMaxT12 = "/images/max-thunberg.jpg";  // Mask image
-const imgMaxT13 = "/images/max-thunberg.jpg";  // Main image
+// Using Cloudinary hosted image
+const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
+const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
 import { Loader2 } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
