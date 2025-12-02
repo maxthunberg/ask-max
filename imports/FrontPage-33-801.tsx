@@ -1,6 +1,6 @@
 import svgPaths from "./svg-npvbmw8egm";
-import imgMaxT12 from "figma:asset/1747899fe2c1d97a5ced4751efb38ee52753edbe.png";
-import imgMaxT13 from "figma:asset/ecfad83766f090d70dd01833d9176a81aa74adea.png";
+const imgMaxT12 = "/images/max-thunberg.jpg";
+const imgMaxT13 = "/images/max-thunberg.jpg";
 
 function TextContainer() {
   return (

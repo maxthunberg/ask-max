@@ -1,6 +1,6 @@
 import svgPaths from "./svg-sevsv6x2yc";
-import imgMaxT12 from "figma:asset/ca9811084fbbbf687eceb2a4e136e80958f1b1e4.png";
-import imgMaxT13 from "figma:asset/ecfad83766f090d70dd01833d9176a81aa74adea.png";
+const imgMaxT12 = "/images/max-thunberg.jpg";
+const imgMaxT13 = "/images/max-thunberg.jpg";
 
 function LinkBase() {
   return (

@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-sevsv6x2yc";
-import imgMaxT12 from "figma:asset/ca9811084fbbbf687eceb2a4e136e80958f1b1e4.png";
-import imgMaxT13 from "figma:asset/ecfad83766f090d70dd01833d9176a81aa74adea.png";
+// Using local image for production build compatibility
+const imgMaxT12 = "/images/max-thunberg.jpg";  // Mask image
+const imgMaxT13 = "/images/max-thunberg.jpg";  // Main image
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
 import { Loader2 } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
