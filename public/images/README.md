@@ -1,26 +1,26 @@
 # Profile Image
 
-## Setup Instructions
+## 🚨 ACTION REQUIRED: Add Your Photo
 
-To use your own profile image:
+Currently using a placeholder gradient. To add your real photo:
 
-1. **Add your image file** to this directory (`/public/images/`)
-2. **Name it**: `max-thunberg.jpg` (or `.png`, `.webp`)
+### Option 1: For Production (Recommended)
+1. **Replace** the file `max-thunberg.jpg` in this directory
+2. **Upload** an actual photo (JPG, PNG, or WebP)
 3. **Recommended specs**:
-   - Dimensions: 526px × 701px (or higher resolution with same aspect ratio)
-   - Format: JPG, PNG, or WebP
-   - Size: Under 500KB for optimal performance
+   - Dimensions: 526px × 701px (or 3:4 aspect ratio)
+   - Format: JPG or PNG
+   - Size: Under 500KB
 
-## Current Setup
+### Option 2: For Figma Make (Data URL)
+If you need the image to work in Figma Make immediately:
 
-The app looks for `/public/images/max-thunberg.jpg`
+1. Convert your photo to base64 at https://base64.guru/converter/encode/image
+2. Open `/components/ProfileImage.tsx`
+3. Replace `MAX_IMAGE_SVG` with your data URL: `data:image/jpeg;base64,YOUR_BASE64_HERE`
 
-If the file doesn't exist, you'll see a placeholder image from Unsplash.
+## Current Status
 
-## Why This Works Everywhere
+⚠️ **Using SVG placeholder** - The current file is just a gradient with text.
 
-✅ **Figma Make** - Images in `/public` are automatically included
-✅ **Local Development** - Next.js serves `/public` at the root URL
-✅ **Production** - Vercel/other hosts serve `/public` as static assets
-
-No external hosting needed!
+Replace it with your actual headshot for production!

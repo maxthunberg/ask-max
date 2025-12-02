@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import svgPaths from "../imports/svg-da725proeg";
+import svgPaths from "../imports/svg-sevsv6x2yc";
 import { Loader2 } from 'lucide-react';
 
 interface SearchInputProps {
@@ -118,7 +118,7 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>(({
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
-          className="basis-0 font-['Figtree:Regular',sans-serif] font-normal grow leading-[24px] min-h-[24px] min-w-px relative shrink-0 text-[16px] bg-transparent border-none outline-none resize-none overflow-hidden text-white placeholder:text-[#c7c1cc] placeholder:opacity-70 max-h-[200px]"
+          className="basis-0 font-normal grow leading-[24px] min-h-[24px] min-w-px relative shrink-0 text-[16px] bg-transparent border-none outline-none resize-none overflow-hidden text-white placeholder:text-[#c7c1cc] placeholder:opacity-70 max-h-[200px]"
           aria-label="Ask Max a question"
           aria-describedby="disclaimer-text"
         />
@@ -126,7 +126,7 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>(({
 
       {/* Disclaimer text */}
       {showDisclaimer && (
-        <p id="disclaimer-text" className="font-['Figtree:Regular',sans-serif] font-normal leading-[18px] opacity-70 relative shrink-0 text-[#c7c1cc] text-[12px] w-full">
+        <p id="disclaimer-text" className="font-normal leading-[18px] opacity-70 relative shrink-0 text-[#c7c1cc] text-[12px] w-full">
           Just like the real Max, my digital twin can also make mistakes.
         </p>
       )}
