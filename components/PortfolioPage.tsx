@@ -241,8 +241,8 @@ export function PortfolioPage() {
       </a>
 
       {/* Page content container - centered max-width wrapper */}
-      <div className="flex flex-col flex-1 items-center relative w-full">
-        <div className="flex flex-col flex-1 max-w-[1232px] w-full relative" data-name="Page content">
+      <div className="flex flex-col h-screen items-center relative w-full">
+        <div className="flex flex-col h-full max-w-[1232px] w-full relative" data-name="Page content">
           <div aria-hidden="true" className="absolute border-[0px_1px] border-[rgba(255,255,255,0.15)] border-dashed inset-0 pointer-events-none" />
           
           {/* Navbar - fixed at top, not part of hero centering */}
@@ -266,16 +266,106 @@ export function PortfolioPage() {
             </div>
           </nav>
 
-          {/* Hero Section Container - vertically centered on desktop, top-aligned on mobile */}
-          <div className="flex-1 flex items-center md:items-center justify-center px-[16px] relative w-full" data-name="Hero Section Wrapper">
-            {/* Hero Section - the actual hero content */}
-            <div className="flex items-center w-full" data-name="Hero Section">
-              {/* Main container - Left side */}
-              <div className="basis-0 flex flex-col gap-[24px] grow items-start min-h-px min-w-px relative shrink-0" data-name="Main container">
-              <main id="main-content">
-                {/* Text container */}
-                <AnimatePresence>
-                  {!isChatMode && (
+          {/* CHAT MODE LAYOUT */}
+          {isChatMode ? (
+            <>
+              {/* Chat Messages Container - scrollable, grows to fill space */}
+              <AnimatePresence>
+                <motion.div
+                  ref={chatContainerRef}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                  className="custom-scrollbar basis-0 box-border flex flex-col gap-[16px] grow items-center min-h-px min-w-px overflow-x-clip overflow-y-auto px-0 py-[16px] relative shrink-0 w-full max-w-[768px] mx-auto"
+                  data-name="Chat"
+                  role="log"
+                  aria-live="polite"
+                  aria-atomic="false"
+                  id="main-content"
+                >
+                  {messages.map((message, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                      className={`flex flex-col gap-[10px] ${message.type === 'user' ? 'items-end' : 'items-start'} relative w-full`}
+                      data-name={message.type === 'user' ? 'Question Container' : 'Response container'}
+                      role={message.type === 'error' ? 'alert' : undefined}
+                    >
+                      {message.type === 'user' ? (
+                        <div className="bg-[rgba(255,255,255,0.05)] max-w-[480px] relative rounded-[12px]" data-name="User query">
+                          <div className="box-border flex gap-[10px] items-center justify-center overflow-clip px-[16px] py-[12px] relative rounded-[inherit]">
+                            <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">{message.content}</p>
+                          </div>
+                          <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[12px]" />
+                        </div>
+                      ) : (
+                        <div 
+                          className={`${
+                            message.type === 'error' 
+                              ? 'bg-[rgba(255,154,154,0.1)]' 
+                              : 'bg-[rgba(255,255,255,0)]'
+                          } max-w-[480px] relative rounded-[12px]`} 
+                          data-name="Response"
+                        >
+                          <div className="box-border flex gap-[10px] items-center justify-center overflow-clip px-[16px] py-[12px] relative rounded-[inherit]">
+                            <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">
+                              {parseMessageWithLinks(message.content)}
+                            </p>
+                          </div>
+                          <div 
+                            aria-hidden="true" 
+                            className={`absolute border ${
+                              message.type === 'error' 
+                                ? 'border-[rgba(255,154,154,0.5)]' 
+                                : 'border-[rgba(255,255,255,0)]'
+                            } border-solid inset-0 pointer-events-none rounded-[12px]`} 
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                  
+                  {isLoading && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex flex-col gap-[10px] items-start relative w-full"
+                      aria-label="Loading response"
+                    >
+                      <div className="bg-[rgba(255,255,255,0)] relative rounded-[12px] px-[16px] py-[12px]">
+                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Search input - fixed at bottom */}
+              <div className="bg-[#130521] box-border flex flex-col gap-[8px] items-start pb-[16px] pt-0 px-0 relative shrink-0 w-full max-w-[768px] mx-auto" data-name="Search input">
+                <SearchInput
+                  ref={searchInputRef}
+                  value={question}
+                  onChange={setQuestion}
+                  onSubmit={handleSubmit}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                  showDisclaimer={isChatMode}
+                />
+              </div>
+            </>
+          ) : (
+            /* HERO MODE LAYOUT */
+            <div className="flex-1 flex items-end px-[16px] relative w-full" data-name="Hero Section Wrapper">
+              {/* Hero Section - the actual hero content */}
+              <div className="flex items-end w-full h-full" data-name="Hero Section">
+                {/* Main container - Left side */}
+                <div className="basis-0 flex flex-col gap-[24px] grow items-start justify-center min-h-px min-w-px relative shrink-0 h-full" data-name="Main container">
+                <main id="main-content">
+                  {/* Text container */}
+                  <AnimatePresence>
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -287,103 +377,25 @@ export function PortfolioPage() {
                       <h1 className="font-semibold leading-[50px] relative shrink-0 text-[40px] text-white w-full max-w-[640px]">Building teams with empathy, designing systems for impact.</h1>
                       <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] w-full max-w-[640px]">Instead of scrolling, you can chat directly with a digital version of me, trained to share how I work, lead, and design for impact.</p>
                     </motion.div>
-                  )}
-                </AnimatePresence>
+                  </AnimatePresence>
+                </main>
 
-                {/* Chat Messages */}
-                <AnimatePresence>
-                  {isChatMode && (
-                    <motion.div
-                      ref={chatContainerRef}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 20 }}
-                      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                      className="w-full max-w-[640px] overflow-y-auto flex flex-col gap-[16px] mb-[24px]"
-                      style={{ maxHeight: 'calc(100vh - 200px)' }}
-                      data-name="Content"
-                      role="log"
-                      aria-live="polite"
-                      aria-atomic="false"
-                    >
-                      {messages.map((message, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                          className={`flex flex-col gap-[10px] ${message.type === 'user' ? 'items-end self-end' : 'items-start self-start'} relative w-full`}
-                          data-name={message.type === 'user' ? 'Query container' : 'Response container'}
-                          role={message.type === 'error' ? 'alert' : undefined}
-                        >
-                          {message.type === 'user' ? (
-                            <div className="bg-[rgba(255,255,255,0.05)] max-w-[90%] sm:max-w-[480px] relative rounded-[12px]" data-name="Query">
-                              <div className="box-border flex gap-[10px] items-center justify-center overflow-clip px-[16px] py-[12px] relative rounded-[inherit]">
-                                <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">{message.content}</p>
-                              </div>
-                              <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[12px]" />
-                            </div>
-                          ) : (
-                            <div 
-                              className={`${
-                                message.type === 'error' 
-                                  ? 'bg-[rgba(255,154,154,0.1)]' 
-                                  : 'bg-[rgba(255,255,255,0)]'
-                              } max-w-[90%] sm:max-w-[480px] relative rounded-[12px]`} 
-                              data-name="Response"
-                            >
-                              <div className="box-border flex gap-[10px] items-center justify-center overflow-clip px-[16px] py-[12px] relative rounded-[inherit]">
-                                <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">
-                                  {parseMessageWithLinks(message.content)}
-                                </p>
-                              </div>
-                              <div 
-                                aria-hidden="true" 
-                                className={`absolute border ${
-                                  message.type === 'error' 
-                                    ? 'border-[rgba(255,154,154,0.5)]' 
-                                    : 'border-[rgba(255,255,255,0)]'
-                                } border-solid inset-0 pointer-events-none rounded-[12px]`} 
-                              />
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                      
-                      {isLoading && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex flex-col gap-[10px] items-start self-start relative w-full"
-                          aria-label="Loading response"
-                        >
-                          <div className="bg-[rgba(255,255,255,0)] relative rounded-[12px] px-[16px] py-[12px]">
-                            <Loader2 className="w-5 h-5 text-white animate-spin" />
-                          </div>
-                        </motion.div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </main>
-
-                {/* Search input */}
-                <div className="flex flex-col gap-[8px] items-start relative shrink-0 w-full max-w-[640px]" data-name="Search input">
-                  <SearchInput
-                    ref={searchInputRef}
-                    value={question}
-                    onChange={setQuestion}
-                    onSubmit={handleSubmit}
-                    disabled={isLoading}
-                    isLoading={isLoading}
-                    showDisclaimer={isChatMode}
-                  />
+                  {/* Search input */}
+                  <div className="flex flex-col gap-[8px] items-start relative shrink-0 w-full max-w-[640px]" data-name="Search input">
+                    <SearchInput
+                      ref={searchInputRef}
+                      value={question}
+                      onChange={setQuestion}
+                      onSubmit={handleSubmit}
+                      disabled={isLoading}
+                      isLoading={isLoading}
+                      showDisclaimer={isChatMode}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Image container - Right side */}
-              <AnimatePresence>
-                {!isChatMode && (
+                {/* Image container - Right side */}
+                <AnimatePresence>
                   <motion.div
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -413,10 +425,10 @@ export function PortfolioPage() {
                       </div>
                     </div>
                   </motion.div>
-                )}
-              </AnimatePresence>
+                </AnimatePresence>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
