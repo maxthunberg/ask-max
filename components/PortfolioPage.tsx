@@ -405,11 +405,11 @@ export function PortfolioPage() {
                     data-name="Image container"
                   >
                     {/* Image */}
-                    <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0" data-name="Image">
-                      <div className="[grid-area:1_/_1] h-[701px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[0px] mask-size-[526px_701px] ml-0 mt-0 relative w-[526px]" data-name="Max_T (1) 2" style={{ maskImage: `url('${imgMaxT12}')` }}>
-                        <img alt="Max Thunberg, UX Lead" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={imgMaxT13} />
-                      </div>
-                      <div className="[grid-area:1_/_1] bg-[#7339ff] h-[701px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-0.5px_0px] mask-size-[526px_701px] mix-blend-color ml-[0.5px] mt-0 opacity-20 w-[526px]" data-name="Overlay" style={{ maskImage: `url('${imgMaxT12}')` }} />
+                    <div className="relative shrink-0" data-name="Image">\n                      <img 
+                        alt="Max Thunberg, UX Lead" 
+                        className="h-[701px] w-[526px] object-cover pointer-events-none" 
+                        src={imgMaxT13} 
+                      />
                     </div>
 
                     {/* Image details */}

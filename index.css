@@ -441,20 +441,8 @@
     margin-inline: auto;
   }
 
-  .mt-0 {
-    margin-top: calc(var(--spacing) * 0);
-  }
-
   .mb-\[24px\] {
     margin-bottom: 24px;
-  }
-
-  .ml-0 {
-    margin-left: calc(var(--spacing) * 0);
-  }
-
-  .ml-\[0\.5px\] {
-    margin-left: .5px;
   }
 
   .box-border {
@@ -471,10 +459,6 @@
 
   .hidden {
     display: none;
-  }
-
-  .inline-grid {
-    display: inline-grid;
   }
 
   .size-\[24px\] {
@@ -587,10 +571,6 @@
     max-width: 1232px;
   }
 
-  .max-w-none {
-    max-width: none;
-  }
-
   .min-w-px {
     min-width: 1px;
   }
@@ -637,20 +617,8 @@
     resize: none;
   }
 
-  .grid-cols-\[max-content\] {
-    grid-template-columns: max-content;
-  }
-
-  .grid-rows-\[max-content\] {
-    grid-template-rows: max-content;
-  }
-
   .flex-col {
     flex-direction: column;
-  }
-
-  .place-items-start {
-    place-items: start;
   }
 
   .content-stretch {
@@ -848,34 +816,6 @@
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
   }
 
-  .mask-intersect {
-    mask-composite: intersect;
-  }
-
-  .mask-alpha {
-    mask-mode: alpha;
-  }
-
-  .mask-size-\[526px_701px\] {
-    mask-size: 526px 701px;
-  }
-
-  .mask-no-clip {
-    mask-clip: no-clip;
-  }
-
-  .mask-position-\[-0\.5px_0px\] {
-    mask-position: -.5px 0;
-  }
-
-  .mask-position-\[0px\] {
-    mask-position: 0;
-  }
-
-  .mask-no-repeat {
-    mask-repeat: no-repeat;
-  }
-
   .object-cover {
     object-fit: cover;
   }
@@ -960,11 +900,6 @@
     font-size: 40px;
   }
 
-  .leading-\[0\] {
-    --tw-leading: 0;
-    line-height: 0;
-  }
-
   .leading-\[18px\] {
     --tw-leading: 18px;
     line-height: 18px;
@@ -1033,20 +968,12 @@
     text-decoration-line: underline;
   }
 
-  .opacity-20 {
-    opacity: .2;
-  }
-
   .opacity-70 {
     opacity: .7;
   }
 
   .opacity-80 {
     opacity: .8;
-  }
-
-  .mix-blend-color {
-    mix-blend-mode: color;
   }
 
   .filter {
@@ -1085,10 +1012,6 @@
   .outline-none {
     --tw-outline-style: none;
     outline-style: none;
-  }
-
-  .\[grid-area\:1_\/_1\] {
-    grid-area: 1 / 1;
   }
 
   .group-focus-within\:border-white:is(:where(.group):focus-within *) {
