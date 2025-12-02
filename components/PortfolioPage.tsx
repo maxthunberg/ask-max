@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import svgPaths from "../imports/svg-da725proeg";
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
@@ -395,10 +396,14 @@ export function PortfolioPage() {
             >
               {/* Main image container with rounded corners */}
               <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gradient-to-br from-[#7339ff]/20 to-[#130521]/40">
-                <ImageWithFallback 
+                <Image 
                   alt="Max Thunberg, UX Lead" 
                   className="w-full h-full object-cover" 
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMG1hbGV8ZW58MXx8fHwxNzMzMDgxMDAwfDA&ixlib=rb-4.1.0&q=80&w=1080"
+                  src="/images/max-thunberg.jpg"
+                  width={526}
+                  height={701}
+                  priority
+                  unoptimized
                 />
                 
                 {/* Purple overlay */}

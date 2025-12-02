@@ -1,0 +1,15 @@
+<!-- This is a placeholder. Replace this file with your actual profile photo. -->
+<svg width="526" height="701" viewBox="0 0 526 701" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="526" height="701" fill="url(#gradient)"/>
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="526" y2="701" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7339ff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#130521" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" opacity="0.7">
+    <tspan x="50%" dy="-20">Add your photo:</tspan>
+    <tspan x="50%" dy="30">/public/images/</tspan>
+    <tspan x="50%" dy="30">max-thunberg.jpg</tspan>
+  </text>
+</svg>

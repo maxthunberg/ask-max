@@ -65,7 +65,6 @@
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --color-gray-100: oklch(.967 .003 264.542);
     --color-black: #000;
     --color-white: #fff;
     --spacing: .25rem;
@@ -520,10 +519,6 @@
     display: none;
   }
 
-  .inline-block {
-    display: inline-block;
-  }
-
   .size-\[24px\] {
     width: 24px;
     height: 24px;
@@ -864,10 +859,6 @@
     }
   }
 
-  .bg-gray-100 {
-    background-color: var(--color-gray-100);
-  }
-
   .bg-transparent {
     background-color: #0000;
   }
@@ -958,16 +949,8 @@
     padding-left: 12px;
   }
 
-  .text-center {
-    text-align: center;
-  }
-
   .text-right {
     text-align: right;
-  }
-
-  .align-middle {
-    vertical-align: middle;
   }
 
   .font-\[\'Figtree\:Medium\'\,sans-serif\] {
