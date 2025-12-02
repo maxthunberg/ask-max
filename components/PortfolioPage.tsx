@@ -231,7 +231,7 @@ export function PortfolioPage() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-[#170641] relative size-full to-[#130521] min-h-screen" data-name="Front Page">
+    <div className="bg-gradient-to-b from-[#170641] to-[#130521] min-h-screen flex flex-col relative" data-name="Front Page">
       {/* Skip to main content link for screen readers */}
       <a 
         href="#main-content" 
@@ -240,25 +240,25 @@ export function PortfolioPage() {
         Skip to main content
       </a>
 
-      <div className="content-stretch flex flex-col items-center relative size-full">
-        {/* Page content container */}
-        <div className="basis-0 content-stretch flex flex-col grow items-center max-w-[1232px] min-h-px min-w-px relative shrink-0 w-full" data-name="Page content">
+      {/* Page content container - centered max-width wrapper */}
+      <div className="flex flex-col flex-1 items-center relative w-full">
+        <div className="flex flex-col flex-1 max-w-[1232px] w-full relative" data-name="Page content">
           <div aria-hidden="true" className="absolute border-[0px_1px] border-[rgba(255,255,255,0.15)] border-dashed inset-0 pointer-events-none" />
           
-          {/* Navbar */}
-          <nav className="box-border content-stretch flex gap-[32px] h-[64px] items-center px-[16px] py-[11px] relative shrink-0 w-full" data-name="Navbar" aria-label="Main navigation">
+          {/* Navbar - fixed at top, not part of hero centering */}
+          <nav className="box-border flex gap-[32px] h-[64px] items-center px-[16px] py-[11px] relative shrink-0 w-full" data-name="Navbar" aria-label="Main navigation">
             <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">Max Thunberg</p>
-            <div className="content-stretch flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
+            <div className="flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
               <button 
                 onClick={handleHomeClick}
-                className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                className="flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
                 aria-label="Go to home page"
               >
                 <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Home</p>
               </button>
               <button 
                 onClick={handleLinkedInClick}
-                className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                className="flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
                 aria-label="Visit LinkedIn profile"
               >
                 <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">LinkedIn</p>
@@ -266,10 +266,12 @@ export function PortfolioPage() {
             </div>
           </nav>
 
-          {/* Hero Section */}
-          <div className="basis-0 box-border content-stretch flex grow items-center min-h-px min-w-px px-[16px] py-0 relative shrink-0 w-full" data-name="Hero Section">
-            {/* Main container - Left side */}
-            <div className="basis-0 content-stretch flex flex-col gap-[24px] grow items-start min-h-px min-w-px relative shrink-0" data-name="Main container">
+          {/* Hero Section Container - vertically centered on desktop, top-aligned on mobile */}
+          <div className="flex-1 flex items-center md:items-center justify-center px-[16px] relative w-full" data-name="Hero Section Wrapper">
+            {/* Hero Section - the actual hero content */}
+            <div className="flex items-center w-full" data-name="Hero Section">
+              {/* Main container - Left side */}
+              <div className="basis-0 flex flex-col gap-[24px] grow items-start min-h-px min-w-px relative shrink-0" data-name="Main container">
               <main id="main-content">
                 {/* Text container */}
                 <AnimatePresence>
@@ -365,54 +367,55 @@ export function PortfolioPage() {
                 </AnimatePresence>
               </main>
 
-              {/* Search input */}
-              <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full max-w-[640px]" data-name="Search input">
-                <SearchInput
-                  ref={searchInputRef}
-                  value={question}
-                  onChange={setQuestion}
-                  onSubmit={handleSubmit}
-                  disabled={isLoading}
-                  isLoading={isLoading}
-                  showDisclaimer={isChatMode}
-                />
+                {/* Search input */}
+                <div className="flex flex-col gap-[8px] items-start relative shrink-0 w-full max-w-[640px]" data-name="Search input">
+                  <SearchInput
+                    ref={searchInputRef}
+                    value={question}
+                    onChange={setQuestion}
+                    onSubmit={handleSubmit}
+                    disabled={isLoading}
+                    isLoading={isLoading}
+                    showDisclaimer={isChatMode}
+                  />
+                </div>
               </div>
+
+              {/* Image container - Right side */}
+              <AnimatePresence>
+                {!isChatMode && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 50 }}
+                    transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                    className="basis-0 hidden lg:flex grow h-full items-end min-h-px min-w-px relative shrink-0" 
+                    data-name="Image container"
+                  >
+                    {/* Image */}
+                    <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0" data-name="Image">
+                      <div className="[grid-area:1_/_1] h-[701px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[0px] mask-size-[526px_701px] ml-0 mt-0 relative w-[526px]" data-name="Max_T (1) 2" style={{ maskImage: `url('${imgMaxT12}')` }}>
+                        <img alt="Max Thunberg, UX Lead" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={imgMaxT13} />
+                      </div>
+                      <div className="[grid-area:1_/_1] bg-[#7339ff] h-[701px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-0.5px_0px] mask-size-[526px_701px] mix-blend-color ml-[0.5px] mt-0 opacity-20 w-[526px]" data-name="Overlay" style={{ maskImage: `url('${imgMaxT12}')` }} />
+                    </div>
+
+                    {/* Image details */}
+                    <div className="absolute bottom-[32px] left-[-255px] flex items-end gap-[12px]" data-name="Image details">
+                      <div className="flex flex-col gap-[4px] text-right">
+                        <p className="font-semibold text-white text-[14px] leading-[20px]">This is me</p>
+                        <p className="font-normal opacity-80 text-[#c7c1cc] text-[14px] leading-[20px]">Currently UX Lead at Volvo Group</p>
+                      </div>
+                      <div className="h-[81.5px] w-[39px] flex-shrink-0">
+                        <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 41 87">
+                          <path d={svgPaths.pec1c610} fill="#E4BE3A" />
+                        </svg>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-
-            {/* Image container - Right side */}
-            <AnimatePresence>
-              {!isChatMode && (
-                <motion.div
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 50 }}
-                  transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                  className="basis-0 content-stretch hidden lg:flex grow h-full items-end min-h-px min-w-px relative shrink-0" 
-                  data-name="Image container"
-                >
-                  {/* Image */}
-                  <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0" data-name="Image">
-                    <div className="[grid-area:1_/_1] h-[701px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[0px] mask-size-[526px_701px] ml-0 mt-0 relative w-[526px]" data-name="Max_T (1) 2" style={{ maskImage: `url('${imgMaxT12}')` }}>
-                      <img alt="Max Thunberg, UX Lead" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={imgMaxT13} />
-                    </div>
-                    <div className="[grid-area:1_/_1] bg-[#7339ff] h-[701px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-0.5px_0px] mask-size-[526px_701px] mix-blend-color ml-[0.5px] mt-0 opacity-20 w-[526px]" data-name="Overlay" style={{ maskImage: `url('${imgMaxT12}')` }} />
-                  </div>
-
-                  {/* Image details */}
-                  <div className="absolute bottom-[32px] left-[-255px] flex items-end gap-[12px]" data-name="Image details">
-                    <div className="flex flex-col gap-[4px] text-right">
-                      <p className="font-semibold text-white text-[14px] leading-[20px]">This is me</p>
-                      <p className="font-normal opacity-80 text-[#c7c1cc] text-[14px] leading-[20px]">Currently UX Lead at Volvo Group</p>
-                    </div>
-                    <div className="h-[81.5px] w-[39px] flex-shrink-0">
-                      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 41 87">
-                        <path d={svgPaths.pec1c610} fill="#E4BE3A" />
-                      </svg>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </div>
