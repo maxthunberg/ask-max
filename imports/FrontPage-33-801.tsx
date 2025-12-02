@@ -60,10 +60,10 @@ function Group2() {
 function Image() {
   return (
     <div className="absolute contents left-[864.51px] top-[275px]" data-name="Image">
-      <div className="absolute h-[649px] left-[864.79px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-0.282px_0px] mask-size-[486.699px_649px] opacity-0 top-[275px] w-[486.699px]" data-name="Max_T (1) 2" style={{ maskImage: `url('${typeof imgMaxT12 === 'string' ? imgMaxT12 : imgMaxT12.src}')` }}>
-        <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={typeof imgMaxT13 === 'string' ? imgMaxT13 : imgMaxT13.src} />
+      <div className="absolute h-[649px] left-[864.79px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-0.282px_0px] mask-size-[486.699px_649px] opacity-0 top-[275px] w-[486.699px]" data-name="Max_T (1) 2" style={{ maskImage: `url('${imgMaxT12}')` }}>
+        <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={imgMaxT13} />
       </div>
-      <div className="absolute bg-[#7339ff] h-[675.849px] left-[calc(50%+352px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-13.887px_26.849px] mask-size-[486.699px_649px] mix-blend-color opacity-0 top-[248.15px] translate-x-[-50%] w-[459.207px]" data-name="Overlay" style={{ maskImage: `url('${typeof imgMaxT12 === 'string' ? imgMaxT12 : imgMaxT12.src}')` }} />
+      <div className="absolute bg-[#7339ff] h-[675.849px] left-[calc(50%+352px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-13.887px_26.849px] mask-size-[486.699px_649px] mix-blend-color opacity-0 top-[248.15px] translate-x-[-50%] w-[459.207px]" data-name="Overlay" style={{ maskImage: `url('${imgMaxT12}')` }} />
     </div>
   );
 }

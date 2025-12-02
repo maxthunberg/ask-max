@@ -107,10 +107,10 @@ function Group() {
 function Image() {
   return (
     <div className="absolute contents left-[845px] top-[207px]" data-name="Image">
-      <div className="absolute h-[701px] left-[845px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[0px] mask-size-[526px_701px] top-[207px] w-[526px]" data-name="Max_T (1) 2" style={{ maskImage: `url('${typeof imgMaxT12 === 'string' ? imgMaxT12 : imgMaxT12.src}')` }}>
-        <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={typeof imgMaxT13 === 'string' ? imgMaxT13 : imgMaxT13.src} />
+      <div className="absolute h-[701px] left-[845px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[0px] mask-size-[526px_701px] top-[207px] w-[526px]" data-name="Max_T (1) 2" style={{ maskImage: `url('${imgMaxT12}')` }}>
+        <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={imgMaxT13} />
       </div>
-      <div className="absolute bg-[#7339ff] h-[730px] left-[calc(50%+352px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-15px_29px] mask-size-[526px_701px] mix-blend-color opacity-20 top-[178px] translate-x-[-50%] w-[496px]" data-name="Overlay" style={{ maskImage: `url('${typeof imgMaxT12 === 'string' ? imgMaxT12 : imgMaxT12.src}')` }} />
+      <div className="absolute bg-[#7339ff] h-[730px] left-[calc(50%+352px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-15px_29px] mask-size-[526px_701px] mix-blend-color opacity-20 top-[178px] translate-x-[-50%] w-[496px]" data-name="Overlay" style={{ maskImage: `url('${imgMaxT12}')` }} />
     </div>
   );
 }
