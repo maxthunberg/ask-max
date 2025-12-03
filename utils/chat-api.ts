@@ -68,3 +68,28 @@ export async function initializeKnowledgeBase(): Promise<void> {
     throw new Error(error.error || 'Failed to initialize knowledge base');
   }
 }
+
+/**
+ * Reset and re-initialize the knowledge base (admin function)
+ */
+export async function resetKnowledgeBase(): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/admin/reset-kb`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${publicAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    const errorMessage = error.details || error.error || 'Failed to reset knowledge base';
+    console.error('Reset KB Error:', error);
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}

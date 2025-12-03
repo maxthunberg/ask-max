@@ -6,8 +6,8 @@ import svgPaths from "../imports/svg-sevsv6x2yc";
 // Using Cloudinary hosted image
 const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
 const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
-import { sendChatMessage, ChatMessage } from '../utils/chat-api';
-import { Loader2 } from 'lucide-react';
+import { sendChatMessage, resetKnowledgeBase, ChatMessage } from '../utils/chat-api';
+import { Loader2, ExternalLink, RotateCcw } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
 
 const QUOTA_EXCEEDED_MESSAGES = [
@@ -51,6 +51,9 @@ export function PortfolioPage() {
   const [hasAnimated, setHasAnimated] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [quotaErrorCount, setQuotaErrorCount] = useState(0);
+  const [showResetKbModal, setShowResetKbModal] = useState(false);
+  const [isResettingKb, setIsResettingKb] = useState(false);
+  const [resetKbMessage, setResetKbMessage] = useState('');
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<SearchInputRef>(null);
 
@@ -137,6 +140,10 @@ export function PortfolioPage() {
     window.open('https://www.linkedin.com/in/maxthunberg', '_blank');
   };
 
+  const handlePortfolioClick = () => {
+    window.open('https://maxthunberg.com', '_blank');
+  };
+
   const handleHomeClick = () => {
     if (isChatMode && messages.length > 0) {
       setShowResetModal(true);
@@ -156,16 +163,51 @@ export function PortfolioPage() {
     setShowResetModal(false);
   };
 
+  // Admin: Reset Knowledge Base
+  const handleResetKbClick = () => {
+    setShowResetKbModal(true);
+    setResetKbMessage('');
+  };
+
+  const handleResetKbConfirm = async () => {
+    setIsResettingKb(true);
+    setResetKbMessage('');
+    
+    try {
+      const result = await resetKnowledgeBase();
+      setResetKbMessage(result.message || 'Knowledge base reset successfully! 🎉');
+      
+      // Auto-close after 3 seconds on success
+      setTimeout(() => {
+        setShowResetKbModal(false);
+        setResetKbMessage('');
+      }, 3000);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reset knowledge base';
+      setResetKbMessage(`Error: ${errorMessage}`);
+    } finally {
+      setIsResettingKb(false);
+    }
+  };
+
+  const handleResetKbCancel = () => {
+    setShowResetKbModal(false);
+    setResetKbMessage('');
+  };
+
   // Close modal on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && showResetModal) {
         handleResetCancel();
       }
+      if (e.key === 'Escape' && showResetKbModal && !isResettingKb) {
+        handleResetKbCancel();
+      }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [showResetModal]);
+  }, [showResetModal, showResetKbModal, isResettingKb]);
 
   // Helper function to parse markdown-style links in error messages
   const parseMessageWithLinks = (content: string) => {
@@ -246,24 +288,46 @@ export function PortfolioPage() {
           <div aria-hidden="true" className="absolute border-[0px_1px] border-[rgba(255,255,255,0.15)] border-dashed inset-0 pointer-events-none" />
           
           {/* Navbar - fixed at top, not part of hero centering */}
-          <nav className="box-border flex gap-[32px] h-[64px] items-center px-[16px] py-[11px] relative shrink-0 w-full" data-name="Navbar" aria-label="Main navigation">
-            <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">Max Thunberg</p>
-            <div className="flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
-              <button 
-                onClick={handleHomeClick}
-                className="flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
-                aria-label="Go to home page"
-              >
-                <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Home</p>
-              </button>
-              <button 
-                onClick={handleLinkedInClick}
-                className="flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
-                aria-label="Visit LinkedIn profile"
-              >
-                <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">LinkedIn</p>
-              </button>
+          <nav className="box-border flex gap-[32px] h-[64px] items-center px-[16px] py-[11px] relative shrink-0 w-full justify-between" data-name="Navbar" aria-label="Main navigation">
+            <div className="flex gap-[32px] items-center">
+              <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">Max Thunberg</p>
+              <div className="flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
+                <button 
+                  onClick={handleHomeClick}
+                  className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                  aria-label="Go to home page"
+                >
+                  <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] group-hover:text-[#fff] group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200">Home</p>
+                </button>
+                <button 
+                  onClick={handleLinkedInClick}
+                  className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                  aria-label="Visit LinkedIn profile"
+                >
+                  <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] group-hover:text-[#fff] group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200">LinkedIn</p>
+                  <ExternalLink className="w-4 h-4 text-[#c7c1cc] group-hover:text-[#fff] transition-colors duration-200" />
+                </button>
+                <button 
+                  onClick={handlePortfolioClick}
+                  className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                  aria-label="Visit portfolio website"
+                >
+                  <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] group-hover:text-[#fff] group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200">Portfolio</p>
+                  <ExternalLink className="w-4 h-4 text-[#c7c1cc] group-hover:text-[#fff] transition-colors duration-200" />
+                </button>
+              </div>
             </div>
+            
+            {/* Admin: Reset KB Button */}
+            <button 
+              onClick={handleResetKbClick}
+              className="group flex gap-[8px] items-center justify-center relative shrink-0 opacity-40 hover:opacity-100 focus:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+              aria-label="Admin: Reset knowledge base"
+              title="Admin: Reset knowledge base"
+            >
+              <RotateCcw className="w-4 h-4 text-[#c7c1cc] group-hover:text-[#fff] transition-colors duration-200" />
+              <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] group-hover:text-[#fff] text-[14px] text-nowrap whitespace-pre transition-all duration-200">Admin</p>
+            </button>
           </nav>
 
           {/* CHAT MODE LAYOUT */}
@@ -405,7 +469,8 @@ export function PortfolioPage() {
                     data-name="Image container"
                   >
                     {/* Image */}
-                    <div className="relative shrink-0" data-name="Image">\n                      <img 
+                    <div className="relative shrink-0" data-name="Image">
+                      <img 
                         alt="Max Thunberg, UX Lead" 
                         className="h-[701px] w-[526px] object-cover pointer-events-none" 
                         src={imgMaxT13} 
@@ -489,6 +554,98 @@ export function PortfolioPage() {
                       className="px-[20px] py-[12px] sm:py-[10px] rounded-[8px] bg-[#7339ff] hover:bg-[#5e2dd9] focus:bg-[#5e2dd9] active:bg-[#4d24b8] active:scale-95 font-medium text-[14px] leading-[20px] text-white transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 min-h-[44px]"
                     >
                       Start over
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Reset Knowledge Base Modal (Admin) */}
+      <AnimatePresence>
+        {showResetKbModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={isResettingKb ? undefined : handleResetKbCancel}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+              aria-hidden="true"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[calc(100%-2rem)] sm:w-[480px] max-w-[480px]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="reset-kb-modal-title"
+              aria-describedby="reset-kb-modal-description"
+            >
+              <div className="bg-[#1a0a2e] rounded-[16px] overflow-hidden">
+                <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[16px]" />
+                
+                {/* Content */}
+                <div className="p-[24px] sm:p-[32px] flex flex-col gap-[24px]">
+                  {/* Header */}
+                  <div className="flex flex-col gap-[8px]">
+                    <div className="flex items-center gap-[12px]">
+                      <RotateCcw className="w-5 h-5 text-[#7339ff]" />
+                      <h2 id="reset-kb-modal-title" className="font-semibold text-[18px] sm:text-[20px] leading-[26px] sm:leading-[28px] text-white">
+                        Reset Knowledge Base?
+                      </h2>
+                    </div>
+                    <p id="reset-kb-modal-description" className="font-normal text-[14px] leading-[20px] text-[#c7c1cc]">
+                      This will delete all embeddings and re-initialize the knowledge base with the latest files from <code className="bg-[rgba(255,255,255,0.1)] px-[6px] py-[2px] rounded text-[13px] font-mono">/knowledge</code> directory.
+                    </p>
+                    <p className="font-normal text-[13px] leading-[18px] text-[#968fa6] mt-[8px]">
+                      ⚠️ Only do this after updating knowledge files or the image library.
+                    </p>
+                  </div>
+
+                  {/* Status Message */}
+                  {resetKbMessage && (
+                    <div className={`p-[12px] rounded-[8px] ${
+                      resetKbMessage.startsWith('Error') 
+                        ? 'bg-[rgba(255,100,100,0.1)] border border-[rgba(255,100,100,0.3)]' 
+                        : 'bg-[rgba(115,57,255,0.1)] border border-[rgba(115,57,255,0.3)]'
+                    }`}>
+                      <p className="font-normal text-[14px] leading-[20px] text-white">
+                        {resetKbMessage}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-[12px] sm:justify-end">
+                    <button
+                      onClick={handleResetKbCancel}
+                      disabled={isResettingKb}
+                      className="px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] text-[#c7c1cc] hover:bg-[rgba(255,255,255,0.05)] focus:bg-[rgba(255,255,255,0.05)] active:bg-[rgba(255,255,255,0.1)] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgba(255,255,255,0.2)] focus:ring-opacity-50 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleResetKbConfirm}
+                      disabled={isResettingKb}
+                      className="px-[20px] py-[12px] sm:py-[10px] rounded-[8px] bg-[#7339ff] hover:bg-[#5e2dd9] focus:bg-[#5e2dd9] active:bg-[#4d24b8] active:scale-95 font-medium text-[14px] leading-[20px] text-white transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-[8px]"
+                    >
+                      {isResettingKb ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Resetting...
+                        </>
+                      ) : (
+                        'Reset Knowledge Base'
+                      )}
                     </button>
                   </div>
                 </div>
