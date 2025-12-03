@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, forwardRef, useImperativeHandle, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import svgPaths from "../imports/svg-sevsv6x2yc";
 import { Loader2 } from 'lucide-react';
 
