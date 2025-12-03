@@ -441,8 +441,8 @@
     margin-inline: auto;
   }
 
-  .mt-\[8px\] {
-    margin-top: 8px;
+  .my-\[12px\] {
+    margin-block: 12px;
   }
 
   .mb-\[24px\] {
@@ -561,6 +561,10 @@
 
   .w-full {
     width: 100%;
+  }
+
+  .max-w-\[400px\] {
+    max-width: 400px;
   }
 
   .max-w-\[440px\] {
@@ -701,10 +705,6 @@
     overflow-y: auto;
   }
 
-  .rounded {
-    border-radius: .25rem;
-  }
-
   .rounded-\[8px\] {
     border-radius: 8px;
   }
@@ -763,14 +763,6 @@
     border-color: #4d4164;
   }
 
-  .border-\[rgba\(115\,57\,255\,0\.3\)\] {
-    border-color: #7339ff4d;
-  }
-
-  .border-\[rgba\(255\,100\,100\,0\.3\)\] {
-    border-color: #ff64644d;
-  }
-
   .border-\[rgba\(255\,154\,154\,0\.5\)\] {
     border-color: #ff9a9a80;
   }
@@ -803,24 +795,12 @@
     background-color: #130521;
   }
 
-  .bg-\[rgba\(115\,57\,255\,0\.1\)\] {
-    background-color: #7339ff1a;
-  }
-
-  .bg-\[rgba\(255\,100\,100\,0\.1\)\] {
-    background-color: #ff64641a;
-  }
-
   .bg-\[rgba\(255\,154\,154\,0\.1\)\] {
     background-color: #ff9a9a1a;
   }
 
   .bg-\[rgba\(255\,255\,255\,0\)\] {
     background-color: #fff0;
-  }
-
-  .bg-\[rgba\(255\,255\,255\,0\.1\)\] {
-    background-color: #ffffff1a;
   }
 
   .bg-\[rgba\(255\,255\,255\,0\.05\)\] {
@@ -864,10 +844,6 @@
     padding: 8px;
   }
 
-  .p-\[12px\] {
-    padding: 12px;
-  }
-
   .p-\[24px\] {
     padding: 24px;
   }
@@ -880,10 +856,6 @@
     padding-inline: calc(var(--spacing) * 2);
   }
 
-  .px-\[6px\] {
-    padding-inline: 6px;
-  }
-
   .px-\[16px\] {
     padding-inline: 16px;
   }
@@ -894,10 +866,6 @@
 
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
-  }
-
-  .py-\[2px\] {
-    padding-block: 2px;
   }
 
   .py-\[11px\] {
@@ -932,16 +900,8 @@
     text-align: right;
   }
 
-  .font-mono {
-    font-family: var(--font-mono);
-  }
-
   .text-\[12px\] {
     font-size: 12px;
-  }
-
-  .text-\[13px\] {
-    font-size: 13px;
   }
 
   .text-\[14px\] {
@@ -1012,14 +972,6 @@
     white-space: pre-wrap;
   }
 
-  .text-\[\#968fa6\] {
-    color: #968fa6;
-  }
-
-  .text-\[\#7339ff\] {
-    color: #7339ff;
-  }
-
   .text-\[\#F6F7FC\] {
     color: #f6f7fc;
   }
@@ -1034,10 +986,6 @@
 
   .underline {
     text-decoration-line: underline;
-  }
-
-  .opacity-40 {
-    opacity: .4;
   }
 
   .opacity-70 {
@@ -1265,12 +1213,6 @@
   @media (width >= 40rem) {
     .sm\:w-\[440px\] {
       width: 440px;
-    }
-  }
-
-  @media (width >= 40rem) {
-    .sm\:w-\[480px\] {
-      width: 480px;
     }
   }
 
