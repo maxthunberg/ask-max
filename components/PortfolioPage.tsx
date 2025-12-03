@@ -7,7 +7,7 @@ import svgPaths from "../imports/svg-sevsv6x2yc";
 const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
 const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
-import { Loader2, ExternalLink, Sun, Moon } from 'lucide-react';
+import { ExternalLink, Sun, Moon, Menu, X } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
 
 const QUOTA_EXCEEDED_MESSAGES = [
@@ -55,6 +55,15 @@ export function PortfolioPage() {
   const [language, setLanguage] = useState<'en' | 'sv'>('en');
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
   const [skeletonStage, setSkeletonStage] = useState<'navbar' | 'search' | 'disclaimer' | null>(null);
+  
+  // Individual language states for progressive translation
+  const [navbarLanguage, setNavbarLanguage] = useState<'en' | 'sv'>('en');
+  const [searchLanguage, setSearchLanguage] = useState<'en' | 'sv'>('en');
+  const [disclaimerLanguage, setDisclaimerLanguage] = useState<'en' | 'sv'>('en');
+  
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<SearchInputRef>(null);
 
@@ -113,12 +122,24 @@ export function PortfolioPage() {
   const detectSwedish = (text: string): boolean => {
     const lowerText = text.toLowerCase().trim();
     
+    // Words that are SO distinctly Swedish that they alone indicate Swedish language
+    const obviousSwedishWords = [
+      'hej', 'hejsan', 'tjena', 'tack', 'tja', 'hallå', 'halloj',
+      'adjö', 'adjös', 'hejdå', 'morsning', 'tjänare'
+    ];
+    
+    // Check if the text is just one obvious Swedish word
+    const singleWord = lowerText.replace(/[.,!?;:]$/g, '');
+    if (obviousSwedishWords.includes(singleWord)) {
+      return true;
+    }
+    
     // Common Swedish words that are distinctly Swedish
     const swedishWords = [
       'jag', 'du', 'är', 'hur', 'vad', 'och', 'att', 'det', 'på', 'för', 'med',
       'kan', 'som', 'har', 'från', 'om', 'till', 'så', 'men', 'när', 'hej', 'tack',
       'varför', 'vilken', 'skulle', 'kunde', 'varit', 'något', 'någon', 'allt',
-      'även', 'över', 'efter', 'där', 'här', 'själv', 'får', 'göra', 'säger',
+      'även', 'över', 'efter', 'där', 'hr', 'själv', 'får', 'göra', 'säger',
       'eller', 'denna', 'dessa', 'under', 'sedan', 'fanns', 'blev', 'fick',
       'måste', 'mycket', 'andra', 'första', 'samma', 'bara', 'också', 'redan',
       'nya', 'stora', 'hela', 'heter', 'bra', 'mig', 'dig', 'sig', 'oss', 'dem',
@@ -191,29 +212,37 @@ export function PortfolioPage() {
       setTimeout(() => {
         setMessages(prev => [...prev, { 
           type: 'system', 
-          content: 'Jaha, du vill ta det på svenska. Låt mig bara ändra språk på sidan åt dig' 
+          content: 'Jaha, du pratar svenska. Låt mig anpassa språk på hemsidan till dig ☺️' 
         }]);
         
-        // Start skeleton animation sequence
+        // Start skeleton animation sequence (wait 2 seconds extra before starting)
         setTimeout(() => {
           setSkeletonStage('navbar');
           
           setTimeout(() => {
+            // Change ONLY navbar language after navbar animation
+            setNavbarLanguage('sv');
             setSkeletonStage('search');
             
             setTimeout(() => {
+              // Change ONLY search language after search animation
+              setSearchLanguage('sv');
               setSkeletonStage('disclaimer');
               
               setTimeout(() => {
+                // Change ONLY disclaimer language after disclaimer animation
+                setDisclaimerLanguage('sv');
                 setSkeletonStage(null);
+                
+                // Finally set overall language to Swedish
                 setLanguage('sv');
                 
-                // Now proceed with the actual API call
-                performAPICall(userMessage);
-              }, 600);
-            }, 600);
-          }, 600);
-        }, 500);
+                // Now proceed with the actual API call, passing flag that user wrote in Swedish
+                performAPICall(userMessage, true);
+              }, 800);
+            }, 800);
+          }, 800);
+        }, 2500);
       }, 300);
       
       return; // Exit early, performAPICall will handle the rest
@@ -221,10 +250,10 @@ export function PortfolioPage() {
 
     // Normal flow without language switch
     setIsLoading(true);
-    await performAPICall(userMessage);
+    await performAPICall(userMessage, false);
   };
 
-  const performAPICall = async (userMessage: string) => {
+  const performAPICall = async (userMessage: string, userWroteInSwedish: boolean = false) => {
     setIsLoading(true);
 
     try {
@@ -237,7 +266,51 @@ export function PortfolioPage() {
         }));
 
       const result = await sendChatMessage(userMessage, conversationHistory);
-      setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
+      
+      // Detect if AI responded in Swedish and switch language if needed
+      // BUT only if the user didn't already write in Swedish (to avoid double system messages)
+      const aiRespondedInSwedish = detectSwedish(result.message);
+      if (language === 'en' && aiRespondedInSwedish && !userWroteInSwedish) {
+        // Add AI message first
+        setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
+        
+        // Then add system message about switching language
+        setTimeout(() => {
+          setMessages(prev => [...prev, { 
+            type: 'system', 
+            content: 'Jaha, du pratar svenska. Låt mig anpassa språk på hemsidan till dig ☺️' 
+          }]);
+          
+          // Start skeleton animation sequence (wait 2 seconds extra before starting)
+          setTimeout(() => {
+            setSkeletonStage('navbar');
+            
+            setTimeout(() => {
+              // Change ONLY navbar language after navbar animation
+              setNavbarLanguage('sv');
+              setSkeletonStage('search');
+              
+              setTimeout(() => {
+                // Change ONLY search language after search animation
+                setSearchLanguage('sv');
+                setSkeletonStage('disclaimer');
+                
+                setTimeout(() => {
+                  // Change ONLY disclaimer language after disclaimer animation
+                  setDisclaimerLanguage('sv');
+                  setSkeletonStage(null);
+                  
+                  // Finally set overall language to Swedish
+                  setLanguage('sv');
+                }, 800);
+              }, 800);
+            }, 800);
+          }, 2500);
+        }, 300);
+      } else {
+        // Normal flow - just add the message
+        setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       const lowerMessage = errorMessage.toLowerCase();
@@ -305,6 +378,11 @@ export function PortfolioPage() {
     setIsLoading(false); // Reset loading state in case they were in infinite loading
     setLanguage('en'); // Reset language to English
     setIsLanguageTransitioning(false); // Reset language transition state
+    
+    // Reset individual language states
+    setNavbarLanguage('en');
+    setSearchLanguage('en');
+    setDisclaimerLanguage('en');
   };
 
   const handleResetCancel = () => {
@@ -420,10 +498,11 @@ export function PortfolioPage() {
           <div aria-hidden="true" className="absolute border-[0px_1px] border-[rgba(255,255,255,0.15)] border-dashed inset-0 pointer-events-none" />
           
           {/* Navbar - fixed at top, not part of hero centering */}
-          <nav className="box-border flex gap-[32px] h-[64px] items-center px-[16px] py-[11px] relative shrink-0 w-full justify-between transition-colors duration-300" data-name="Navbar" aria-label="Main navigation">
+          <nav className="box-border flex gap-[32px] h-[64px] items-center px-[12px] md:px-[16px] py-[11px] relative shrink-0 w-full justify-between transition-colors duration-300" data-name="Navbar" aria-label="Main navigation">
             <div className="flex gap-[32px] items-center">
               <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap whitespace-pre transition-colors duration-300" style={{ color: colors.textPrimary }}>Max Thunberg</p>
-              <div className="flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
+              {/* Desktop links - hidden on mobile */}
+              <div className="hidden md:flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
                 <button 
                   onClick={handleHomeClick}
                   className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px] overflow-hidden"
@@ -434,7 +513,7 @@ export function PortfolioPage() {
                       className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" 
                       style={{ color: colors.textSecondary }}
                     >
-                      {t.home}
+                      {translations[navbarLanguage].home}
                     </p>
                     {skeletonStage === 'navbar' && (
                       <div 
@@ -466,19 +545,15 @@ export function PortfolioPage() {
               </div>
             </div>
             
-            {/* Theme Toggle Button - TEMPORARILY HIDDEN, keeping dark mode only */}
-            {/* <button 
-              onClick={toggleTheme}
-              className="group flex gap-[8px] items-center justify-center relative shrink-0 opacity-80 hover:opacity-100 focus:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            {/* Hamburger menu button - visible only on mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden flex items-center justify-center relative shrink-0 opacity-80 hover:opacity-100 focus:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md p-2 min-h-[44px] min-w-[44px]"
+              aria-label="Open navigation menu"
+              aria-expanded={isMobileMenuOpen}
             >
-              {theme === 'light' ? (
-                <Moon className="w-5 h-5 transition-colors duration-200" style={{ color: colors.textSecondary }} />
-              ) : (
-                <Sun className="w-5 h-5 transition-colors duration-200" style={{ color: colors.textSecondary }} />
-              )}
-            </button> */}
+              <Menu className="w-6 h-6 transition-colors duration-200" style={{ color: colors.textPrimary }} />
+            </button>
           </nav>
 
           {/* CHAT MODE LAYOUT */}
@@ -492,7 +567,7 @@ export function PortfolioPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                  className="custom-scrollbar basis-0 box-border flex flex-col gap-[16px] grow items-center min-h-px min-w-px overflow-x-clip overflow-y-auto px-0 py-[16px] relative shrink-0 w-full max-w-[768px] mx-auto"
+                  className="custom-scrollbar basis-0 box-border flex flex-col gap-[16px] grow items-center min-h-px min-w-px overflow-x-clip overflow-y-auto px-[12px] md:px-[16px] py-[16px] relative shrink-0 w-full max-w-[768px] mx-auto"
                   data-name="Chat"
                   role="log"
                   aria-live="polite"
@@ -560,8 +635,158 @@ export function PortfolioPage() {
                       className="flex flex-col gap-[10px] items-start relative w-full"
                       aria-label="Loading response"
                     >
-                      <div className="relative rounded-[12px] px-[16px] py-[12px]">
-                        <Loader2 className="w-5 h-5 animate-spin transition-colors duration-300" style={{ color: colors.textPrimary }} />
+                      <div className="relative w-[48px] h-[48px]">
+                        {/* Star 1 - Fast with trails */}
+                        {[0, 1, 2, 3].map((trailIndex) => (
+                          <motion.div
+                            key={`star1-trail-${trailIndex}`}
+                            className="absolute"
+                            initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
+                            animate={{
+                              x: [0, 20, 40],
+                              y: [48, 28, 8],
+                              rotate: [0, 180, 360],
+                              opacity: [0, 1 - (trailIndex * 0.25), 0],
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "easeOut",
+                              times: [0, 0.3, 1],
+                              delay: trailIndex * 0.08,
+                            }}
+                            style={{
+                              filter: trailIndex > 0 ? 'blur(1px)' : 'none',
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                                fill="url(#star-gradient-1)"
+                              />
+                              <defs>
+                                <linearGradient id="star-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#FFD27F" />
+                                  <stop offset="100%" stopColor="#E4BE3A" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                          </motion.div>
+                        ))}
+
+                        {/* Star 2 - Medium with trails */}
+                        {[0, 1, 2, 3].map((trailIndex) => (
+                          <motion.div
+                            key={`star2-trail-${trailIndex}`}
+                            className="absolute"
+                            initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
+                            animate={{
+                              x: [-5, 15, 35],
+                              y: [50, 30, 10],
+                              rotate: [0, 180, 360],
+                              opacity: [0, 1 - (trailIndex * 0.25), 0],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeOut",
+                              delay: 0.3 + (trailIndex * 0.08),
+                              times: [0, 0.3, 1],
+                            }}
+                            style={{
+                              filter: trailIndex > 0 ? 'blur(1px)' : 'none',
+                            }}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                                fill="url(#star-gradient-2)"
+                              />
+                              <defs>
+                                <linearGradient id="star-gradient-2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#FFE5A3" />
+                                  <stop offset="100%" stopColor="#FFB84D" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                          </motion.div>
+                        ))}
+
+                        {/* Star 3 - Slow with trails */}
+                        {[0, 1, 2, 3].map((trailIndex) => (
+                          <motion.div
+                            key={`star3-trail-${trailIndex}`}
+                            className="absolute"
+                            initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
+                            animate={{
+                              x: [5, 22, 38],
+                              y: [52, 32, 12],
+                              rotate: [0, 180, 360],
+                              opacity: [0, 1 - (trailIndex * 0.25), 0],
+                            }}
+                            transition={{
+                              duration: 2.5,
+                              repeat: Infinity,
+                              ease: "easeOut",
+                              delay: 0.6 + (trailIndex * 0.08),
+                              times: [0, 0.3, 1],
+                            }}
+                            style={{
+                              filter: trailIndex > 0 ? 'blur(1px)' : 'none',
+                            }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                                fill="url(#star-gradient-3)"
+                              />
+                              <defs>
+                                <linearGradient id="star-gradient-3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#FFF4D6" />
+                                  <stop offset="100%" stopColor="#FFD27F" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                          </motion.div>
+                        ))}
+
+                        {/* Star 4 - Very fast, small with trails */}
+                        {[0, 1, 2, 3].map((trailIndex) => (
+                          <motion.div
+                            key={`star4-trail-${trailIndex}`}
+                            className="absolute"
+                            initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
+                            animate={{
+                              x: [-8, 12, 32],
+                              y: [46, 26, 6],
+                              rotate: [0, 180, 360],
+                              opacity: [0, 1 - (trailIndex * 0.25), 0],
+                            }}
+                            transition={{
+                              duration: 1.2,
+                              repeat: Infinity,
+                              ease: "easeOut",
+                              delay: 0.9 + (trailIndex * 0.08),
+                              times: [0, 0.3, 1],
+                            }}
+                            style={{
+                              filter: trailIndex > 0 ? 'blur(1px)' : 'none',
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                                fill="url(#star-gradient-4)"
+                              />
+                              <defs>
+                                <linearGradient id="star-gradient-4" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#E4BE3A" />
+                                  <stop offset="100%" stopColor="#D4A52A" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                          </motion.div>
+                        ))}
                       </div>
                     </motion.div>
                   )}
@@ -569,7 +794,7 @@ export function PortfolioPage() {
               </AnimatePresence>
 
               {/* Search input - fixed at bottom */}
-              <div className="box-border flex flex-col gap-[8px] items-start pb-[16px] pt-0 px-0 relative shrink-0 w-full max-w-[768px] mx-auto transition-colors duration-300" data-name="Search input" style={{ backgroundColor: theme === 'light' ? '#f5f5f7' : '#130521' }}>
+              <div className="box-border flex flex-col gap-[8px] items-start pb-[16px] pt-0 px-[12px] md:px-[16px] relative shrink-0 w-full max-w-[768px] mx-auto transition-colors duration-300" data-name="Search input" style={{ backgroundColor: theme === 'light' ? '#f5f5f7' : '#130521' }}>
                 <SearchInput
                   ref={searchInputRef}
                   value={question}
@@ -579,9 +804,9 @@ export function PortfolioPage() {
                   isLoading={isLoading}
                   showDisclaimer={isChatMode}
                   theme={theme}
-                  placeholder={t.placeholder}
-                  disclaimerText={t.disclaimer}
-                  language={language}
+                  placeholder={translations[searchLanguage].placeholder}
+                  disclaimerText={translations[disclaimerLanguage].disclaimer}
+                  language={searchLanguage}
                   isChatMode={isChatMode}
                   showPlaceholderSkeleton={skeletonStage === 'search'}
                   showDisclaimerSkeleton={skeletonStage === 'disclaimer'}
@@ -590,11 +815,23 @@ export function PortfolioPage() {
             </>
           ) : (
             /* HERO MODE LAYOUT */
-            <div className="flex-1 flex items-end px-[16px] relative w-full" data-name="Hero Section Wrapper">
+            <div className="flex-1 flex items-end px-[12px] md:px-[16px] relative w-full" data-name="Hero Section Wrapper">
+              {/* Mobile background image - only visible on mobile screens */}
+              <div 
+                className="absolute inset-0 lg:hidden pointer-events-none"
+                style={{ 
+                  backgroundImage: `url(${imgMaxT13})`, 
+                  backgroundSize: 'cover', 
+                  backgroundPosition: 'center bottom', 
+                  backgroundRepeat: 'no-repeat', 
+                  opacity: 0.3,
+                }}
+              />
+              
               {/* Hero Section - the actual hero content */}
-              <div className="flex items-end w-full h-full" data-name="Hero Section">
+              <div className="flex items-end w-full h-full relative z-10" data-name="Hero Section">
                 {/* Main container - Left side */}
-                <div className="basis-0 flex flex-col gap-[24px] grow items-start justify-center min-h-px min-w-px relative shrink-0 h-full" data-name="Main container">
+                <div className="basis-0 flex flex-col gap-[24px] grow items-start justify-end lg:justify-center min-h-px min-w-px relative shrink-0 h-full pb-[32px] lg:pb-0" data-name="Main container">
                 <main id="main-content">
                   {/* Text container */}
                   <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full overflow-hidden" data-name="Text container">
@@ -747,6 +984,90 @@ export function PortfolioPage() {
                   </div>
                 </div>
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Menu - Fullscreen */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] md:hidden"
+              aria-hidden="true"
+            />
+
+            {/* Menu Panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed inset-0 z-[151] md:hidden"
+              style={{
+                background: theme === 'light'
+                  ? 'linear-gradient(to bottom, #f5f5f7, #e8e8ed)'
+                  : 'linear-gradient(to bottom, #170641, #130521)'
+              }}
+            >
+              {/* Header with close button */}
+              <div className="flex items-center justify-between px-[12px] md:px-[16px] py-[11px] h-[64px] transition-colors duration-300">
+                <p className="font-semibold leading-[24px] text-[16px] transition-colors duration-300" style={{ color: colors.textPrimary }}>Max Thunberg</p>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center relative shrink-0 opacity-80 hover:opacity-100 focus:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md p-2 min-h-[44px] min-w-[44px]"
+                  aria-label="Close navigation menu"
+                >
+                  <X className="w-6 h-6 transition-colors duration-200" style={{ color: colors.textPrimary }} />
+                </button>
+              </div>
+
+              {/* Menu items */}
+              <nav className="flex flex-col gap-[8px] px-[12px] md:px-[16px] py-[32px]" aria-label="Mobile navigation">
+                <button
+                  onClick={() => {
+                    handleHomeClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="group flex gap-[10px] items-center relative shrink-0 hover:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-4 py-3 min-h-[56px]"
+                  style={{ backgroundColor: colors.hoverBg }}
+                >
+                  <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>
+                    {translations[navbarLanguage].home}
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleLinkedInClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="group flex gap-[10px] items-center justify-between relative shrink-0 hover:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-4 py-3 min-h-[56px]"
+                  style={{ backgroundColor: colors.hoverBg }}
+                >
+                  <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>LinkedIn</p>
+                  <ExternalLink className="w-5 h-5 transition-colors duration-200" style={{ color: colors.textSecondary }} />
+                </button>
+
+                <button
+                  onClick={() => {
+                    handlePortfolioClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="group flex gap-[10px] items-center justify-between relative shrink-0 hover:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-4 py-3 min-h-[56px]"
+                  style={{ backgroundColor: colors.hoverBg }}
+                >
+                  <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>Portfolio</p>
+                  <ExternalLink className="w-5 h-5 transition-colors duration-200" style={{ color: colors.textSecondary }} />
+                </button>
+              </nav>
             </motion.div>
           </>
         )}
