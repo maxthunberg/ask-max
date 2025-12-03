@@ -7,7 +7,7 @@ import svgPaths from "../imports/svg-sevsv6x2yc";
 const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
 const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
-import { Loader2, ExternalLink } from 'lucide-react';
+import { Loader2, ExternalLink, Sun, Moon } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
 
 const QUOTA_EXCEEDED_MESSAGES = [
@@ -45,14 +45,120 @@ const SARCASTIC_QUOTA_MESSAGES = [
 
 export function PortfolioPage() {
   const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<Array<{ type: 'user' | 'assistant' | 'error'; content: string }>>([]);
+  const [messages, setMessages] = useState<Array<{ type: 'user' | 'assistant' | 'error' | 'system'; content: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [quotaErrorCount, setQuotaErrorCount] = useState(0);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [language, setLanguage] = useState<'en' | 'sv'>('en');
+  const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
+  const [skeletonStage, setSkeletonStage] = useState<'navbar' | 'search' | 'disclaimer' | null>(null);
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<SearchInputRef>(null);
+
+  // Load theme from localStorage on mount
+  // TEMPORARILY DISABLED - keeping dark mode only for now
+  // useEffect(() => {
+  //   const savedTheme = localStorage.getItem('portfolio-theme') as 'light' | 'dark' | null;
+  //   if (savedTheme) {
+  //     setTheme(savedTheme);
+  //   }
+  // }, []);
+
+  // Save theme to localStorage when it changes
+  // TEMPORARILY DISABLED - keeping dark mode only for now
+  // useEffect(() => {
+  //   localStorage.setItem('portfolio-theme', theme);
+  // }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  // Translations
+  const translations = {
+    en: {
+      home: "Home",
+      heroTitle: "Building teams with empathy, designing systems for impact.",
+      heroSubtitle: "Instead of scrolling, you can chat directly with a digital version of me, trained to share how I work, lead, and design for impact.",
+      title: "This is me",
+      subtitle: "Currently UX Lead at Volvo Group",
+      placeholder: "Ask me about UX, leadership or whatever you feel like",
+      disclaimer: "Just like the real Max, my digital twin can also make mistakes.",
+      modalTitle: "Start over?",
+      modalDescription: "This will clear your current conversation and return you to the home screen.",
+      modalKeepChatting: "Keep chatting",
+      modalStartOver: "Start over"
+    },
+    sv: {
+      home: "Hem",
+      heroTitle: "Bygger team med empati, designar system för påverkan.",
+      heroSubtitle: "Istället för att scrolla kan du chatta direkt med en digital version av mig, tränad att dela hur jag jobbar, leder och designar för påverkan.",
+      title: "Det här är jag",
+      subtitle: "För närvarande UX Lead på Volvo Group",
+      placeholder: "Fråga mig om UX, ledarskap eller vad du vill",
+      disclaimer: "Precis som den riktiga Max kan min digitala tvilling också göra misstag.",
+      modalTitle: "Börja om?",
+      modalDescription: "Detta kommer att rensa din nuvarande konversation och ta dig tillbaka till startsidan.",
+      modalKeepChatting: "Fortsätt chatta",
+      modalStartOver: "Börja om"
+    }
+  };
+
+  const t = translations[language];
+
+  // Detect if text is in Swedish
+  const detectSwedish = (text: string): boolean => {
+    const lowerText = text.toLowerCase().trim();
+    
+    // Common Swedish words that are distinctly Swedish
+    const swedishWords = [
+      'jag', 'du', 'är', 'hur', 'vad', 'och', 'att', 'det', 'på', 'för', 'med',
+      'kan', 'som', 'har', 'från', 'om', 'till', 'så', 'men', 'när', 'hej', 'tack',
+      'varför', 'vilken', 'skulle', 'kunde', 'varit', 'något', 'någon', 'allt',
+      'även', 'över', 'efter', 'där', 'här', 'själv', 'får', 'göra', 'säger',
+      'eller', 'denna', 'dessa', 'under', 'sedan', 'fanns', 'blev', 'fick',
+      'måste', 'mycket', 'andra', 'första', 'samma', 'bara', 'också', 'redan',
+      'nya', 'stora', 'hela', 'heter', 'bra', 'mig', 'dig', 'sig', 'oss', 'dem',
+      'vi', 'vet', 'vill', 'jobbar', 'tror', 'tycker', 'gillar', 'brukar', 'kör',
+      'blir', 'varit', 'gjort', 'sett', 'tänker', 'börja', 'säga', 'berätta'
+    ];
+    
+    // Check if text contains Swedish-specific characters
+    const hasSwedishChars = /[åäöÅÄÖ]/.test(text);
+    
+    // Count Swedish words - exact word matching
+    const words = lowerText.split(/\s+/);
+    const swedishWordCount = words.filter(word => 
+      swedishWords.includes(word.replace(/[.,!?;:]$/g, ''))
+    ).length;
+    
+    // If text has Swedish characters OR at least 2 Swedish words, it's Swedish
+    return hasSwedishChars || swedishWordCount >= 2;
+  };
+
+  // Theme colors
+  const colors = {
+    bg: theme === 'light' ? '#f5f5f7' : '#0a0118',
+    navBg: theme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(10, 1, 24, 0.8)',
+    cardBg: theme === 'light' ? '#ffffff' : '#1a0a2e',
+    textPrimary: theme === 'light' ? '#1d1d1f' : '#ffffff',
+    textSecondary: theme === 'light' ? '#6e6e73' : '#c7c1cc',
+    textTertiary: theme === 'light' ? '#86868b' : '#968fa6',
+    border: theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.2)',
+    borderLight: theme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+    inputBg: theme === 'light' ? '#f5f5f7' : 'rgba(255, 255, 255, 0.05)',
+    inputBorder: theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.2)',
+    inputFocus: theme === 'light' ? 'rgba(115, 57, 255, 0.3)' : 'rgba(115, 57, 255, 0.5)',
+    messageBg: theme === 'light' ? '#f5f5f7' : 'rgba(255, 255, 255, 0.05)',
+    userMessageBg: theme === 'light' ? '#7339ff' : '#7339ff',
+    userMessageText: '#ffffff',
+    linkColor: theme === 'light' ? '#7339ff' : '#9d7aff',
+    hoverBg: theme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)',
+    activeBg: theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -67,6 +173,9 @@ export function PortfolioPage() {
     const userMessage = question;
     setQuestion('');
     
+    // Detect if this is a language switch
+    const shouldSwitchToSwedish = language === 'en' && detectSwedish(userMessage);
+    
     // Add user message
     setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
     
@@ -76,12 +185,52 @@ export function PortfolioPage() {
       setHasAnimated(true);
     }
 
+    // If switching to Swedish, show the system message and skeleton animation first
+    if (shouldSwitchToSwedish) {
+      // Add system message about switching language
+      setTimeout(() => {
+        setMessages(prev => [...prev, { 
+          type: 'system', 
+          content: 'Jaha, du vill ta det på svenska. Låt mig bara ändra språk på sidan åt dig' 
+        }]);
+        
+        // Start skeleton animation sequence
+        setTimeout(() => {
+          setSkeletonStage('navbar');
+          
+          setTimeout(() => {
+            setSkeletonStage('search');
+            
+            setTimeout(() => {
+              setSkeletonStage('disclaimer');
+              
+              setTimeout(() => {
+                setSkeletonStage(null);
+                setLanguage('sv');
+                
+                // Now proceed with the actual API call
+                performAPICall(userMessage);
+              }, 600);
+            }, 600);
+          }, 600);
+        }, 500);
+      }, 300);
+      
+      return; // Exit early, performAPICall will handle the rest
+    }
+
+    // Normal flow without language switch
+    setIsLoading(true);
+    await performAPICall(userMessage);
+  };
+
+  const performAPICall = async (userMessage: string) => {
     setIsLoading(true);
 
     try {
-      // Build conversation history
+      // Build conversation history (exclude system messages)
       const conversationHistory: ChatMessage[] = messages
-        .filter(m => m.type !== 'error')
+        .filter(m => m.type !== 'error' && m.type !== 'system')
         .map(m => ({
           role: m.type === 'user' ? 'user' : 'assistant',
           content: m.content,
@@ -154,6 +303,8 @@ export function PortfolioPage() {
     setShowResetModal(false);
     setQuotaErrorCount(0); // Reset quota error counter
     setIsLoading(false); // Reset loading state in case they were in infinite loading
+    setLanguage('en'); // Reset language to English
+    setIsLanguageTransitioning(false); // Reset language transition state
   };
 
   const handleResetCancel = () => {
@@ -244,7 +395,17 @@ export function PortfolioPage() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-[#170641] to-[#130521] min-h-screen flex flex-col relative" data-name="Front Page">
+    <div 
+      className="min-h-screen flex flex-col relative transition-colors duration-300" 
+      style={{ 
+        background: theme === 'light' 
+          ? 'linear-gradient(to bottom, #f5f5f7, #e8e8ed)' 
+          : 'linear-gradient(to bottom, #170641, #130521)' 
+      }}
+      data-name="Front Page"
+    >
+
+      
       {/* Skip to main content link for screen readers */}
       <a 
         href="#main-content" 
@@ -259,35 +420,65 @@ export function PortfolioPage() {
           <div aria-hidden="true" className="absolute border-[0px_1px] border-[rgba(255,255,255,0.15)] border-dashed inset-0 pointer-events-none" />
           
           {/* Navbar - fixed at top, not part of hero centering */}
-          <nav className="box-border flex gap-[32px] h-[64px] items-center px-[16px] py-[11px] relative shrink-0 w-full justify-between" data-name="Navbar" aria-label="Main navigation">
+          <nav className="box-border flex gap-[32px] h-[64px] items-center px-[16px] py-[11px] relative shrink-0 w-full justify-between transition-colors duration-300" data-name="Navbar" aria-label="Main navigation">
             <div className="flex gap-[32px] items-center">
-              <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">Max Thunberg</p>
+              <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap whitespace-pre transition-colors duration-300" style={{ color: colors.textPrimary }}>Max Thunberg</p>
               <div className="flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
                 <button 
                   onClick={handleHomeClick}
-                  className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                  className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px] overflow-hidden"
                   aria-label="Go to home page"
                 >
-                  <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] group-hover:text-[#fff] group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200">Home</p>
+                  <div className="relative">
+                    <p 
+                      className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" 
+                      style={{ color: colors.textSecondary }}
+                    >
+                      {t.home}
+                    </p>
+                    {skeletonStage === 'navbar' && (
+                      <div 
+                        className="absolute inset-0 rounded"
+                        style={{
+                          background: 'linear-gradient(90deg, transparent 0%, rgba(115, 57, 255, 0.6) 50%, transparent 100%)',
+                          animation: 'shimmer 1s ease-in-out',
+                        }}
+                      />
+                    )}
+                  </div>
                 </button>
                 <button 
                   onClick={handleLinkedInClick}
                   className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
                   aria-label="Visit LinkedIn profile"
                 >
-                  <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] group-hover:text-[#fff] group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200">LinkedIn</p>
-                  <ExternalLink className="w-4 h-4 text-[#c7c1cc] group-hover:text-[#fff] transition-colors duration-200" />
+                  <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>LinkedIn</p>
+                  <ExternalLink className="w-4 h-4 transition-colors duration-200" style={{ color: colors.textSecondary }} />
                 </button>
                 <button 
                   onClick={handlePortfolioClick}
                   className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
                   aria-label="Visit portfolio website"
                 >
-                  <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] group-hover:text-[#fff] group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200">Portfolio</p>
-                  <ExternalLink className="w-4 h-4 text-[#c7c1cc] group-hover:text-[#fff] transition-colors duration-200" />
+                  <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>Portfolio</p>
+                  <ExternalLink className="w-4 h-4 transition-colors duration-200" style={{ color: colors.textSecondary }} />
                 </button>
               </div>
             </div>
+            
+            {/* Theme Toggle Button - TEMPORARILY HIDDEN, keeping dark mode only */}
+            {/* <button 
+              onClick={toggleTheme}
+              className="group flex gap-[8px] items-center justify-center relative shrink-0 opacity-80 hover:opacity-100 focus:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5 transition-colors duration-200" style={{ color: colors.textSecondary }} />
+              ) : (
+                <Sun className="w-5 h-5 transition-colors duration-200" style={{ color: colors.textSecondary }} />
+              )}
+            </button> */}
           </nav>
 
           {/* CHAT MODE LAYOUT */}
@@ -325,27 +516,37 @@ export function PortfolioPage() {
                           </div>
                           <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[12px]" />
                         </div>
+                      ) : message.type === 'system' ? (
+                        <div className="max-w-[480px] relative rounded-[12px]" data-name="System message">
+                          <div className="box-border flex gap-[10px] items-center justify-center overflow-clip relative rounded-[inherit]">
+                            <p className="font-normal leading-[24px] relative text-[16px] italic opacity-80 whitespace-pre-wrap" style={{ color: colors.textSecondary }}>
+                              {message.content}
+                            </p>
+                          </div>
+                        </div>
                       ) : (
                         <div 
-                          className={`${
-                            message.type === 'error' 
-                              ? 'bg-[rgba(255,154,154,0.1)]' 
-                              : 'bg-[rgba(255,255,255,0)]'
-                          } max-w-[480px] relative rounded-[12px]`} 
+                          className="max-w-[480px] relative rounded-[12px]" 
+                          style={{ 
+                            backgroundColor: message.type === 'error' 
+                              ? 'rgba(255,154,154,0.1)' 
+                              : 'rgba(255,255,255,0)' 
+                          }}
                           data-name="Response"
                         >
-                          <div className="box-border flex flex-col gap-[10px] px-[16px] py-[12px] relative rounded-[inherit]">
-                            <div className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">
+                          <div className="box-border flex gap-[10px] items-center justify-center overflow-clip relative rounded-[inherit]">
+                            <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">
                               {parseMessageWithLinks(message.content)}
-                            </div>
+                            </p>
                           </div>
                           <div 
                             aria-hidden="true" 
-                            className={`absolute border ${
-                              message.type === 'error' 
-                                ? 'border-[rgba(255,154,154,0.5)]' 
-                                : 'border-[rgba(255,255,255,0)]'
-                            } border-solid inset-0 pointer-events-none rounded-[12px]`} 
+                            className="absolute border border-solid inset-0 pointer-events-none rounded-[12px]" 
+                            style={{ 
+                              borderColor: message.type === 'error' 
+                                ? 'rgba(255,154,154,0.5)' 
+                                : 'rgba(255,255,255,0)'
+                            }}
                           />
                         </div>
                       )}
@@ -359,8 +560,8 @@ export function PortfolioPage() {
                       className="flex flex-col gap-[10px] items-start relative w-full"
                       aria-label="Loading response"
                     >
-                      <div className="bg-[rgba(255,255,255,0)] relative rounded-[12px] px-[16px] py-[12px]">
-                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                      <div className="relative rounded-[12px] px-[16px] py-[12px]">
+                        <Loader2 className="w-5 h-5 animate-spin transition-colors duration-300" style={{ color: colors.textPrimary }} />
                       </div>
                     </motion.div>
                   )}
@@ -368,7 +569,7 @@ export function PortfolioPage() {
               </AnimatePresence>
 
               {/* Search input - fixed at bottom */}
-              <div className="bg-[#130521] box-border flex flex-col gap-[8px] items-start pb-[16px] pt-0 px-0 relative shrink-0 w-full max-w-[768px] mx-auto" data-name="Search input">
+              <div className="box-border flex flex-col gap-[8px] items-start pb-[16px] pt-0 px-0 relative shrink-0 w-full max-w-[768px] mx-auto transition-colors duration-300" data-name="Search input" style={{ backgroundColor: theme === 'light' ? '#f5f5f7' : '#130521' }}>
                 <SearchInput
                   ref={searchInputRef}
                   value={question}
@@ -377,6 +578,13 @@ export function PortfolioPage() {
                   disabled={isLoading}
                   isLoading={isLoading}
                   showDisclaimer={isChatMode}
+                  theme={theme}
+                  placeholder={t.placeholder}
+                  disclaimerText={t.disclaimer}
+                  language={language}
+                  isChatMode={isChatMode}
+                  showPlaceholderSkeleton={skeletonStage === 'search'}
+                  showDisclaimerSkeleton={skeletonStage === 'disclaimer'}
                 />
               </div>
             </>
@@ -389,19 +597,20 @@ export function PortfolioPage() {
                 <div className="basis-0 flex flex-col gap-[24px] grow items-start justify-center min-h-px min-w-px relative shrink-0 h-full" data-name="Main container">
                 <main id="main-content">
                   {/* Text container */}
-                  <AnimatePresence>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                      className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full mb-[24px]" 
-                      data-name="Text container"
+                  <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full overflow-hidden" data-name="Text container">
+                    <h1 
+                      className="font-semibold leading-[50px] relative shrink-0 text-[40px] w-full max-w-[640px] transition-colors duration-300" 
+                      style={{ color: colors.textPrimary }}
                     >
-                      <h1 className="font-semibold leading-[50px] relative shrink-0 text-[40px] text-white w-full max-w-[640px]">Building teams with empathy, designing systems for impact.</h1>
-                      <p className="font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] w-full max-w-[640px]">Instead of scrolling, you can chat directly with a digital version of me, trained to share how I work, lead, and design for impact.</p>
-                    </motion.div>
-                  </AnimatePresence>
+                      {t.heroTitle}
+                    </h1>
+                    <p 
+                      className="font-normal leading-[24px] relative shrink-0 text-[16px] w-full max-w-[640px] transition-colors duration-300" 
+                      style={{ color: colors.textSecondary }}
+                    >
+                      {t.heroSubtitle}
+                    </p>
+                  </div>
                 </main>
 
                   {/* Search input */}
@@ -414,6 +623,10 @@ export function PortfolioPage() {
                       disabled={isLoading}
                       isLoading={isLoading}
                       showDisclaimer={isChatMode}
+                      theme={theme}
+                      placeholder={t.placeholder}
+                      disclaimerText={t.disclaimer}
+                      language={language}
                     />
                   </div>
                 </div>
@@ -439,9 +652,19 @@ export function PortfolioPage() {
 
                     {/* Image details */}
                     <div className="absolute bottom-[32px] left-[-255px] flex items-end gap-[12px]" data-name="Image details">
-                      <div className="flex flex-col gap-[4px] text-right">
-                        <p className="font-semibold text-white text-[14px] leading-[20px]">This is me</p>
-                        <p className="font-normal opacity-80 text-[#c7c1cc] text-[14px] leading-[20px]">Currently UX Lead at Volvo Group</p>
+                      <div className="flex flex-col gap-0 text-right overflow-hidden">
+                        <p 
+                          className="font-semibold text-[14px] leading-[20px] transition-colors duration-300" 
+                          style={{ color: colors.textPrimary }}
+                        >
+                          {t.title}
+                        </p>
+                        <p 
+                          className="font-normal opacity-80 text-[14px] leading-[20px] transition-colors duration-300" 
+                          style={{ color: colors.textSecondary }}
+                        >
+                          {t.subtitle}
+                        </p>
                       </div>
                       <div className="h-[81.5px] w-[39px] flex-shrink-0">
                         <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 41 87">
@@ -486,18 +709,18 @@ export function PortfolioPage() {
               aria-labelledby="modal-title"
               aria-describedby="modal-description"
             >
-              <div className="bg-[#1a0a2e] rounded-[16px] overflow-hidden">
-                <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[16px]" />
+              <div className="rounded-[16px] overflow-hidden transition-colors duration-300" style={{ backgroundColor: colors.cardBg }}>
+                <div aria-hidden="true" className="absolute border border-solid inset-0 pointer-events-none rounded-[16px] transition-colors duration-300" style={{ borderColor: colors.border }} />
                 
                 {/* Content */}
                 <div className="p-[24px] sm:p-[32px] flex flex-col gap-[24px]">
                   {/* Header */}
                   <div className="flex flex-col gap-[8px]">
-                    <h2 id="modal-title" className="font-semibold text-[18px] sm:text-[20px] leading-[26px] sm:leading-[28px] text-white">
-                      Start over?
+                    <h2 id="modal-title" className="font-semibold text-[18px] sm:text-[20px] leading-[26px] sm:leading-[28px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
+                      {t.modalTitle}
                     </h2>
-                    <p id="modal-description" className="font-normal text-[14px] leading-[20px] text-[#c7c1cc]">
-                      This will clear your current conversation and return you to the home screen.
+                    <p id="modal-description" className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
+                      {t.modalDescription}
                     </p>
                   </div>
 
@@ -505,15 +728,21 @@ export function PortfolioPage() {
                   <div className="flex flex-col sm:flex-row gap-[12px] sm:justify-end">
                     <button
                       onClick={handleResetCancel}
-                      className="px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] text-[#c7c1cc] hover:bg-[rgba(255,255,255,0.05)] focus:bg-[rgba(255,255,255,0.05)] active:bg-[rgba(255,255,255,0.1)] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgba(255,255,255,0.2)] focus:ring-opacity-50 min-h-[44px]"
+                      className="px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-opacity-50 min-h-[44px]"
+                      style={{ 
+                        color: colors.textSecondary,
+                        backgroundColor: colors.hoverBg
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.hoverBg}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      Keep chatting
+                      {t.modalKeepChatting}
                     </button>
                     <button
                       onClick={handleResetConfirm}
                       className="px-[20px] py-[12px] sm:py-[10px] rounded-[8px] bg-[#7339ff] hover:bg-[#5e2dd9] focus:bg-[#5e2dd9] active:bg-[#4d24b8] active:scale-95 font-medium text-[14px] leading-[20px] text-white transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 min-h-[44px]"
                     >
-                      Start over
+                      {t.modalStartOver}
                     </button>
                   </div>
                 </div>
