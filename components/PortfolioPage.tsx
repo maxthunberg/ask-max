@@ -7,11 +7,15 @@ import svgPaths from "../imports/svg-sevsv6x2yc";
 const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
 const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
-import { ExternalLink, Sun, Moon, Menu, X } from 'lucide-react';
+import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
+import { BrainIllustration, ImageIllustration, BookIllustration, MicIllustration } from './ComingSoonIcons';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag-251-299';
 import { CookieConsent } from './CookieConsent';
 import { trackSearch, trackChatStarted, detectUnknownResponse, generateSessionId } from '../utils/analytics';
+
+// App version
+const APP_VERSION = 'v1.0';
 
 const QUOTA_EXCEEDED_MESSAGES = [
   "Oops! Max has talked too much today. Even digital me needs to recharge. Try again tomorrow!",
@@ -66,6 +70,9 @@ export function PortfolioPage() {
   
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Upcoming plans modal state
+  const [showUpcomingPlansModal, setShowUpcomingPlansModal] = useState(false);
   
   // Session ID for analytics tracking
   const [sessionId, setSessionId] = useState<string>('');
@@ -436,16 +443,21 @@ export function PortfolioPage() {
     setShowResetModal(false);
   };
 
-  // Close modal on Escape key
+  // Close modals on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showResetModal) {
-        handleResetCancel();
+      if (e.key === 'Escape') {
+        if (showResetModal) {
+          handleResetCancel();
+        }
+        if (showUpcomingPlansModal) {
+          setShowUpcomingPlansModal(false);
+        }
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [showResetModal]);
+  }, [showResetModal, showUpcomingPlansModal]);
 
   // Helper function to parse markdown-style links and images in messages
   const parseMessageWithLinks = (content: string) => {
@@ -591,6 +603,13 @@ export function PortfolioPage() {
                 >
                   <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>Portfolio</p>
                   <ExternalLink className="w-4 h-4 transition-colors duration-200" style={{ color: colors.textSecondary }} />
+                </button>
+                <button 
+                  onClick={() => setShowUpcomingPlansModal(true)}
+                  className="group flex gap-[6px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                  aria-label="View coming soon features"
+                >
+                  <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>Coming soon</p>
                 </button>
               </div>
             </div>
@@ -1033,6 +1052,138 @@ export function PortfolioPage() {
         )}
       </AnimatePresence>
 
+      {/* Upcoming Plans Modal */}
+      <AnimatePresence>
+        {showUpcomingPlansModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setShowUpcomingPlansModal(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+              aria-hidden="true"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed left-1/2 top-1/2 z-[101] w-[calc(100%-2rem)] sm:w-[560px] max-w-[560px]"
+              style={{ x: '-50%', y: '-50%' }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="upcoming-plans-title"
+            >
+              <div className="rounded-[16px] overflow-hidden transition-colors duration-300" style={{ backgroundColor: colors.cardBg }}>
+                <div aria-hidden="true" className="absolute border border-solid inset-0 pointer-events-none rounded-[16px] transition-colors duration-300" style={{ borderColor: colors.border }} />
+                
+                {/* Content */}
+                <div className="p-[24px] sm:p-[32px] flex flex-col gap-[24px]">
+                  {/* Header */}
+                  <div className="flex flex-col gap-[8px]">
+                    <h2 id="upcoming-plans-title" className="font-semibold text-[20px] sm:text-[24px] leading-[28px] sm:leading-[32px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
+                      Coming soon
+                    </h2>
+                    <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
+                      Here's what I'm planning to improve in the future:
+                    </p>
+                  </div>
+
+                  {/* Plans List */}
+                  <div className="flex flex-col gap-[16px]">
+                    {/* Plan 1 */}
+                    <div className="flex gap-[16px] items-start">
+                      <div className="flex items-center justify-center w-[48px] h-[48px] shrink-0">
+                        <BrainIllustration theme={theme} />
+                      </div>
+                      <div className="flex flex-col gap-[4px] flex-1">
+                        <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
+                          More life-like Max
+                        </p>
+                        <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
+                          Train the model on significantly more material about me and test it rigorously to create a more "life-like" Max
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Plan 2 */}
+                    <div className="flex gap-[16px] items-start">
+                      <div className="flex items-center justify-center w-[48px] h-[48px] shrink-0">
+                        <ImageIllustration theme={theme} />
+                      </div>
+                      <div className="flex flex-col gap-[4px] flex-1">
+                        <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
+                          Visual content in chat
+                        </p>
+                        <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
+                          Build in support for displaying visual images and materials as responses in the chat
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Plan 3 */}
+                    <div className="flex gap-[16px] items-start">
+                      <div className="flex items-center justify-center w-[48px] h-[48px] shrink-0">
+                        <BookIllustration theme={theme} />
+                      </div>
+                      <div className="flex flex-col gap-[4px] flex-1">
+                        <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
+                          Learning resources
+                        </p>
+                        <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
+                          Describe how the website was built and provide support for people who want to learn how
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Plan 4 */}
+                    <div className="flex gap-[16px] items-start">
+                      <div className="flex items-center justify-center w-[48px] h-[48px] shrink-0">
+                        <MicIllustration theme={theme} />
+                      </div>
+                      <div className="flex flex-col gap-[4px] flex-1">
+                        <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
+                          Voice prompt
+                        </p>
+                        <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
+                          Enable voice input functionality so visitors can speak their questions instead of typing them
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Close button */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setShowUpcomingPlansModal(false)}
+                      className="relative px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-opacity-50 min-h-[44px] overflow-hidden"
+                      style={{ 
+                        backgroundColor: theme === 'light' ? '#e8e8ed' : '#21123c',
+                        color: colors.textPrimary
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#dcdce0' : '#271641'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : '#21123c'}
+                    >
+                      <div 
+                        aria-hidden="true" 
+                        className="absolute border border-solid inset-0 pointer-events-none rounded-[8px] transition-colors duration-200" 
+                        style={{ borderColor: theme === 'light' ? 'rgba(0, 0, 0, 0.15)' : '#4d4164' }}
+                      />
+                      <span className="relative z-10">Close</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Menu - Fullscreen */}
       <AnimatePresence>
         {isMobileMenuOpen && (
@@ -1110,6 +1261,17 @@ export function PortfolioPage() {
                 >
                   <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>Portfolio</p>
                   <ExternalLink className="w-5 h-5 transition-colors duration-200" style={{ color: colors.textSecondary }} />
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowUpcomingPlansModal(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="group flex gap-[10px] items-center relative shrink-0 hover:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-4 py-3 min-h-[56px]"
+                  style={{ backgroundColor: colors.hoverBg }}
+                >
+                  <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>Coming soon</p>
                 </button>
               </nav>
             </motion.div>
