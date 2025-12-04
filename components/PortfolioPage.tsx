@@ -11,6 +11,7 @@ import { ExternalLink, Sun, Moon, Menu, X } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag-251-299';
 import { CookieConsent } from './CookieConsent';
+import { trackSearch, trackChatStarted } from '../utils/analytics';
 
 const QUOTA_EXCEEDED_MESSAGES = [
   "Oops! Max has talked too much today. Even digital me needs to recharge. Try again tomorrow!",
@@ -215,6 +216,9 @@ export function PortfolioPage() {
     const userMessage = question;
     setQuestion('');
     
+    // Track search event in Google Analytics
+    trackSearch(userMessage);
+    
     // Detect if this is a language switch
     const shouldSwitchToSwedish = language === 'en' && detectSwedish(userMessage);
     
@@ -225,6 +229,7 @@ export function PortfolioPage() {
     if (!isChatMode) {
       setIsChatMode(true);
       setHasAnimated(true);
+      trackChatStarted();
     }
 
     // If switching to Swedish, show the system message and skeleton animation first
