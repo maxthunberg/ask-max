@@ -11,7 +11,7 @@ import { ExternalLink, Sun, Moon, Menu, X } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag-251-299';
 import { CookieConsent } from './CookieConsent';
-import { trackSearch, trackChatStarted } from '../utils/analytics';
+import { trackSearch, trackChatStarted, detectUnknownResponse, generateSessionId } from '../utils/analytics';
 
 const QUOTA_EXCEEDED_MESSAGES = [
   "Oops! Max has talked too much today. Even digital me needs to recharge. Try again tomorrow!",
@@ -67,6 +67,9 @@ export function PortfolioPage() {
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // Session ID for analytics tracking
+  const [sessionId, setSessionId] = useState<string>('');
+  
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<SearchInputRef>(null);
 
@@ -93,8 +96,8 @@ export function PortfolioPage() {
   const translations = {
     en: {
       home: "Home",
-      heroTitle: "Building teams with empathy, designing systems for impact.",
-      heroSubtitle: "Instead of scrolling, you can chat directly with a digital version of me, trained to share how I work, lead, and design for impact.",
+      heroTitle: "The most talkative portfolio you will ever meet",
+      heroSubtitle: "It's like talking to me, just without the calendar gymnastics.",
       title: "This is me",
       subtitle: "Currently UX Lead at Volvo Group",
       placeholder: "Ask me about UX, leadership or whatever you feel like",
@@ -106,8 +109,8 @@ export function PortfolioPage() {
     },
     sv: {
       home: "Hem",
-      heroTitle: "Bygger team med empati, designar system för påverkan.",
-      heroSubtitle: "Istället för att scrolla kan du chatta direkt med en digital version av mig, tränad att dela hur jag jobbar, leder och designar för påverkan.",
+      heroTitle: "Den mest pratsamma portföljen du någonsin kommer att träffa",
+      heroSubtitle: "Det är som att plocka min hjärna om design och ledarskap, utan kalenderbokingen.",
       title: "Det här är jag",
       subtitle: "För närvarande UX Lead på Volvo Group",
       placeholder: "Fråga mig om UX, ledarskap eller vad du vill",
@@ -216,21 +219,24 @@ export function PortfolioPage() {
     const userMessage = question;
     setQuestion('');
     
-    // Track search event in Google Analytics
-    trackSearch(userMessage);
+    // Generate session ID on first message (chat started)
+    let currentSessionId = sessionId;
+    if (!isChatMode) {
+      currentSessionId = generateSessionId();
+      setSessionId(currentSessionId);
+      setIsChatMode(true);
+      setHasAnimated(true);
+      trackChatStarted(currentSessionId);
+    }
+    
+    // Track user message in Google Analytics
+    trackSearch(userMessage, currentSessionId, 'user');
     
     // Detect if this is a language switch
     const shouldSwitchToSwedish = language === 'en' && detectSwedish(userMessage);
     
     // Add user message
     setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
-    
-    // Switch to chat mode on first message
-    if (!isChatMode) {
-      setIsChatMode(true);
-      setHasAnimated(true);
-      trackChatStarted();
-    }
 
     // If switching to Swedish, show the system message and skeleton animation first
     if (shouldSwitchToSwedish) {
@@ -292,6 +298,16 @@ export function PortfolioPage() {
         }));
 
       const result = await sendChatMessage(userMessage, conversationHistory);
+      
+      // Detect if this is an "unknown" response
+      const isUnknownResponse = detectUnknownResponse(result.message);
+      
+      // Track the AI response in Google Analytics
+      if (isUnknownResponse) {
+        trackSearch(result.message, sessionId, 'ai', 'unknown');
+      } else {
+        trackSearch(result.message, sessionId, 'ai', 'success');
+      }
       
       // Detect if AI responded in Swedish and switch language if needed
       // BUT only if the user didn't already write in Swedish (to avoid double system messages)
@@ -366,8 +382,12 @@ export function PortfolioPage() {
         }
         
         setMessages(prev => [...prev, { type: 'error', content: errorMsg }]);
+        // Track error response from AI
+        trackSearch(errorMsg, sessionId, 'ai', 'error');
       } else {
         setMessages(prev => [...prev, { type: 'error', content: errorMessage }]);
+        // Track error response from AI
+        trackSearch(errorMessage, sessionId, 'ai', 'error');
       }
     } finally {
       // Only turn off loading if we're not in infinite loading mode
@@ -404,6 +424,7 @@ export function PortfolioPage() {
     setIsLoading(false); // Reset loading state in case they were in infinite loading
     setLanguage('en'); // Reset language to English
     setIsLanguageTransitioning(false); // Reset language transition state
+    setSessionId(''); // Reset session ID for new chat
     
     // Reset individual language states
     setNavbarLanguage('en');
@@ -840,7 +861,7 @@ export function PortfolioPage() {
                   {/* Text container */}
                   <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full overflow-hidden" data-name="Text container">
                     <h1 
-                      className="font-semibold leading-[50px] relative shrink-0 text-[40px] w-full max-w-[640px] transition-colors duration-300" 
+                      className="font-semibold leading-[52px] relative shrink-0 text-[44px] w-full max-w-[640px] transition-colors duration-300" 
                       style={{ color: colors.textPrimary }}
                     >
                       {t.heroTitle}

@@ -989,8 +989,8 @@
     font-size: 18px;
   }
 
-  .text-\[40px\] {
-    font-size: 40px;
+  .text-\[44px\] {
+    font-size: 44px;
   }
 
   .leading-\[18px\] {
@@ -1018,9 +1018,9 @@
     line-height: 26px;
   }
 
-  .leading-\[50px\] {
-    --tw-leading: 50px;
-    line-height: 50px;
+  .leading-\[52px\] {
+    --tw-leading: 52px;
+    line-height: 52px;
   }
 
   .font-medium {

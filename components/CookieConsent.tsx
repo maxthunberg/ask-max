@@ -61,13 +61,13 @@ export function CookieConsent({ theme, language }: CookieConsentProps) {
   const translations = {
     en: {
       title: 'Cookie preferences',
-      description: "I want to learn how you use my website because I'm curious. You decide if you want to accept it or not.",
+      description: "I will track your interaction with the site to make me more like myself. You choose if you want me to do so.",
       accept: 'Accept',
       decline: 'Decline'
     },
     sv: {
       title: 'Cookie-inställningar',
-      description: 'Jag vill lära mig hur du använder min webbplats för jag är nyfiken. Du bestämmer om du vill acceptera det eller inte.',
+      description: 'Jag kommer att spåra din interaktion med sajten för att göra mig mer lik mig själv. Du väljer om du vill att jag ska göra det.',
       accept: 'Acceptera',
       decline: 'Neka'
     }
