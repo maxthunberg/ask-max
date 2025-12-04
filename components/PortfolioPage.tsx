@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-sevsv6x2yc";
@@ -9,6 +7,8 @@ const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
 import { ExternalLink, Sun, Moon, Menu, X } from 'lucide-react';
 import { SearchInput, SearchInputRef } from './SearchInput';
+import BetaTag from '../imports/BetaTag-251-299';
+import { CookieConsent } from './CookieConsent';
 
 const QUOTA_EXCEEDED_MESSAGES = [
   "Oops! Max has talked too much today. Even digital me needs to recharge. Try again tomorrow!",
@@ -519,7 +519,10 @@ export function PortfolioPage() {
           {/* Navbar - fixed at top, not part of hero centering */}
           <nav className="box-border flex gap-[32px] h-[64px] items-center px-[12px] md:px-[16px] py-[11px] relative shrink-0 w-full justify-between transition-colors duration-300" data-name="Navbar" aria-label="Main navigation">
             <div className="flex gap-[32px] items-center">
-              <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap whitespace-pre transition-colors duration-300" style={{ color: colors.textPrimary }}>Max Thunberg</p>
+              <div className="flex items-center gap-[8px]">
+                <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap whitespace-pre transition-colors duration-300" style={{ color: colors.textPrimary }}>Max Thunberg</p>
+                <BetaTag />
+              </div>
               {/* Desktop links - hidden on mobile */}
               <div className="hidden md:flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
                 <button 
@@ -547,7 +550,7 @@ export function PortfolioPage() {
                 </button>
                 <button 
                   onClick={handleLinkedInClick}
-                  className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                  className="group flex gap-[6px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
                   aria-label="Visit LinkedIn profile"
                 >
                   <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>LinkedIn</p>
@@ -555,7 +558,7 @@ export function PortfolioPage() {
                 </button>
                 <button 
                   onClick={handlePortfolioClick}
-                  className="group flex gap-[10px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
+                  className="group flex gap-[6px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
                   aria-label="Visit portfolio website"
                 >
                   <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>Portfolio</p>
@@ -960,21 +963,37 @@ export function PortfolioPage() {
                   <div className="flex flex-col sm:flex-row gap-[12px] sm:justify-end">
                     <button
                       onClick={handleResetCancel}
-                      className="px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-opacity-50 min-h-[44px]"
+                      className="relative px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-opacity-50 min-h-[44px] overflow-hidden"
                       style={{ 
-                        color: colors.textSecondary,
-                        backgroundColor: colors.hoverBg
+                        backgroundColor: theme === 'light' ? '#e8e8ed' : '#21123c',
+                        color: colors.textPrimary
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.hoverBg}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#dcdce0' : '#271641'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : '#21123c'}
                     >
-                      {t.modalKeepChatting}
+                      <div 
+                        aria-hidden="true" 
+                        className="absolute border border-solid inset-0 pointer-events-none rounded-[8px] transition-colors duration-200" 
+                        style={{ borderColor: theme === 'light' ? 'rgba(0, 0, 0, 0.15)' : '#4d4164' }}
+                      />
+                      <span className="relative z-10">{t.modalKeepChatting}</span>
                     </button>
                     <button
                       onClick={handleResetConfirm}
-                      className="px-[20px] py-[12px] sm:py-[10px] rounded-[8px] bg-[#7339ff] hover:bg-[#5e2dd9] focus:bg-[#5e2dd9] active:bg-[#4d24b8] active:scale-95 font-medium text-[14px] leading-[20px] text-white transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 min-h-[44px]"
+                      className="relative px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-opacity-50 min-h-[44px] overflow-hidden"
+                      style={{ 
+                        backgroundColor: theme === 'light' ? '#e8e8ed' : '#21123c',
+                        color: colors.textPrimary
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#dcdce0' : '#271641'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : '#21123c'}
                     >
-                      {t.modalStartOver}
+                      <div 
+                        aria-hidden="true" 
+                        className="absolute border border-solid inset-0 pointer-events-none rounded-[8px] transition-colors duration-200" 
+                        style={{ borderColor: theme === 'light' ? 'rgba(0, 0, 0, 0.15)' : '#4d4164' }}
+                      />
+                      <span className="relative z-10">{t.modalStartOver}</span>
                     </button>
                   </div>
                 </div>
@@ -1068,6 +1087,8 @@ export function PortfolioPage() {
         )}
       </AnimatePresence>
 
+      {/* Cookie Consent */}
+      <CookieConsent theme={theme} language={language} />
 
     </div>
   );
