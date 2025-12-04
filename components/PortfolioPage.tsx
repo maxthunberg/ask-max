@@ -654,158 +654,133 @@ export function PortfolioPage() {
                       className="flex flex-col gap-[10px] items-start relative w-full"
                       aria-label="Loading response"
                     >
-                      <div className="relative w-[48px] h-[48px]">
-                        {/* Star 1 - Fast with trails */}
-                        {[0, 1, 2, 3].map((trailIndex) => (
-                          <motion.div
-                            key={`star1-trail-${trailIndex}`}
-                            className="absolute"
-                            initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
-                            animate={{
-                              x: [0, 20, 40],
-                              y: [48, 28, 8],
-                              rotate: [0, 180, 360],
-                              opacity: [0, 1 - (trailIndex * 0.25), 0],
-                            }}
-                            transition={{
-                              duration: 1.5,
-                              repeat: Infinity,
-                              ease: "easeOut",
-                              times: [0, 0.3, 1],
-                              delay: trailIndex * 0.08,
-                            }}
-                            style={{
-                              filter: trailIndex > 0 ? 'blur(1px)' : 'none',
-                            }}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                                fill="url(#star-gradient-1)"
-                              />
-                              <defs>
-                                <linearGradient id="star-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" stopColor="#FFD27F" />
-                                  <stop offset="100%" stopColor="#E4BE3A" />
-                                </linearGradient>
-                              </defs>
-                            </svg>
-                          </motion.div>
-                        ))}
+                      <div className="relative w-[32px] h-[32px]">
+                        {/* Star 1 - Fast */}
+                        <motion.div
+                          className="absolute"
+                          initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
+                          animate={{
+                            x: [0, 12, 24],
+                            y: [32, 18, 4],
+                            rotate: [0, 180, 360],
+                            opacity: [0, 1, 0],
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeOut",
+                            times: [0, 0.3, 1],
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                              fill="url(#star-gradient-1)"
+                            />
+                            <defs>
+                              <linearGradient id="star-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#FFD27F" />
+                                <stop offset="100%" stopColor="#E4BE3A" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                        </motion.div>
 
-                        {/* Star 2 - Medium with trails */}
-                        {[0, 1, 2, 3].map((trailIndex) => (
-                          <motion.div
-                            key={`star2-trail-${trailIndex}`}
-                            className="absolute"
-                            initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
-                            animate={{
-                              x: [-5, 15, 35],
-                              y: [50, 30, 10],
-                              rotate: [0, 180, 360],
-                              opacity: [0, 1 - (trailIndex * 0.25), 0],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeOut",
-                              delay: 0.3 + (trailIndex * 0.08),
-                              times: [0, 0.3, 1],
-                            }}
-                            style={{
-                              filter: trailIndex > 0 ? 'blur(1px)' : 'none',
-                            }}
-                          >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                                fill="url(#star-gradient-2)"
-                              />
-                              <defs>
-                                <linearGradient id="star-gradient-2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" stopColor="#FFE5A3" />
-                                  <stop offset="100%" stopColor="#FFB84D" />
-                                </linearGradient>
-                              </defs>
-                            </svg>
-                          </motion.div>
-                        ))}
+                        {/* Star 2 - Medium */}
+                        <motion.div
+                          className="absolute"
+                          initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
+                          animate={{
+                            x: [-3, 9, 21],
+                            y: [34, 20, 6],
+                            rotate: [0, 180, 360],
+                            opacity: [0, 1, 0],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeOut",
+                            delay: 0.3,
+                            times: [0, 0.3, 1],
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                              fill="url(#star-gradient-2)"
+                            />
+                            <defs>
+                              <linearGradient id="star-gradient-2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#FFE5A3" />
+                                <stop offset="100%" stopColor="#FFB84D" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                        </motion.div>
 
-                        {/* Star 3 - Slow with trails */}
-                        {[0, 1, 2, 3].map((trailIndex) => (
-                          <motion.div
-                            key={`star3-trail-${trailIndex}`}
-                            className="absolute"
-                            initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
-                            animate={{
-                              x: [5, 22, 38],
-                              y: [52, 32, 12],
-                              rotate: [0, 180, 360],
-                              opacity: [0, 1 - (trailIndex * 0.25), 0],
-                            }}
-                            transition={{
-                              duration: 2.5,
-                              repeat: Infinity,
-                              ease: "easeOut",
-                              delay: 0.6 + (trailIndex * 0.08),
-                              times: [0, 0.3, 1],
-                            }}
-                            style={{
-                              filter: trailIndex > 0 ? 'blur(1px)' : 'none',
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                                fill="url(#star-gradient-3)"
-                              />
-                              <defs>
-                                <linearGradient id="star-gradient-3" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" stopColor="#FFF4D6" />
-                                  <stop offset="100%" stopColor="#FFD27F" />
-                                </linearGradient>
-                              </defs>
-                            </svg>
-                          </motion.div>
-                        ))}
+                        {/* Star 3 - Slow */}
+                        <motion.div
+                          className="absolute"
+                          initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
+                          animate={{
+                            x: [3, 14, 25],
+                            y: [35, 21, 7],
+                            rotate: [0, 180, 360],
+                            opacity: [0, 1, 0],
+                          }}
+                          transition={{
+                            duration: 2.5,
+                            repeat: Infinity,
+                            ease: "easeOut",
+                            delay: 0.6,
+                            times: [0, 0.3, 1],
+                          }}
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                              fill="url(#star-gradient-3)"
+                            />
+                            <defs>
+                              <linearGradient id="star-gradient-3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#FFF4D6" />
+                                <stop offset="100%" stopColor="#FFD27F" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                        </motion.div>
 
-                        {/* Star 4 - Very fast, small with trails */}
-                        {[0, 1, 2, 3].map((trailIndex) => (
-                          <motion.div
-                            key={`star4-trail-${trailIndex}`}
-                            className="absolute"
-                            initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
-                            animate={{
-                              x: [-8, 12, 32],
-                              y: [46, 26, 6],
-                              rotate: [0, 180, 360],
-                              opacity: [0, 1 - (trailIndex * 0.25), 0],
-                            }}
-                            transition={{
-                              duration: 1.2,
-                              repeat: Infinity,
-                              ease: "easeOut",
-                              delay: 0.9 + (trailIndex * 0.08),
-                              times: [0, 0.3, 1],
-                            }}
-                            style={{
-                              filter: trailIndex > 0 ? 'blur(1px)' : 'none',
-                            }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                                fill="url(#star-gradient-4)"
-                              />
-                              <defs>
-                                <linearGradient id="star-gradient-4" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" stopColor="#E4BE3A" />
-                                  <stop offset="100%" stopColor="#D4A52A" />
-                                </linearGradient>
-                              </defs>
-                            </svg>
-                          </motion.div>
-                        ))}
+                        {/* Star 4 - Very fast, small */}
+                        <motion.div
+                          className="absolute"
+                          initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
+                          animate={{
+                            x: [-5, 7, 19],
+                            y: [31, 17, 3],
+                            rotate: [0, 180, 360],
+                            opacity: [0, 1, 0],
+                          }}
+                          transition={{
+                            duration: 1.2,
+                            repeat: Infinity,
+                            ease: "easeOut",
+                            delay: 0.9,
+                            times: [0, 0.3, 1],
+                          }}
+                        >
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                              fill="url(#star-gradient-4)"
+                            />
+                            <defs>
+                              <linearGradient id="star-gradient-4" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#FFFAEB" />
+                                <stop offset="100%" stopColor="#FFE5A3" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                        </motion.div>
                       </div>
                     </motion.div>
                   )}

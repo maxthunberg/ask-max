@@ -497,12 +497,12 @@
     height: calc(var(--spacing) * 6);
   }
 
-  .h-\[40px\] {
-    height: 40px;
+  .h-\[32px\] {
+    height: 32px;
   }
 
-  .h-\[48px\] {
-    height: 48px;
+  .h-\[40px\] {
+    height: 40px;
   }
 
   .h-\[64px\] {
@@ -561,16 +561,16 @@
     width: calc(var(--spacing) * 6);
   }
 
+  .w-\[32px\] {
+    width: 32px;
+  }
+
   .w-\[39px\] {
     width: 39px;
   }
 
   .w-\[40px\] {
     width: 40px;
-  }
-
-  .w-\[48px\] {
-    width: 48px;
   }
 
   .w-\[526px\] {
@@ -1011,11 +1011,6 @@
 
   .opacity-80 {
     opacity: .8;
-  }
-
-  .blur {
-    --tw-blur: blur(8px);
-    filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );
   }
 
   .filter {
