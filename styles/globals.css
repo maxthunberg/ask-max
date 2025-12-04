@@ -93,6 +93,7 @@
 html {
   font-size: var(--font-size);
   font-family: 'Figtree', sans-serif;
+  background: linear-gradient(to bottom, #170641, #130521);
 }
 
 /* Custom Scrollbar Styling */

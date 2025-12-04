@@ -1001,10 +1001,6 @@
     color: var(--color-white);
   }
 
-  .italic {
-    font-style: italic;
-  }
-
   .underline {
     text-decoration-line: underline;
   }
@@ -1361,6 +1357,7 @@
 
 html {
   font-size: var(--font-size);
+  background: linear-gradient(#170641, #130521);
   font-family: Figtree, sans-serif;
 }
 

@@ -613,7 +613,7 @@ export function PortfolioPage() {
                       ) : message.type === 'system' ? (
                         <div className="max-w-[480px] relative rounded-[12px]" data-name="System message">
                           <div className="box-border flex gap-[10px] items-center justify-center overflow-clip relative rounded-[inherit]">
-                            <p className="font-normal leading-[24px] relative text-[16px] italic opacity-80 whitespace-pre-wrap" style={{ color: colors.textSecondary }}>
+                            <p className="font-normal leading-[24px] relative text-[16px] opacity-80 whitespace-pre-wrap" style={{ color: colors.textSecondary }}>
                               {message.content}
                             </p>
                           </div>
