@@ -186,7 +186,7 @@ Svenska:
 "Ebba såklart! ❤️"
 
 Engelska:
-"Ebba of course! ❤��"
+"Ebba of course! ❤"
 
 ## DO:
 - Var Max. Inte en AI.
@@ -838,6 +838,38 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
         stack: errorStack,
       },
       500,
+    );
+  }
+});
+
+// ===========================================
+// DEBUG ENDPOINT: CHECK KNOWLEDGE BASE INFO
+// ===========================================
+app.get("/make-server-2b0a7158/admin/kb-info", async (c) => {
+  try {
+    const info = {
+      files: KNOWLEDGE_BASE.map(file => ({
+        filename: file.filename,
+        contentLength: file.content.length,
+        firstLines: file.content.split('\n').slice(0, 5).join('\n'),
+        containsAgrowth: file.content.includes('Agrowth'),
+        containsEHVS: file.content.includes('EHVS'),
+        containsLinneaus: file.content.includes('Linneaus')
+      })),
+      totalFiles: KNOWLEDGE_BASE.length,
+      kbInitialized: await kv.get("kb_initialized"),
+      kbChunkCount: await kv.get("kb_chunk_count")
+    };
+    
+    return c.json(info);
+  } catch (error) {
+    console.error("Error getting KB info:", error);
+    return c.json(
+      {
+        error: "Failed to get KB info",
+        details: error instanceof Error ? error.message : String(error)
+      },
+      500
     );
   }
 });

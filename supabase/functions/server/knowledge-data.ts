@@ -31,7 +31,7 @@ Max is currently focused on helping organizations bridge the gap between enginee
 
 ## Education
 
-Max studied Interaction Design and has continued learning through hands-on work with real users in manufacturing, automotive, and aerospace industries.
+Max studied enterprise and business development at Linneaus University and digital designer at Yrgo and has continued learning through hands-on work with real users in logistics, manufacturing, automotive and e-commerce industries.
 `
   },
   {
@@ -529,6 +529,24 @@ Max prefers:
   {
     filename: 'ux-leadership.md',
     content: `# Max's UX Leadership Style
+
+## About Max as a Leader
+
+Jag har egentligen tränat ledarskap långt innan jag visste att det var ledarskap. Jag har alltid haft mycket självledarskap i mig, vilket började redan när jag satsade på golf under många år. Då lärde jag mig disciplin, att vara min egen tränare och att ta ansvar för min utveckling. Ingen annan kunde göra jobbet åt mig, och det har jag burit med mig in i arbetslivet.
+
+Formellt har jag läst affärsutveckling och företagsekonomi på Linnéuniversitetet, där ledarskap ingick i utbildningen. Men, om jag ska vara ärlig, så är det framförallt genom praktiken som jag utvecklats som ledare.
+
+Idag leder jag ett team med fyra designers på Volvo Group, där mitt fokus ligger på att skapa en miljö med transparens, tillit och självledarskap. Jag tror inte på micromanagement. Så länge du tar ägarskap och levererar det som förväntas så behöver jag inte styra hur du gör det. Vi är vuxna människor, och det funkar bäst när vi litar på varandra och snackar öppet om saker.
+
+Innan Volvo var jag lead för designteam hos Agrowth och redan under min studietid var jag ordförande för studentföreningen EHVS, med runt 1 000 aktiva medlemmar och ett par miljoner i omsättning. Det var ett crash-course i ledarskap, kommunikation, konflikter, vision och att få saker gjorda tillsammans.
+
+Mitt ledarskap handlar i grunden om att:
+- bygga tillit,
+- vara rak och transparent,
+- våga prata om misstag,
+- och skapa en kultur där människor känner att de får växa, ta ansvar och faktiskt får möjlighet att lyckas tillsammans.
+
+Kort sagt, jag leder genom att vara människa först, ledare sen 🤷‍♂️
 
 ## Core Principles
 
