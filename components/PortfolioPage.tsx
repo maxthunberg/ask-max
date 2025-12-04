@@ -147,17 +147,36 @@ export function PortfolioPage() {
       'blir', 'varit', 'gjort', 'sett', 'tänker', 'börja', 'säga', 'berätta'
     ];
     
+    // Split into words and filter out capitalized words (likely proper nouns/names)
+    const words = lowerText.split(/\s+/).map(word => word.replace(/[.,!?;:]$/g, ''));
+    const meaningfulWords = words.filter(word => {
+      // Ignore single-letter words
+      if (word.length <= 1) return false;
+      // Ignore words that are all caps or start with capital in original text (likely proper nouns/names)
+      const originalWord = text.split(/\s+/).find(w => w.toLowerCase().replace(/[.,!?;:]$/g, '') === word);
+      if (originalWord && /^[A-Z]/.test(originalWord)) return false;
+      return true;
+    });
+    
+    // Need at least 3 meaningful words to make a judgment
+    if (meaningfulWords.length < 3) {
+      // For very short sentences, check if Swedish chars exist AND at least 1 Swedish word
+      const hasSwedishChars = /[åäöÅÄÖ]/.test(text);
+      const swedishWordCount = meaningfulWords.filter(word => swedishWords.includes(word)).length;
+      return hasSwedishChars && swedishWordCount >= 1;
+    }
+    
     // Check if text contains Swedish-specific characters
     const hasSwedishChars = /[åäöÅÄÖ]/.test(text);
     
-    // Count Swedish words - exact word matching
-    const words = lowerText.split(/\s+/);
-    const swedishWordCount = words.filter(word => 
-      swedishWords.includes(word.replace(/[.,!?;:]$/g, ''))
-    ).length;
+    // Count Swedish words among meaningful words
+    const swedishWordCount = meaningfulWords.filter(word => swedishWords.includes(word)).length;
+    const swedishRatio = swedishWordCount / meaningfulWords.length;
     
-    // If text has Swedish characters OR at least 2 Swedish words, it's Swedish
-    return hasSwedishChars || swedishWordCount >= 2;
+    // Language is Swedish if:
+    // 1. Has Swedish characters AND at least 30% Swedish words, OR
+    // 2. At least 40% of meaningful words are Swedish words
+    return (hasSwedishChars && swedishRatio >= 0.3) || swedishRatio >= 0.4;
   };
 
   // Theme colors
