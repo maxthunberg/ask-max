@@ -843,15 +843,17 @@ export function PortfolioPage() {
             <div className="flex-1 flex items-end px-[12px] md:px-[16px] relative w-full" data-name="Hero Section Wrapper">
               {/* Mobile background image - only visible on mobile screens */}
               <div 
-                className="absolute inset-0 lg:hidden pointer-events-none"
-                style={{ 
-                  backgroundImage: `url(${imgMaxT13})`, 
-                  backgroundSize: 'cover', 
-                  backgroundPosition: 'center bottom', 
-                  backgroundRepeat: 'no-repeat', 
-                  opacity: 0.3,
-                }}
-              />
+                className="absolute inset-0 lg:hidden pointer-events-none flex items-end justify-center"
+              >
+                <img
+                  src={imgMaxT13}
+                  alt=""
+                  className="max-h-[70vh] w-auto object-contain opacity-30"
+                  style={{
+                    objectPosition: 'center bottom'
+                  }}
+                />
+              </div>
               
               {/* Hero Section - the actual hero content */}
               <div className="flex items-end w-full h-full relative z-10" data-name="Hero Section">
