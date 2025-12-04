@@ -930,11 +930,12 @@ export function PortfolioPage() {
 
             {/* Modal */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[calc(100%-2rem)] sm:w-[440px] max-w-[440px]"
+              className="fixed left-1/2 top-1/2 z-[101] w-[calc(100%-2rem)] sm:w-[440px] max-w-[440px]"
+              style={{ x: '-50%', y: '-50%' }}
               role="dialog"
               aria-modal="true"
               aria-labelledby="modal-title"
