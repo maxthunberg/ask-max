@@ -21,4 +21,4 @@ Max is currently focused on helping organizations bridge the gap between enginee
 
 ## Education
 
-Max studied Interaction Design and has continued learning through hands-on work with real users in manufacturing, automotive, and aerospace industries.
+Max studied enterprise and business development at Linneaus University and digital designer at Yrgo and has continued learning through hands-on work with real users in logistics, manufacturing, automotive and e-commerce industries.
