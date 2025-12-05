@@ -3,7 +3,6 @@
 @layer properties {
   @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
     *, :before, :after, ::backdrop {
-      --tw-space-y-reverse: 0;
       --tw-border-style: solid;
       --tw-leading: initial;
       --tw-font-weight: initial;
@@ -56,32 +55,9 @@
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --color-red-200: oklch(.885 .062 18.334);
-    --color-red-600: oklch(.577 .245 27.325);
-    --color-red-900: oklch(.396 .141 25.723);
-    --color-blue-400: oklch(.707 .165 254.624);
-    --color-blue-600: oklch(.546 .245 262.881);
-    --color-blue-700: oklch(.488 .243 264.376);
-    --color-gray-100: oklch(.967 .003 264.542);
-    --color-gray-300: oklch(.872 .01 258.338);
-    --color-gray-400: oklch(.707 .022 261.325);
-    --color-gray-600: oklch(.446 .03 256.802);
-    --color-gray-800: oklch(.278 .033 256.848);
-    --color-gray-900: oklch(.21 .034 264.665);
     --color-black: #000;
     --color-white: #fff;
     --spacing: .25rem;
-    --container-4xl: 56rem;
-    --text-xs: .75rem;
-    --text-xs--line-height: calc(1 / .75);
-    --text-sm: .875rem;
-    --text-sm--line-height: calc(1.25 / .875);
-    --text-lg: 1.125rem;
-    --text-lg--line-height: calc(1.75 / 1.125);
-    --text-xl: 1.25rem;
-    --text-xl--line-height: calc(1.75 / 1.25);
-    --text-3xl: 1.875rem;
-    --text-3xl--line-height: calc(2.25 / 1.875);
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
@@ -514,26 +490,6 @@
     margin-block: 12px;
   }
 
-  .mb-2 {
-    margin-bottom: calc(var(--spacing) * 2);
-  }
-
-  .mb-3 {
-    margin-bottom: calc(var(--spacing) * 3);
-  }
-
-  .mb-4 {
-    margin-bottom: calc(var(--spacing) * 4);
-  }
-
-  .mb-6 {
-    margin-bottom: calc(var(--spacing) * 6);
-  }
-
-  .mb-8 {
-    margin-bottom: calc(var(--spacing) * 8);
-  }
-
   .box-border {
     box-sizing: border-box;
   }
@@ -679,10 +635,6 @@
 
   .w-full {
     width: 100%;
-  }
-
-  .max-w-4xl {
-    max-width: var(--container-4xl);
   }
 
   .max-w-\[400px\] {
@@ -845,24 +797,6 @@
     gap: 32px;
   }
 
-  :where(.space-y-2 > :not(:last-child)) {
-    --tw-space-y-reverse: 0;
-    margin-block-start: calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse));
-    margin-block-end: calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)));
-  }
-
-  :where(.space-y-4 > :not(:last-child)) {
-    --tw-space-y-reverse: 0;
-    margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));
-    margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));
-  }
-
-  :where(.space-y-6 > :not(:last-child)) {
-    --tw-space-y-reverse: 0;
-    margin-block-start: calc(calc(var(--spacing) * 6) * var(--tw-space-y-reverse));
-    margin-block-end: calc(calc(var(--spacing) * 6) * calc(1 - var(--tw-space-y-reverse)));
-  }
-
   .overflow-clip {
     overflow: clip;
   }
@@ -901,10 +835,6 @@
 
   .rounded-\[inherit\] {
     border-radius: inherit;
-  }
-
-  .rounded-lg {
-    border-radius: .625rem;
   }
 
   .rounded-md {
@@ -953,10 +883,6 @@
     border-color: #ffffff26;
   }
 
-  .border-red-600 {
-    border-color: var(--color-red-600);
-  }
-
   .bg-\[\#7339ff\] {
     background-color: #7339ff;
   }
@@ -993,28 +919,6 @@
     }
   }
 
-  .bg-blue-600 {
-    background-color: var(--color-blue-600);
-  }
-
-  .bg-gray-800 {
-    background-color: var(--color-gray-800);
-  }
-
-  .bg-gray-900 {
-    background-color: var(--color-gray-900);
-  }
-
-  .bg-red-900\/50 {
-    background-color: color-mix(in srgb, oklch(.396 .141 25.723) 50%, transparent);
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-red-900\/50 {
-      background-color: color-mix(in oklab, var(--color-red-900) 50%, transparent);
-    }
-  }
-
   .bg-transparent {
     background-color: #0000;
   }
@@ -1035,14 +939,6 @@
     padding: calc(var(--spacing) * 4);
   }
 
-  .p-6 {
-    padding: calc(var(--spacing) * 6);
-  }
-
-  .p-8 {
-    padding: calc(var(--spacing) * 8);
-  }
-
   .p-\[8px\] {
     padding: 8px;
   }
@@ -1057,10 +953,6 @@
 
   .px-4 {
     padding-inline: calc(var(--spacing) * 4);
-  }
-
-  .px-6 {
-    padding-inline: calc(var(--spacing) * 6);
   }
 
   .px-\[4px\] {
@@ -1141,35 +1033,6 @@
 
   .text-right {
     text-align: right;
-  }
-
-  .font-mono {
-    font-family: var(--font-mono);
-  }
-
-  .text-3xl {
-    font-size: var(--text-3xl);
-    line-height: var(--tw-leading, var(--text-3xl--line-height));
-  }
-
-  .text-lg {
-    font-size: var(--text-lg);
-    line-height: var(--tw-leading, var(--text-lg--line-height));
-  }
-
-  .text-sm {
-    font-size: var(--text-sm);
-    line-height: var(--tw-leading, var(--text-sm--line-height));
-  }
-
-  .text-xl {
-    font-size: var(--text-xl);
-    line-height: var(--tw-leading, var(--text-xl--line-height));
-  }
-
-  .text-xs {
-    font-size: var(--text-xs);
-    line-height: var(--tw-leading, var(--text-xs--line-height));
   }
 
   .text-\[12px\] {
@@ -1290,26 +1153,6 @@
     color: #fff;
   }
 
-  .text-blue-400 {
-    color: var(--color-blue-400);
-  }
-
-  .text-gray-100 {
-    color: var(--color-gray-100);
-  }
-
-  .text-gray-300 {
-    color: var(--color-gray-300);
-  }
-
-  .text-gray-400 {
-    color: var(--color-gray-400);
-  }
-
-  .text-red-200 {
-    color: var(--color-red-200);
-  }
-
   .text-white {
     color: var(--color-white);
   }
@@ -1418,12 +1261,6 @@
   @media (hover: hover) {
     .hover\:bg-\[rgba\(255\,255\,255\,0\.05\)\]:hover {
       background-color: #ffffff0d;
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:bg-blue-700:hover {
-      background-color: var(--color-blue-700);
     }
   }
 
@@ -1541,10 +1378,6 @@
 
   .disabled\:cursor-not-allowed:disabled {
     cursor: not-allowed;
-  }
-
-  .disabled\:bg-gray-600:disabled {
-    background-color: var(--color-gray-600);
   }
 
   .disabled\:opacity-50:disabled {
@@ -1813,12 +1646,6 @@ html {
     opacity: 0;
     transform: translateX(100%);
   }
-}
-
-@property --tw-space-y-reverse {
-  syntax: "*";
-  inherits: false;
-  initial-value: 0;
 }
 
 @property --tw-border-style {

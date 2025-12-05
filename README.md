@@ -10,7 +10,7 @@ Visitors can chat with an AI version of Max and get answers about:
 - Design principles and how Max works with teams
 - His approach to complex enterprise systems (PLM/PDM)
 
-**Important:** The AI only knows what's in the `/knowledge` folder. It won't answer generic questions about the world.
+**Important:** The AI only knows what's in the knowledge base defined in `/supabase/functions/server/knowledge-data.ts`. It won't answer generic questions about the world.
 
 ## 🏗️ Architecture
 
@@ -22,7 +22,7 @@ Visitors can chat with an AI version of Max and get answers about:
 
 ### How It Works
 
-1. **Knowledge Base**: Markdown files in `/knowledge` are split into chunks on server startup
+1. **Knowledge Base**: Content from `/supabase/functions/server/knowledge-data.ts` is split into chunks on server startup
 2. **Embeddings**: Each chunk is converted to a vector embedding using OpenAI
 3. **Storage**: Embeddings are stored in Supabase KV store
 4. **Chat Flow**:
@@ -35,12 +35,10 @@ Visitors can chat with an AI version of Max and get answers about:
 ## 📁 Project Structure
 
 ```
-/knowledge/               # Knowledge base (edit these!)
-  bio-max.md             # Max's background
-  ux-leadership.md       # Leadership principles
-  case-volvo-plm-pdm.md  # Case study 1
-  case-item-management.md # Case study 2
-  principles-and-values.md # Design principles
+/supabase/functions/server/
+  index.tsx             # Backend server with RAG implementation
+  knowledge-data.ts     # Knowledge base (EDIT THIS!)
+  kv_store.tsx          # KV store utilities (protected)
 
 /components/
   ChatInterface.tsx      # Main chat UI component
@@ -50,10 +48,6 @@ Visitors can chat with an AI version of Max and get answers about:
 /utils/
   chat-api.ts           # API client functions
   supabase/             # Supabase configuration
-
-/supabase/functions/server/
-  index.tsx             # Backend server with RAG implementation
-  kv_store.tsx          # KV store utilities (protected)
 
 App.tsx                 # Main demo page
 ```
@@ -73,7 +67,7 @@ You can get an API key from: https://platform.openai.com/api-keys
 
 ### 3. Initialize Knowledge Base
 
-The knowledge base is automatically initialized when the server starts. If you need to manually reinitialize (after updating knowledge files), you can call:
+The knowledge base is automatically initialized when the server starts. If you need to manually reinitialize (after updating knowledge), you can call:
 
 ```bash
 POST https://your-project.supabase.co/functions/v1/make-server-2b0a7158/init-kb
@@ -91,38 +85,37 @@ await fetch('https://your-project.supabase.co/functions/v1/make-server-2b0a7158/
 
 ### Adding or Editing Knowledge
 
-1. **Edit existing files** in `/knowledge/` or **create new markdown files**
-2. Write clear, structured content (the AI will use this verbatim)
-3. Use headings, lists, and paragraphs for better chunking
-4. **Redeploy** or call the `/init-kb` endpoint to reindex
+1. **Edit `/supabase/functions/server/knowledge-data.ts`** - this is the ONLY file that matters!
+2. Add or modify entries in the `KNOWLEDGE_BASE` array
+3. Each entry should have a `filename` (for reference) and `content` (the actual knowledge)
+4. Write clear, structured content (the AI will use this verbatim)
+5. **Redeploy** or call the `/init-kb` endpoint to reindex
 
-### Knowledge File Tips
+**Example:**
+```typescript
+export const KNOWLEDGE_BASE = [
+  {
+    filename: 'bio-max.md',
+    content: `# Max Thunberg - Bio
+    
+    [DIN TEXT HÄR...]`
+  },
+  {
+    filename: 'new-topic.md',
+    content: `# New Topic
 
-- **Keep it focused**: Each file should cover one topic
+    Your content here...`
+  }
+];
+```
+
+### Knowledge Content Tips
+
+- **Keep it focused**: Each entry should cover one topic
 - **Be specific**: Include concrete examples and details
 - **Use clear language**: The AI will mirror your writing style
 - **Chunk-friendly**: Use headings and short paragraphs (helps with chunking)
 - **No sensitive data**: Only include public information
-
-### Example Knowledge Structure
-
-```markdown
-# Topic Title
-
-## Section 1
-
-Clear, specific information here. Use real examples.
-
-## Section 2
-
-- Bullet points work well
-- They're easy to chunk
-- And easy for the AI to reference
-
-## Section 3
-
-More detailed paragraphs when needed, but keep them focused.
-```
 
 ## 🎨 Customizing the Persona
 

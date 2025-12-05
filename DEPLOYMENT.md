@@ -6,9 +6,9 @@ Follow these steps to deploy Ask Max (Light) to production.
 
 ### 1. Update Knowledge Base
 
-- [ ] Replace placeholder content in `/knowledge/` files with real information
-- [ ] Add Max's actual bio, case studies, and principles
-- [ ] Review each file for accuracy and clarity
+- [ ] Edit `/supabase/functions/server/knowledge-data.ts` with real information
+- [ ] Add Max's actual bio, case studies, and principles to the `KNOWLEDGE_BASE` array
+- [ ] Review each entry for accuracy and clarity
 - [ ] Remove any "placeholder" or "Note: This is a placeholder" text
 
 ### 2. Configure Environment Variables
@@ -33,7 +33,7 @@ Follow these steps to deploy Ask Max (Light) to production.
 
 ### 5. Privacy & Security Review
 
-- [ ] Confirm no sensitive data in knowledge files
+- [ ] Confirm no sensitive data in knowledge base
 - [ ] Verify no PII is logged
 - [ ] Check that API keys are server-side only
 - [ ] Review privacy notice text
@@ -182,10 +182,10 @@ These are estimates. Monitor your actual usage in the OpenAI dashboard.
 
 To update the knowledge base after deployment:
 
-1. Edit markdown files in `/knowledge/`
-2. Redeploy (or push changes to your server)
-3. Call the `/init-kb` endpoint to reindex
-4. Test the changes
+1. Edit the `KNOWLEDGE_BASE` array in `/supabase/functions/server/knowledge-data.ts`
+2. Redeploy (changes to server code require redeployment)
+3. The knowledge base will automatically reinitialize on server startup
+4. Or manually call the `/init-kb` endpoint to force reindexing
 
 **Tip**: Keep a local test version to verify changes before deploying to production.
 
