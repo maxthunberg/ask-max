@@ -63,3 +63,24 @@ export async function sendChatMessage(
   
   return data;
 }
+
+/**
+ * Initialize the knowledge base with Max's portfolio data
+ */
+export async function initializeKnowledgeBase(): Promise<void> {
+  const response = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/initialize`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${publicAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || 'Failed to initialize knowledge base');
+  }
+}
