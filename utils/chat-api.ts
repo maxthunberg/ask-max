@@ -1,5 +1,15 @@
 import { projectId, publicAnonKey } from './supabase/info';
 
+// Generate a unique chat ID for each session
+let sessionChatId: string | null = null;
+
+function getChatId(): string {
+  if (!sessionChatId) {
+    sessionChatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  }
+  return sessionChatId;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -17,6 +27,8 @@ export async function sendChatMessage(
   message: string,
   conversationHistory: ChatMessage[] = []
 ): Promise<ChatResponse> {
+  // Note: Tracking is now handled in PortfolioPage.tsx via utils/analytics.ts
+  
   const response = await fetch(
     `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/chat`,
     {
@@ -45,51 +57,9 @@ export async function sendChatMessage(
     throw new Error(errorMessage);
   }
 
-  return response.json();
-}
-
-/**
- * Initialize the knowledge base (should be called once on deployment)
- */
-export async function initializeKnowledgeBase(): Promise<void> {
-  const response = await fetch(
-    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/init-kb`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${publicAnonKey}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || 'Failed to initialize knowledge base');
-  }
-}
-
-/**
- * Reset and re-initialize the knowledge base (admin function)
- */
-export async function resetKnowledgeBase(): Promise<{ success: boolean; message: string }> {
-  const response = await fetch(
-    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/admin/reset-kb`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${publicAnonKey}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    const errorMessage = error.details || error.error || 'Failed to reset knowledge base';
-    console.error('Reset KB Error:', error);
-    throw new Error(errorMessage);
-  }
-
-  return response.json();
+  const data = await response.json();
+  
+  // Note: Tracking is now handled in PortfolioPage.tsx via utils/analytics.ts
+  
+  return data;
 }
