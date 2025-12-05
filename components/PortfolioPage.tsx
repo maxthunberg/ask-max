@@ -13,42 +13,78 @@ import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag-251-299';
 import { CookieConsent } from './CookieConsent';
 import { trackSearch, trackChatStarted, detectUnknownResponse, generateSessionId } from '../utils/analytics';
+import { saveLanguagePreference, getLanguagePreference } from '../utils/language-cookie';
 
 // App version
 const APP_VERSION = 'v1.0';
 
-const QUOTA_EXCEEDED_MESSAGES = [
-  "Oops! Max has talked too much today. Even digital me needs to recharge. Try again tomorrow!",
-  "Max's AI brain has hit its daily word limit. Turns out I'm chattier than I thought. Come back tomorrow?",
-  "I've exceeded my daily quota of brilliant insights. (Okay, maybe just my API limit.) See you tomorrow!",
-  "My digital clone just ran out of coffee. Translation: quota exceeded. Let's chat again tomorrow!",
-  "Too many questions today! My AI self is taking a power nap. Check back tomorrow when I'm recharged.",
-  "Quota exceeded! Apparently there's a limit to how much wisdom I can dispense in one day. Try me tomorrow?",
-  "I've hit my daily conversation limit. Even AI Max needs boundaries. Let's reconnect tomorrow!",
-  "My API tokens have left the building. (Quota exceeded.) But I'll be back tomorrow, fully restocked!",
-  "Too popular for my own good! Daily quota reached. Circle back tomorrow and I'll be ready to chat.",
-  "I've used up all my daily chat credits. Think of it as me being responsibly frugal with API calls. Tomorrow?",
-  "The chatbot has clocked out for the day. Union rules, you know. See you tomorrow!",
-  "My neural networks need their beauty sleep. Quota maxed out. Come back when I'm fresh!",
-  "I've hit my daily limit of profound UX insights. (It's measured in tokens, apparently.) Try tomorrow?",
-  "Out of order! Well, not really. Just out of API credits. Back in business tomorrow!",
-  "The AI well has run dry today. Check back tomorrow when it's replenished!",
-  "I've reached my conversational capacity for today. Even algorithms need breaks!",
-  "Daily quota: MAXED. (See what I did there?) Let's chat again tomorrow!",
-  "My digital brain is officially fried for today. Tomorrow's a new day with a fresh quota!",
-  "Gone fishing for more API credits. Be back tomorrow with a full tank!",
-  "I've talked myself out today. Literally. Quota exceeded. See you tomorrow!"
-];
+const QUOTA_EXCEEDED_MESSAGES = {
+  en: [
+    "Oops! Max has talked too much today. Even digital me needs to recharge. Try again tomorrow!",
+    "Max's AI brain has hit its daily word limit. Turns out I'm chattier than I thought. Come back tomorrow?",
+    "I've exceeded my daily quota of brilliant insights. (Okay, maybe just my API limit.) See you tomorrow!",
+    "My digital clone just ran out of coffee. Translation: quota exceeded. Let's chat again tomorrow!",
+    "Too many questions today! My AI self is taking a power nap. Check back tomorrow when I'm recharged.",
+    "Quota exceeded! Apparently there's a limit to how much wisdom I can dispense in one day. Try me tomorrow?",
+    "I've hit my daily conversation limit. Even AI Max needs boundaries. Let's reconnect tomorrow!",
+    "My API tokens have left the building. (Quota exceeded.) But I'll be back tomorrow, fully restocked!",
+    "Too popular for my own good! Daily quota reached. Circle back tomorrow and I'll be ready to chat.",
+    "I've used up all my daily chat credits. Think of it as me being responsibly frugal with API calls. Tomorrow?",
+    "The chatbot has clocked out for the day. Union rules, you know. See you tomorrow!",
+    "My neural networks need their beauty sleep. Quota maxed out. Come back when I'm fresh!",
+    "I've hit my daily limit of profound UX insights. (It's measured in tokens, apparently.) Try tomorrow?",
+    "Out of order! Well, not really. Just out of API credits. Back in business tomorrow!",
+    "The AI well has run dry today. Check back tomorrow when it's replenished!",
+    "I've reached my conversational capacity for today. Even algorithms need breaks!",
+    "Daily quota: MAXED. (See what I did there?) Let's chat again tomorrow!",
+    "My digital brain is officially fried for today. Tomorrow's a new day with a fresh quota!",
+    "Gone fishing for more API credits. Be back tomorrow with a full tank!",
+    "I've talked myself out today. Literally. Quota exceeded. See you tomorrow!"
+  ],
+  sv: [
+    "Hoppsan! Max har pratat för mycket idag. Även digitala jag behöver ladda batterierna. Testa igen imorgon!",
+    "Max AI-hjärna har nått sin dagliga ordgräns. Tydligen är jag mer pratglad än jag trodde. Kom tillbaka imorgon?",
+    "Jag har överskridit min dagliga kvot av briljanta insikter. (Okej, kanske bara min API-gräns.) Ses imorgon!",
+    "Min digitala klon har slut på kaffe. Översättning: kvot överskriden. Vi chattar igen imorgon!",
+    "För många frågor idag! Mitt AI-jag tar en tupplur. Kom tillbaka imorgon när jag är uppladdad.",
+    "Kvot överskriden! Tydligen finns det en gräns för hur mycket visdom jag kan dela ut på en dag. Testa imorgon?",
+    "Jag har nått min dagliga konversationsgräns. Även AI-Max behöver gränser. Vi hörs imorgon!",
+    "Mina API-tokens har lämnat byggnaden. (Kvot överskriden.) Men jag är tillbaka imorgon, fullt påfylld!",
+    "För populär för mitt eget bästa! Daglig kvot nådd. Kom tillbaka imorgon så är jag redo att chatta.",
+    "Jag har använt upp alla mina dagliga chattcredits. Se det som att jag är ansvarsfull med API-anrop. Imorgon?",
+    "Chatboten har stämplat ut för dagen. Fackliga regler, you know. Ses imorgon!",
+    "Mina neurala nätverk behöver sin skönhetssömn. Kvot maxad. Kom tillbaka när jag är fräsch!",
+    "Jag har nått min dagliga gräns av djupa UX-insikter. (Det mäts i tokens, tydligen.) Testa imorgon?",
+    "Ur funktion! Ja, inte riktigt. Bara slut på API-credits. Tillbaka i verksamheten imorgon!",
+    "AI-brunnen har torkat ut idag. Kom tillbaka imorgon när den är påfylld!",
+    "Jag har nått min konversationskapacitet för idag. Även algoritmer behöver pauser!",
+    "Daglig kvot: MAXAD. (Ser du vad jag gjorde där?) Vi chattar igen imorgon!",
+    "Min digitala hjärna är officiellt stekt för idag. Imorgon är en ny dag med en ny kvot!",
+    "Har gått och fiskat efter fler API-credits. Tillbaka imorgon med full tank!",
+    "Jag har pratat slut på mig själv idag. Bokstavligen. Kvot överskriden. Ses imorgon!"
+  ]
+};
 
-const SARCASTIC_QUOTA_MESSAGES = [
-  "I understand you want to try it out to see what happens. But I really can't talk to you more today.",
-  "Still here? I admire your persistence, but the answer remains the same: quota exceeded. Tomorrow is your friend.",
-  "Okay, I see what you're doing. Testing if the message changes? It does! But the quota is still exceeded. Come back tomorrow.",
-  "At this point, we're basically in a committed relationship. Too bad I still can't answer your questions. Quota's maxed. Tomorrow?",
-  "Look, I appreciate the dedication, but repeatedly asking won't conjure up more API credits. Tomorrow. Please.",
-  "We're really doing this, huh? For the 6th time: Can't talk. Quota exceeded. Tomorrow exists for a reason.",
-  "So for the 7th time: Can't talk, maxed out my limit, etc etc etc etc. Ask me again and I'll just show you a spinning loading wheel. No answer. Just loading. Forever. Try me.",
-];
+const SARCASTIC_QUOTA_MESSAGES = {
+  en: [
+    "I understand you want to try it out to see what happens. But I really can't talk to you more today.",
+    "Still here? I admire your persistence, but the answer remains the same: quota exceeded. Tomorrow is your friend.",
+    "Okay, I see what you're doing. Testing if the message changes? It does! But the quota is still exceeded. Come back tomorrow.",
+    "At this point, we're basically in a committed relationship. Too bad I still can't answer your questions. Quota's maxed. Tomorrow?",
+    "Look, I appreciate the dedication, but repeatedly asking won't conjure up more API credits. Tomorrow. Please.",
+    "We're really doing this, huh? For the 6th time: Can't talk. Quota exceeded. Tomorrow exists for a reason.",
+    "So for the 7th time: Can't talk, maxed out my limit, etc etc etc etc. Ask me again and I'll just show you a spinning loading wheel. No answer. Just loading. Forever. Try me.",
+  ],
+  sv: [
+    "Jag förstår att du vill testa vad som händer. Men jag kan verkligen inte prata med dig mer idag.",
+    "Fortfarande här? Jag beundrar din ihärdighet, men svaret är detsamma: kvot överskriden. Imorgon är din vän.",
+    "Okej, jag ser vad du gör. Testar om meddelandet ändras? Det gör det! Men kvoten är fortfarande överskriden. Kom tillbaka imorgon.",
+    "Vid det här laget är vi typ i ett seriöst förhållande. Synd bara att jag fortfarande inte kan svara på dina frågor. Kvot maxad. Imorgon?",
+    "Lyssna, jag uppskattar dedikationen, men att fråga upprepade gånger kommer inte trolla fram fler API-credits. Imorgon. Snälla.",
+    "Gör vi verkligen detta? För sjätte gången: Kan inte prata. Kvot överskriden. Imorgon finns av en anledning.",
+    "Så för sjunde gången: Kan inte prata, maxat min gräns, etc etc etc etc. Fråga mig igen så visar jag bara en snurrande laddningshjul. Inget svar. Bara laddning. För evigt. Testa mig.",
+  ]
+};
 
 export function PortfolioPage() {
   const [question, setQuestion] = useState('');
@@ -77,8 +113,29 @@ export function PortfolioPage() {
   // Session ID for analytics tracking
   const [sessionId, setSessionId] = useState<string>('');
   
+  // Track if we're waiting for user to decide on language switch
+  const [waitingForLanguageDecision, setWaitingForLanguageDecision] = useState(false);
+  
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<SearchInputRef>(null);
+
+  // Load language preference from cookie on mount
+  useEffect(() => {
+    const savedLanguage = getLanguagePreference();
+    // Set language based on saved preference (defaults to 'en' if not set)
+    setLanguage(savedLanguage);
+    setNavbarLanguage(savedLanguage);
+    setSearchLanguage(savedLanguage);
+    setDisclaimerLanguage(savedLanguage);
+    console.log(`🌍 Loaded ${savedLanguage === 'sv' ? 'Swedish' : 'English'} language preference from cookie`);
+  }, []);
+
+  // Save language preference to cookie when it changes
+  useEffect(() => {
+    // Save preference whenever language changes
+    console.log('💾 useEffect triggered - saving language to cookie:', language);
+    saveLanguagePreference(language);
+  }, [language]);
 
   // Load theme from localStorage on mount
   // TEMPORARILY DISABLED - keeping dark mode only for now
@@ -103,6 +160,8 @@ export function PortfolioPage() {
   const translations = {
     en: {
       home: "Home",
+      portfolio: "Portfolio",
+      comingSoon: "Coming soon",
       heroTitle: "The most talkative portfolio you will ever meet",
       heroSubtitle: "It's like talking to me, just without the calendar gymnastics.",
       title: "This is me",
@@ -112,12 +171,27 @@ export function PortfolioPage() {
       modalTitle: "Start over?",
       modalDescription: "This will clear your current conversation and return you to the home screen.",
       modalKeepChatting: "Keep chatting",
-      modalStartOver: "Start over"
+      modalStartOver: "Start over",
+      // Coming Soon Modal
+      comingSoonTitle: "Coming soon",
+      comingSoonDescription: "Here's what I'm planning to improve in the future:",
+      comingSoonClose: "Close",
+      // Coming Soon Plans
+      plan1Title: "More life-like Max",
+      plan1Description: "Train the model on significantly more material about me and test it rigorously to create a more \"life-like\" Max",
+      plan2Title: "Visual content in chat",
+      plan2Description: "Build in support for displaying visual images and materials as responses in the chat",
+      plan3Title: "Learning resources",
+      plan3Description: "Describe how the website was built and provide support for people who want to learn how",
+      plan4Title: "Voice prompt",
+      plan4Description: "Enable voice input functionality so visitors can speak their questions instead of typing them"
     },
     sv: {
       home: "Hem",
-      heroTitle: "Den mest pratsamma portföljen du någonsin kommer att träffa",
-      heroSubtitle: "Det är som att plocka min hjärna om design och ledarskap, utan kalenderbokingen.",
+      portfolio: "Portfölj",
+      comingSoon: "Kommer snart",
+      heroTitle: "Den mest pratsamma portfolio du någonsin kommer att träffa",
+      heroSubtitle: "Det är som att ta del av mina tankar om design och ledarskap, fast utan kalendargymnastiken.",
       title: "Det här är jag",
       subtitle: "För närvarande UX Lead på Volvo Group",
       placeholder: "Fråga mig om UX, ledarskap eller vad du vill",
@@ -125,7 +199,20 @@ export function PortfolioPage() {
       modalTitle: "Börja om?",
       modalDescription: "Detta kommer att rensa din nuvarande konversation och ta dig tillbaka till startsidan.",
       modalKeepChatting: "Fortsätt chatta",
-      modalStartOver: "Börja om"
+      modalStartOver: "Börja om",
+      // Coming Soon Modal
+      comingSoonTitle: "Kommer snart",
+      comingSoonDescription: "Här är vad jag planerar att förbättra i framtiden:",
+      comingSoonClose: "Stäng",
+      // Coming Soon Plans
+      plan1Title: "Mer livaktig Max",
+      plan1Description: "Träna modellen på betydligt mer material om mig och testa rigoröst för att skapa en mer \"livaktig\" Max",
+      plan2Title: "Visuellt innehåll i chatten",
+      plan2Description: "Bygga in stöd för att visa bilder och material som svar i chatten",
+      plan3Title: "Läranderesurser",
+      plan3Description: "Beskriva hur webbplatsen byggdes och ge stöd till personer som vill lära sig hur",
+      plan4Title: "Röstinmatning",
+      plan4Description: "Aktivera röstinmatningsfunktionalitet så att besökare kan tala sina frågor istället för att skriva dem"
     }
   };
 
@@ -162,34 +249,94 @@ export function PortfolioPage() {
     
     // Split into words and filter out capitalized words (likely proper nouns/names)
     const words = lowerText.split(/\s+/).map(word => word.replace(/[.,!?;:]$/g, ''));
-    const meaningfulWords = words.filter(word => {
+    const originalWords = text.split(/\s+/);
+    
+    const meaningfulWords = words.filter((word, index) => {
       // Ignore single-letter words
       if (word.length <= 1) return false;
+      
       // Ignore words that are all caps or start with capital in original text (likely proper nouns/names)
-      const originalWord = text.split(/\s+/).find(w => w.toLowerCase().replace(/[.,!?;:]$/g, '') === word);
-      if (originalWord && /^[A-Z]/.test(originalWord)) return false;
+      // BUT: Allow the first word to be capitalized (normal sentence capitalization)
+      const originalWord = originalWords[index];
+      if (originalWord && /^[A-Z]/.test(originalWord) && index !== 0) return false;
+      
       return true;
     });
     
-    // Need at least 3 meaningful words to make a judgment
+    // Count Swedish words among meaningful words
+    const swedishWordCount = meaningfulWords.filter(word => swedishWords.includes(word)).length;
+    
+    // REQUIRE AT LEAST 2 SWEDISH WORDS to trigger language switch
+    // This prevents random strings like "asdf" from triggering the switch
+    if (swedishWordCount < 2) {
+      return false;
+    }
+    
+    // For short sentences (less than 3 words), require 2 Swedish words
     if (meaningfulWords.length < 3) {
-      // For very short sentences, check if Swedish chars exist AND at least 1 Swedish word
-      const hasSwedishChars = /[åäöÅÄÖ]/.test(text);
-      const swedishWordCount = meaningfulWords.filter(word => swedishWords.includes(word)).length;
-      return hasSwedishChars && swedishWordCount >= 1;
+      return swedishWordCount >= 2;
     }
     
     // Check if text contains Swedish-specific characters
     const hasSwedishChars = /[åäöÅÄÖ]/.test(text);
     
-    // Count Swedish words among meaningful words
-    const swedishWordCount = meaningfulWords.filter(word => swedishWords.includes(word)).length;
+    // Calculate ratio for longer texts
     const swedishRatio = swedishWordCount / meaningfulWords.length;
     
     // Language is Swedish if:
     // 1. Has Swedish characters AND at least 30% Swedish words, OR
     // 2. At least 40% of meaningful words are Swedish words
     return (hasSwedishChars && swedishRatio >= 0.3) || swedishRatio >= 0.4;
+  };
+
+  // Detect if text is in English
+  const detectEnglish = (text: string): boolean => {
+    const lowerText = text.toLowerCase().trim();
+    
+    // Obvious English greetings
+    const obviousEnglishWords = [
+      'hello', 'hi', 'hey', 'thanks', 'bye', 'goodbye', 'howdy'
+    ];
+    
+    // Check if the text is just one obvious English word
+    const singleWord = lowerText.replace(/[.,!?;:]$/g, '');
+    if (obviousEnglishWords.includes(singleWord)) {
+      return true;
+    }
+    
+    // Common English words
+    const englishWords = [
+      'the', 'is', 'are', 'was', 'were', 'what', 'how', 'why', 'who', 'where', 'when',
+      'you', 'your', 'i', 'my', 'me', 'we', 'our', 'they', 'their', 'this', 'that',
+      'have', 'has', 'had', 'do', 'does', 'did', 'can', 'could', 'would', 'should',
+      'will', 'about', 'from', 'with', 'into', 'through', 'during', 'before', 'after',
+      'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once',
+      'here', 'there', 'all', 'both', 'each', 'few', 'more', 'most', 'other', 'some',
+      'such', 'only', 'own', 'same', 'than', 'too', 'very', 'work', 'think', 'know',
+      'get', 'make', 'go', 'see', 'come', 'want', 'use', 'find', 'give', 'tell'
+    ];
+    
+    // Split into words
+    const words = lowerText.split(/\s+/).map(word => word.replace(/[.,!?;:]$/g, ''));
+    const meaningfulWords = words.filter(word => word.length > 1);
+    
+    // Need at least 3 words to make a judgment
+    if (meaningfulWords.length < 3) {
+      // For short sentences, if there are Swedish chars, it's definitely NOT English
+      if (/[åäöÅÄÖ]/.test(text)) return false;
+      // Check if at least 1 English word exists
+      return meaningfulWords.some(word => englishWords.includes(word));
+    }
+    
+    // If text contains Swedish characters, it's not English
+    if (/[åäöÅÄÖ]/.test(text)) return false;
+    
+    // Count English words
+    const englishWordCount = meaningfulWords.filter(word => englishWords.includes(word)).length;
+    const englishRatio = englishWordCount / meaningfulWords.length;
+    
+    // Text is English if at least 40% of words are common English words
+    return englishRatio >= 0.4;
   };
 
   // Theme colors
@@ -239,72 +386,183 @@ export function PortfolioPage() {
     // Track user message in Google Analytics
     trackSearch(userMessage, currentSessionId, 'user');
     
-    // Detect if this is a language switch
-    const shouldSwitchToSwedish = language === 'en' && detectSwedish(userMessage);
+    // Detect if this is a language switch (ONLY if we're not already waiting for a decision)
+    const shouldSwitchToSwedish = !waitingForLanguageDecision && language === 'en' && detectSwedish(userMessage);
+    const shouldSwitchToEnglish = !waitingForLanguageDecision && language === 'sv' && detectEnglish(userMessage);
+    
+    console.log('🔍 Language detection:', {
+      userMessage,
+      currentLanguage: language,
+      waitingForLanguageDecision,
+      shouldSwitchToSwedish,
+      shouldSwitchToEnglish,
+      detectSwedishResult: detectSwedish(userMessage),
+      detectEnglishResult: detectEnglish(userMessage)
+    });
     
     // Add user message
     setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
 
-    // If switching to Swedish, show the system message and skeleton animation first
+    // If switching to Swedish, ask user first with action buttons
     if (shouldSwitchToSwedish) {
-      // Add system message about switching language
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          type: 'system', 
-          content: 'Jaha, du pratar svenska. Låt mig anpassa språk på hemsidan till dig ☺️' 
-        }]);
-        
-        // Start skeleton animation sequence (wait 2 seconds extra before starting)
-        setTimeout(() => {
-          setSkeletonStage('navbar');
-          
-          setTimeout(() => {
-            // Change ONLY navbar language after navbar animation
-            setNavbarLanguage('sv');
-            setSkeletonStage('search');
-            
-            setTimeout(() => {
-              // Change ONLY search language after search animation
-              setSearchLanguage('sv');
-              setSkeletonStage('disclaimer');
+      console.log('🇸🇪 Showing Swedish language switch prompt (NO API call yet)');
+      // Add system message asking if user wants to switch language
+      const switchToSwedishMessage: any = {
+        type: 'system',
+        content: 'Du verkar prata svenska? Vill du att jag byter språk?',
+        actions: [
+          {
+            label: 'Ja, byt språk',
+            onClick: () => {
+              // Remove the action buttons from this message
+              setMessages(prev => prev.map(m => 
+                m === switchToSwedishMessage ? { ...m, actions: undefined } : m
+              ));
               
+              // No longer waiting for decision
+              setWaitingForLanguageDecision(false);
+              
+              // Start skeleton animation sequence
               setTimeout(() => {
-                // Change ONLY disclaimer language after disclaimer animation
-                setDisclaimerLanguage('sv');
-                setSkeletonStage(null);
+                setSkeletonStage('navbar');
                 
-                // Finally set overall language to Swedish
-                setLanguage('sv');
-                
-                // Now proceed with the actual API call, passing flag that user wrote in Swedish
-                performAPICall(userMessage, true);
-              }, 800);
-            }, 800);
-          }, 800);
-        }, 2500);
-      }, 300);
+                setTimeout(() => {
+                  setNavbarLanguage('sv');
+                  setSkeletonStage('search');
+                  
+                  setTimeout(() => {
+                    setSearchLanguage('sv');
+                    setSkeletonStage('disclaimer');
+                    
+                    setTimeout(() => {
+                      setDisclaimerLanguage('sv');
+                      setSkeletonStage(null);
+                      console.log('🇸🇪 Setting language to Swedish');
+                      setLanguage('sv');
+                      performAPICall(userMessage, true);
+                    }, 800);
+                  }, 800);
+                }, 800);
+              }, 300);
+            }
+          },
+          {
+            label: 'I don\'t understand',
+            onClick: () => {
+              // Remove the action buttons and just proceed with English
+              setMessages(prev => prev.map(m => 
+                m === switchToSwedishMessage ? { ...m, actions: undefined } : m
+              ));
+              
+              // No longer waiting for decision
+              setWaitingForLanguageDecision(false);
+              
+              performAPICall(userMessage, false);
+            }
+          }
+        ]
+      };
       
-      return; // Exit early, performAPICall will handle the rest
+      setMessages(prev => [...prev, switchToSwedishMessage]);
+      
+      // Mark that we're waiting for user decision
+      setWaitingForLanguageDecision(true);
+      
+      return; // Exit early, waiting for user to click a button
+    }
+
+    // If switching to English, ask user first with action buttons
+    if (shouldSwitchToEnglish) {
+      // Add system message asking if user wants to switch language
+      const switchToEnglishMessage: any = {
+        type: 'system',
+        content: 'You seem to be speaking English? Would you like me to switch language?',
+        actions: [
+          {
+            label: 'Yes, switch language',
+            onClick: () => {
+              // Remove the action buttons from this message
+              setMessages(prev => prev.map(m => 
+                m === switchToEnglishMessage ? { ...m, actions: undefined } : m
+              ));
+              
+              // No longer waiting for decision
+              setWaitingForLanguageDecision(false);
+              
+              // Start skeleton animation sequence
+              setTimeout(() => {
+                setSkeletonStage('navbar');
+                
+                setTimeout(() => {
+                  setNavbarLanguage('en');
+                  setSkeletonStage('search');
+                  
+                  setTimeout(() => {
+                    setSearchLanguage('en');
+                    setSkeletonStage('disclaimer');
+                    
+                    setTimeout(() => {
+                      setDisclaimerLanguage('en');
+                      setSkeletonStage(null);
+                      console.log('🇬🇧 Setting language to English');
+                      setLanguage('en');
+                      performAPICall(userMessage, false);
+                    }, 800);
+                  }, 800);
+                }, 800);
+              }, 300);
+            }
+          },
+          {
+            label: 'Jag förstår inte',
+            onClick: () => {
+              // Remove the action buttons and just proceed with Swedish
+              setMessages(prev => prev.map(m => 
+                m === switchToEnglishMessage ? { ...m, actions: undefined } : m
+              ));
+              
+              // No longer waiting for decision
+              setWaitingForLanguageDecision(false);
+              
+              performAPICall(userMessage, false);
+            }
+          }
+        ]
+      };
+      
+      setMessages(prev => [...prev, switchToEnglishMessage]);
+      
+      // Mark that we're waiting for user decision
+      setWaitingForLanguageDecision(true);
+      
+      return; // Exit early, waiting for user to click a button
     }
 
     // Normal flow without language switch
+    console.log('📞 Normal flow: Making API call immediately (no language switch detected)');
     setIsLoading(true);
-    await performAPICall(userMessage, false);
+    // If we're waiting for language decision, use current language (not detected language)
+    await performAPICall(userMessage, false, waitingForLanguageDecision ? language : undefined);
   };
 
-  const performAPICall = async (userMessage: string, userWroteInSwedish: boolean = false) => {
+  const performAPICall = async (userMessage: string, userWroteInSwedish: boolean = false, forceLanguage?: 'en' | 'sv') => {
     setIsLoading(true);
 
     try {
-      // Build conversation history (exclude system messages)
+      // Build conversation history (include system messages as assistant messages so AI is context-aware)
       const conversationHistory: ChatMessage[] = messages
-        .filter(m => m.type !== 'error' && m.type !== 'system')
+        .filter(m => m.type !== 'error') // Only exclude error messages
         .map(m => ({
-          role: m.type === 'user' ? 'user' : 'assistant',
+          role: m.type === 'user' ? 'user' : 'assistant', // system and assistant both become 'assistant'
           content: m.content,
         }));
 
-      const result = await sendChatMessage(userMessage, conversationHistory);
+      // Detect language from user message for explicit backend instruction
+      // If forceLanguage is provided, use that instead of detecting
+      // IMPORTANT: Always use current UI language, NOT detected language from message
+      const languageToSend = forceLanguage || language;
+      
+      const result = await sendChatMessage(userMessage, conversationHistory, languageToSend);
       
       // Detect if this is an "unknown" response
       const isUnknownResponse = detectUnknownResponse(result.message);
@@ -316,50 +574,8 @@ export function PortfolioPage() {
         trackSearch(result.message, sessionId, 'ai', 'success');
       }
       
-      // Detect if AI responded in Swedish and switch language if needed
-      // BUT only if the user didn't already write in Swedish (to avoid double system messages)
-      const aiRespondedInSwedish = detectSwedish(result.message);
-      if (language === 'en' && aiRespondedInSwedish && !userWroteInSwedish) {
-        // Add AI message first
-        setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
-        
-        // Then add system message about switching language
-        setTimeout(() => {
-          setMessages(prev => [...prev, { 
-            type: 'system', 
-            content: 'Jaha, du pratar svenska. Låt mig anpassa språk på hemsidan till dig ☺️' 
-          }]);
-          
-          // Start skeleton animation sequence (wait 2 seconds extra before starting)
-          setTimeout(() => {
-            setSkeletonStage('navbar');
-            
-            setTimeout(() => {
-              // Change ONLY navbar language after navbar animation
-              setNavbarLanguage('sv');
-              setSkeletonStage('search');
-              
-              setTimeout(() => {
-                // Change ONLY search language after search animation
-                setSearchLanguage('sv');
-                setSkeletonStage('disclaimer');
-                
-                setTimeout(() => {
-                  // Change ONLY disclaimer language after disclaimer animation
-                  setDisclaimerLanguage('sv');
-                  setSkeletonStage(null);
-                  
-                  // Finally set overall language to Swedish
-                  setLanguage('sv');
-                }, 800);
-              }, 800);
-            }, 800);
-          }, 2500);
-        }, 300);
-      } else {
-        // Normal flow - just add the message
-        setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
-      }
+      // Add AI message (language switching is only triggered by user input, not AI responses)
+      setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       const lowerMessage = errorMessage.toLowerCase();
@@ -376,16 +592,22 @@ export function PortfolioPage() {
         }
         
         let errorMsg: string;
+        const currentLang = language; // Use current language for error messages
+        
         if (newCount === 1) {
-          // First attempt: Always show the MAX pun
-          errorMsg = "Looks like I'm literally MAXED out! 😅 (see what I did there? 😉) My API quota has hit its limit. Come back tomorrow when I'm fresh, or contact the real me via [LinkedIn](https://www.linkedin.com/in/maxthunberg) or [email](mailto:max@maxthunberg.com).";
+          // First attempt: Always show the MAX pun (language-aware)
+          errorMsg = currentLang === 'sv' 
+            ? "Ser ut som att jag är bokstavligen MAXAD! 😅 (ser du vad jag gjorde där? 😉) Min API-kvot har nått sin gräns. Kom tillbaka imorgon när jag är fräsch, eller kontakta riktiga mig via [LinkedIn](https://www.linkedin.com/in/maxthunberg) eller [email](mailto:max@maxthunberg.com)."
+            : "Looks like I'm literally MAXED out! 😅 (see what I did there? 😉) My API quota has hit its limit. Come back tomorrow when I'm fresh, or contact the real me via [LinkedIn](https://www.linkedin.com/in/maxthunberg) or [email](mailto:max@maxthunberg.com).";
         } else if (newCount <= 3) {
           // Attempts 2-3: show random funny messages
-          errorMsg = QUOTA_EXCEEDED_MESSAGES[Math.floor(Math.random() * QUOTA_EXCEEDED_MESSAGES.length)];
+          const messages = QUOTA_EXCEEDED_MESSAGES[currentLang];
+          errorMsg = messages[Math.floor(Math.random() * messages.length)];
         } else {
           // Attempts 4-10: show increasingly sarcastic messages
-          const sarcasticIndex = Math.min(newCount - 4, SARCASTIC_QUOTA_MESSAGES.length - 1);
-          errorMsg = SARCASTIC_QUOTA_MESSAGES[sarcasticIndex];
+          const sarcasticMessages = SARCASTIC_QUOTA_MESSAGES[currentLang];
+          const sarcasticIndex = Math.min(newCount - 4, sarcasticMessages.length - 1);
+          errorMsg = sarcasticMessages[sarcasticIndex];
         }
         
         setMessages(prev => [...prev, { type: 'error', content: errorMsg }]);
@@ -423,20 +645,28 @@ export function PortfolioPage() {
   };
 
   const handleResetConfirm = () => {
+    console.log('🔄 handleResetConfirm called - current language state:', language);
+    console.log('🔄 Current navbar/search/disclaimer languages:', navbarLanguage, searchLanguage, disclaimerLanguage);
+    
+    // IMPORTANT: First ensure current language is saved to cookie before reading
+    // This prevents race conditions where the language was just changed but cookie not yet saved
+    saveLanguagePreference(language);
+    
     setMessages([]);
     setQuestion('');
     setIsChatMode(false);
     setShowResetModal(false);
     setQuotaErrorCount(0); // Reset quota error counter
     setIsLoading(false); // Reset loading state in case they were in infinite loading
-    setLanguage('en'); // Reset language to English
     setIsLanguageTransitioning(false); // Reset language transition state
     setSessionId(''); // Reset session ID for new chat
     
-    // Reset individual language states
-    setNavbarLanguage('en');
-    setSearchLanguage('en');
-    setDisclaimerLanguage('en');
+    // KEEP language preference - language state should already be correct,
+    // but we keep all individual language states in sync
+    setNavbarLanguage(language);
+    setSearchLanguage(language);
+    setDisclaimerLanguage(language);
+    console.log(`🔄 Reset conversation, keeping ${language === 'sv' ? 'Swedish' : 'English'} language`);
   };
 
   const handleResetCancel = () => {
@@ -601,7 +831,7 @@ export function PortfolioPage() {
                   className="group flex gap-[6px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
                   aria-label="Visit portfolio website"
                 >
-                  <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>Portfolio</p>
+                  <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>{translations[navbarLanguage].portfolio}</p>
                   <ExternalLink className="w-4 h-4 transition-colors duration-200" style={{ color: colors.textSecondary }} />
                 </button>
                 <button 
@@ -609,7 +839,7 @@ export function PortfolioPage() {
                   className="group flex gap-[6px] items-center justify-center relative shrink-0 hover:opacity-100 focus:opacity-100 active:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-2 py-1 min-h-[44px]"
                   aria-label="View coming soon features"
                 >
-                  <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>Coming soon</p>
+                  <p className="font-normal leading-[24px] relative shrink-0 group-hover:underline text-[16px] text-nowrap whitespace-pre transition-all duration-200" style={{ color: colors.textSecondary }}>{translations[navbarLanguage].comingSoon}</p>
                 </button>
               </div>
             </div>
@@ -661,12 +891,36 @@ export function PortfolioPage() {
                           <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[12px]" />
                         </div>
                       ) : message.type === 'system' ? (
-                        <div className="max-w-[480px] relative rounded-[12px]" data-name="System message">
+                        <div className="max-w-[480px] relative rounded-[12px] flex flex-col gap-3" data-name="System message">
                           <div className="box-border flex gap-[10px] items-center justify-center overflow-clip relative rounded-[inherit]">
                             <p className="font-normal leading-[24px] relative text-[16px] opacity-80 whitespace-pre-wrap" style={{ color: colors.textSecondary }}>
                               {message.content}
                             </p>
                           </div>
+                          {(message as any).actions && (message as any).actions.length > 0 && (
+                            <div className="flex gap-2">
+                              {(message as any).actions.map((action: any, actionIndex: number) => (
+                                <button
+                                  key={actionIndex}
+                                  onClick={action.onClick}
+                                  className="px-4 py-2 rounded-lg transition-all duration-200"
+                                  style={{
+                                    backgroundColor: 'rgba(255,255,255,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    color: colors.textPrimary,
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                                  }}
+                                >
+                                  {action.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div 
@@ -907,9 +1161,12 @@ export function PortfolioPage() {
                       isLoading={isLoading}
                       showDisclaimer={isChatMode}
                       theme={theme}
-                      placeholder={t.placeholder}
-                      disclaimerText={t.disclaimer}
-                      language={language}
+                      placeholder={translations[searchLanguage].placeholder}
+                      disclaimerText={translations[disclaimerLanguage].disclaimer}
+                      language={searchLanguage}
+                      isChatMode={isChatMode}
+                      showPlaceholderSkeleton={skeletonStage === 'search'}
+                      showDisclaimerSkeleton={skeletonStage === 'disclaimer'}
                     />
                   </div>
                 </div>
@@ -1087,10 +1344,10 @@ export function PortfolioPage() {
                   {/* Header */}
                   <div className="flex flex-col gap-[8px]">
                     <h2 id="upcoming-plans-title" className="font-semibold text-[20px] sm:text-[24px] leading-[28px] sm:leading-[32px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
-                      Coming soon
+                      {t.comingSoonTitle}
                     </h2>
                     <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
-                      Here's what I'm planning to improve in the future:
+                      {t.comingSoonDescription}
                     </p>
                   </div>
 
@@ -1103,10 +1360,10 @@ export function PortfolioPage() {
                       </div>
                       <div className="flex flex-col gap-[4px] flex-1">
                         <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
-                          More life-like Max
+                          {t.plan1Title}
                         </p>
                         <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
-                          Train the model on significantly more material about me and test it rigorously to create a more "life-like" Max
+                          {t.plan1Description}
                         </p>
                       </div>
                     </div>
@@ -1118,10 +1375,10 @@ export function PortfolioPage() {
                       </div>
                       <div className="flex flex-col gap-[4px] flex-1">
                         <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
-                          Visual content in chat
+                          {t.plan2Title}
                         </p>
                         <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
-                          Build in support for displaying visual images and materials as responses in the chat
+                          {t.plan2Description}
                         </p>
                       </div>
                     </div>
@@ -1133,10 +1390,10 @@ export function PortfolioPage() {
                       </div>
                       <div className="flex flex-col gap-[4px] flex-1">
                         <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
-                          Learning resources
+                          {t.plan3Title}
                         </p>
                         <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
-                          Describe how the website was built and provide support for people who want to learn how
+                          {t.plan3Description}
                         </p>
                       </div>
                     </div>
@@ -1148,10 +1405,10 @@ export function PortfolioPage() {
                       </div>
                       <div className="flex flex-col gap-[4px] flex-1">
                         <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
-                          Voice prompt
+                          {t.plan4Title}
                         </p>
                         <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
-                          Enable voice input functionality so visitors can speak their questions instead of typing them
+                          {t.plan4Description}
                         </p>
                       </div>
                     </div>
@@ -1174,7 +1431,7 @@ export function PortfolioPage() {
                         className="absolute border border-solid inset-0 pointer-events-none rounded-[8px] transition-colors duration-200" 
                         style={{ borderColor: theme === 'light' ? 'rgba(0, 0, 0, 0.15)' : '#4d4164' }}
                       />
-                      <span className="relative z-10">Close</span>
+                      <span className="relative z-10">{t.comingSoonClose}</span>
                     </button>
                   </div>
                 </div>
@@ -1259,7 +1516,7 @@ export function PortfolioPage() {
                   className="group flex gap-[10px] items-center justify-between relative shrink-0 hover:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-4 py-3 min-h-[56px]"
                   style={{ backgroundColor: colors.hoverBg }}
                 >
-                  <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>Portfolio</p>
+                  <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>{translations[navbarLanguage].portfolio}</p>
                   <ExternalLink className="w-5 h-5 transition-colors duration-200" style={{ color: colors.textSecondary }} />
                 </button>
 
@@ -1271,7 +1528,7 @@ export function PortfolioPage() {
                   className="group flex gap-[10px] items-center relative shrink-0 hover:opacity-100 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-md px-4 py-3 min-h-[56px]"
                   style={{ backgroundColor: colors.hoverBg }}
                 >
-                  <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>Coming soon</p>
+                  <p className="font-medium text-[18px] transition-all duration-200" style={{ color: colors.textPrimary }}>{translations[navbarLanguage].comingSoon}</p>
                 </button>
               </nav>
             </motion.div>

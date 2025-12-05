@@ -761,6 +761,10 @@
     gap: calc(var(--spacing) * 2);
   }
 
+  .gap-3 {
+    gap: calc(var(--spacing) * 3);
+  }
+
   .gap-4 {
     gap: calc(var(--spacing) * 4);
   }
@@ -835,6 +839,10 @@
 
   .rounded-\[inherit\] {
     border-radius: inherit;
+  }
+
+  .rounded-lg {
+    border-radius: .625rem;
   }
 
   .rounded-md {
@@ -977,6 +985,10 @@
 
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
+  }
+
+  .py-2 {
+    padding-block: calc(var(--spacing) * 2);
   }
 
   .py-2\.5 {

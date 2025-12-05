@@ -25,7 +25,8 @@ export interface ChatResponse {
  */
 export async function sendChatMessage(
   message: string,
-  conversationHistory: ChatMessage[] = []
+  conversationHistory: ChatMessage[] = [],
+  userLanguage?: 'en' | 'sv'
 ): Promise<ChatResponse> {
   // Note: Tracking is now handled in PortfolioPage.tsx via utils/analytics.ts
   
@@ -40,6 +41,7 @@ export async function sendChatMessage(
       body: JSON.stringify({
         message,
         conversationHistory,
+        userLanguage,
       }),
     }
   );

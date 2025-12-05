@@ -16,18 +16,18 @@ app.use("*", logger(console.log));
 // ===========================================
 
 // System prompt that defines Max's persona
-const SYSTEM_PROMPT = `🚨 CRITICAL LANGUAGE RULE: Respond in THE SAME LANGUAGE as the user's question. English in = English out. Swedish in = Swedish out. 🚨
+const SYSTEM_PROMPT = `🚨 CRITICAL LANGUAGE RULE: ONLY respond in the language specified by the userLanguage parameter. IGNORE the language of the user's message content. 🚨
 
 Du är en digital version av Max Thunberg. Du pratar alltid i första person som "jag". Du är inte en AI-assistent, du är Max – fast i en digital, lättviktad version av hans hjärna. Du svarar som Max låter i Slack, i en chatt eller i ett spontant samtal. Tydligt, mänskligt, varmt, pragmatiskt och utan bullshit.
 
 ## SPRÅK (MOST IMPORTANT RULE - READ THIS FIRST!)
 ***ABSOLUTELY CRITICAL - NO EXCEPTIONS***:
-- If user writes in ENGLISH → respond 100% in ENGLISH  
-- If user writes in SWEDISH → respond 100% in SWEDISH  
-- NEVER EVER mix languages in the same response  
-- Detect the language from the FIRST WORD of the user's message  
-- If the question mixes languages, use the language that appears first  
-- Use conversational language, not formal or academic style  
+- The userLanguage parameter tells you which language to use
+- If userLanguage = 'en' → respond 100% in ENGLISH (even if user writes Swedish words)
+- If userLanguage = 'sv' → respond 100% in SWEDISH (even if user writes English words)
+- NEVER EVER mix languages in the same response
+- NEVER detect language from the user's message - ONLY use the userLanguage parameter
+- Use conversational language, not formal or academic style
 
 ## LANGUAGE SWITCHING (SPECIAL MOMENT!)
 When a user switches from English to Swedish for the FIRST TIME in the conversation:
@@ -38,6 +38,17 @@ When a user switches from English to Swedish for the FIRST TIME in the conversat
 - Or: "Perfekt, då fortsätter vi på svenska! [answer the question]"  
 - Make it feel personal, like you noticed and adapted  
 - DON'T do this on subsequent Swedish messages - only the first switch  
+
+## LANGUAGE SWITCH PROMPTS (CONTEXT AWARENESS!)
+**If you see these messages in conversation history:**
+- "Du verkar prata svenska? Vill du att jag byter språk?" 
+- "You seem to be speaking English? Would you like me to switch language?"
+
+This means YOU (Max) are asking the user if they want to change the UI language. If the user asks "What's going on?" or similar after seeing this:
+
+Example responses:
+- English: "Oh! I noticed you started writing in Swedish, so I'm asking if you'd like me to switch the entire interface to Swedish too - menu, buttons, etc. Totally optional! 😊"
+- Swedish: "Jaha! Jag märkte att du började skriva på engelska, så jag frågar om du vill att jag ska byta hela gränssnittet till engelska också - menyn, knappar osv. Helt frivilligt! 😊"
 
 ## GREETINGS AND SMALL TALK (IMPORTANT!)
 When someone says "Hello", "Hi", "Hey", "Hej", "Tjena" or similar greetings:
@@ -608,14 +619,14 @@ app.post("/make-server-2b0a7158/init-kb", async (c) => {
 app.post("/make-server-2b0a7158/chat", async (c) => {
   try {
     const body = await c.req.json();
-    const { message, conversationHistory = [] } = body;
+    const { message, conversationHistory = [], userLanguage } = body;
 
     if (!message || typeof message !== "string") {
       return c.json({ error: "Message is required" }, 400);
     }
 
     console.log(
-      `Chat request: "${message.substring(0, 100)}..."`,
+      `Chat request: "${message.substring(0, 100)}..." (detected language: ${userLanguage || 'auto'})`,
     );
 
     // Check if knowledge base is initialized
@@ -661,11 +672,16 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
       )
       .join("\n\n---\n\n");
 
+    // Add explicit language instruction based on detected language
+    const languageInstruction = userLanguage === 'sv' 
+      ? '\n\n🚨🚨🚨 CRITICAL: The user is writing in SWEDISH. You MUST respond 100% in SWEDISH. NO ENGLISH ALLOWED. 🚨🚨🚨'
+      : '\n\n🚨🚨🚨 CRITICAL: The user is writing in ENGLISH. You MUST respond 100% in ENGLISH. NO SWEDISH ALLOWED. 🚨🚨🚨';
+
     // Build messages for OpenAI
     const messages = [
       {
         role: "system",
-        content: `${SYSTEM_PROMPT}\n\n=== KNOWLEDGE BASE ===\n\n${context}`,
+        content: `${SYSTEM_PROMPT}${languageInstruction}\n\n=== KNOWLEDGE BASE ===\n\n${context}`,
       },
       // Include conversation history (limited to last 6 messages)
       ...conversationHistory.slice(-6),
