@@ -476,7 +476,7 @@ export function PortfolioPage() {
       }
       
       // Only switch UI if backend says we should (full sentence in new language)
-      if (result.shouldSwitchUI && result.detectedLanguage && result.detectedLanguage !== language) {
+      if (result.shouldSwitchUI && result.detectedLanguage && result.detectedLanguage !== language && result.detectedLanguage !== 'other') {
         console.log(`🔄 Backend says switch UI to ${result.detectedLanguage} (full sentence detected)`);
         
         // Start skeleton animation sequence
@@ -484,18 +484,18 @@ export function PortfolioPage() {
           setSkeletonStage('navbar');
           
           setTimeout(() => {
-            setNavbarLanguage(result.detectedLanguage!);
+            setNavbarLanguage(result.detectedLanguage as 'en' | 'sv');
             setSkeletonStage('search');
             
             setTimeout(() => {
-              setSearchLanguage(result.detectedLanguage!);
+              setSearchLanguage(result.detectedLanguage as 'en' | 'sv');
               setSkeletonStage('disclaimer');
               
               setTimeout(() => {
-                setDisclaimerLanguage(result.detectedLanguage!);
+                setDisclaimerLanguage(result.detectedLanguage as 'en' | 'sv');
                 setSkeletonStage(null);
-                setLanguage(result.detectedLanguage!);
-                saveLanguagePreference(result.detectedLanguage!);
+                setLanguage(result.detectedLanguage as 'en' | 'sv');
+                saveLanguagePreference(result.detectedLanguage as 'en' | 'sv');
               }, 800);
             }, 800);
           }, 800);
