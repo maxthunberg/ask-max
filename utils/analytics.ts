@@ -16,7 +16,7 @@
 //    Params: chat_id, ui_language, chat_language
 //
 // 2. chat_message - Fired for each message (user + assistant)
-//    Params: chat_id, sender ("user" or "assistant"), message_text, language, message_number, response_type (optional)
+//    Params: chat_id, sender ("user" or "assistant"), message_text, chat_language, message_number, response_type (optional)
 //
 // 3. chat_end - Fired when user closes chat or resets conversation
 //    Params: chat_id, messages_total, duration_seconds
@@ -36,7 +36,7 @@
 //   "chat_id": "chat_1733...",
 //   "sender": "user",
 //   "message_text": "what is ux",
-//   "language": "en",
+//   "chat_language": "en",
 //   "message_number": 1
 // }
 // {
@@ -44,7 +44,7 @@
 //   "chat_id": "chat_1733...",
 //   "sender": "assistant",
 //   "message_text": "UX is about...",
-//   "language": "en",
+//   "chat_language": "en",
 //   "message_number": 2,
 //   "response_type": "success"
 // }
@@ -102,7 +102,7 @@ export function trackChatMessage(
       chat_id: sessionId,
       sender: isUser ? 'user' : 'assistant',
       message_text: messageText,
-      language: language,
+      chat_language: language, // Changed from 'language' to match GA4 dimension name
       message_number: messageNumber,
     };
     

@@ -16,7 +16,7 @@ import { trackChatMessage, trackChatStarted, trackChatEnd, trackChatError, detec
 import { saveLanguagePreference, getLanguagePreference } from '../utils/language-cookie';
 
 // App version
-const APP_VERSION = 'v1.0';
+const APP_VERSION = 'v1.1';
 
 const QUOTA_EXCEEDED_MESSAGES = {
   en: [
@@ -158,7 +158,7 @@ export function PortfolioPage() {
   const translations = {
     en: {
       home: "Home",
-      portfolio: "Portfolio",
+      portfolio: "Cases",
       comingSoon: "Coming soon",
       heroTitle: "The most talkative portfolio you will ever meet",
       heroSubtitle: "It's like talking to me, just without the calendar gymnastics.",
@@ -186,7 +186,7 @@ export function PortfolioPage() {
     },
     sv: {
       home: "Hem",
-      portfolio: "Portfölj",
+      portfolio: "Cases",
       comingSoon: "Kommer snart",
       heroTitle: "Den mest pratsamma portfolio du någonsin kommer att träffa",
       heroSubtitle: "Det är som att ta del av mina tankar om design och ledarskap, fast utan kalendargymnastiken.",

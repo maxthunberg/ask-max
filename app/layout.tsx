@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import '../styles/globals.css';
+import faviconImage from 'figma:asset/d97c92fa41b8032e5df3837e2ba68cd6e8d66722.png';
 
 export const metadata: Metadata = {
   title: 'Max Thunberg – UX Leadership, Design Strategy och Modernisering',
@@ -8,6 +9,9 @@ export const metadata: Metadata = {
   authors: [{ name: 'Max Thunberg' }],
   creator: 'Max Thunberg',
   publisher: 'Max Thunberg',
+  icons: {
+    icon: faviconImage,
+  },
   openGraph: {
     title: 'Max Thunberg – UX Leadership, Design Strategy och Modernisering',
     description: 'Max Thunberg, UX Leader inom Volvo Group. Fokus på UX leadership, modernisering av verktyg för ingenjörer och designbaserad förändring. Fråga mig vad som helst.',
@@ -38,6 +42,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href={faviconImage} type="image/png" />
+      </head>
       <body>{children}</body>
     </html>
   );
