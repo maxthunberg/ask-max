@@ -470,7 +470,7 @@ export function PortfolioPage() {
       // Check if backend detected 'other' language
       if (result.detectedLanguage === 'other') {
         console.log('🌍 Backend detected other language');
-        setMessages(prev => [...prev, { type: 'ai', content: result.message }]);
+        setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
         setIsLoading(false);
         return;
       }
