@@ -12,7 +12,7 @@ import { BrainIllustration, ImageIllustration, BookIllustration, MicIllustration
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag-251-299';
 import { CookieConsent } from './CookieConsent';
-import { trackSearch, trackChatStarted, detectUnknownResponse, generateSessionId } from '../utils/analytics';
+import { trackChatMessage, trackChatStarted, trackChatEnd, trackChatError, detectUnknownResponse, generateSessionId } from '../utils/analytics';
 import { saveLanguagePreference, getLanguagePreference } from '../utils/language-cookie';
 
 // App version
@@ -113,6 +113,7 @@ export function PortfolioPage() {
   // Session ID for analytics tracking
   const [sessionId, setSessionId] = useState<string>('');
   const [messageNumber, setMessageNumber] = useState<number>(0); // Track message order in conversation
+  const [chatStartTime, setChatStartTime] = useState<number | null>(null); // Track when chat started (for duration)
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<SearchInputRef>(null);
 
@@ -435,13 +436,14 @@ export function PortfolioPage() {
       setSessionId(currentSessionId);
       setIsChatMode(true);
       setHasAnimated(true);
-      trackChatStarted(currentSessionId);
+      setChatStartTime(Date.now()); // Record chat start time
+      trackChatStarted(currentSessionId, language, language); // ui_language and chat_language (same initially)
     }
     
     // Track user message in Google Analytics
     const nextMessageNumber = messageNumber + 1;
     setMessageNumber(nextMessageNumber);
-    trackSearch(userMessage, currentSessionId, 'user', nextMessageNumber);
+    trackChatMessage(userMessage, currentSessionId, true, language, nextMessageNumber);
     
     // Add user message
     setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
@@ -512,9 +514,9 @@ export function PortfolioPage() {
       setMessageNumber(aiMessageNumber);
       
       if (isUnknownResponse) {
-        trackSearch(result.message, sessionId, 'ai', aiMessageNumber, 'unknown');
+        trackChatMessage(result.message, sessionId, false, language, aiMessageNumber, 'unknown');
       } else {
-        trackSearch(result.message, sessionId, 'ai', aiMessageNumber, 'success');
+        trackChatMessage(result.message, sessionId, false, language, aiMessageNumber, 'success');
       }
       
       // Add AI message
@@ -554,16 +556,13 @@ export function PortfolioPage() {
         }
         
         setMessages(prev => [...prev, { type: 'error', content: errorMsg }]);
-        // Track error response from AI
-        const errorMessageNumber = userMessageNumber + 1;
-        setMessageNumber(errorMessageNumber);
-        trackSearch(errorMsg, sessionId, 'ai', errorMessageNumber, 'error');
+        // Track quota error event
+        trackChatError(sessionId, 'quota_exceeded', errorMsg);
       } else {
         setMessages(prev => [...prev, { type: 'error', content: errorMessage }]);
-        // Track error response from AI
-        const errorMessageNumber = userMessageNumber + 1;
-        setMessageNumber(errorMessageNumber);
-        trackSearch(errorMessage, sessionId, 'ai', errorMessageNumber, 'error');
+        // Track general error event
+        const errorType = errorMessage.toLowerCase().includes('timeout') ? 'timeout' : 'other';
+        trackChatError(sessionId, errorType, errorMessage);
       }
     } finally {
       // Only turn off loading if we're not in infinite loading mode
@@ -595,6 +594,12 @@ export function PortfolioPage() {
     console.log('🔄 handleResetConfirm called - current language state:', language);
     console.log('🔄 Current navbar/search/disclaimer languages:', navbarLanguage, searchLanguage, disclaimerLanguage);
     
+    // Track chat end event before resetting
+    if (sessionId && chatStartTime) {
+      const durationSeconds = Math.floor((Date.now() - chatStartTime) / 1000);
+      trackChatEnd(sessionId, messageNumber, durationSeconds);
+    }
+    
     // IMPORTANT: First ensure current language is saved to cookie before reading
     // This prevents race conditions where the language was just changed but cookie not yet saved
     saveLanguagePreference(language);
@@ -608,6 +613,7 @@ export function PortfolioPage() {
     setIsLanguageTransitioning(false); // Reset language transition state
     setSessionId(''); // Reset session ID for new chat
     setMessageNumber(0); // Reset message counter for new conversation
+    setChatStartTime(null); // Reset chat start time
     
     // KEEP language preference - language state should already be correct,
     // but we keep all individual language states in sync
