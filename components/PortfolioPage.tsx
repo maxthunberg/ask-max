@@ -476,7 +476,7 @@ export function PortfolioPage() {
       }
       
       // Only switch UI if backend says we should (full sentence in new language)
-      if (result.shouldSwitchUI && result.detectedLanguage && result.detectedLanguage !== language && result.detectedLanguage !== 'other') {
+      if (result.shouldSwitchUI && result.detectedLanguage && result.detectedLanguage !== language) {
         console.log(`🔄 Backend says switch UI to ${result.detectedLanguage} (full sentence detected)`);
         
         // Start skeleton animation sequence
