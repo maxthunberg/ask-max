@@ -1,0 +1,143 @@
+  const handleSubmit = async () => {
+    if (!question.trim() || isLoading) return;
+
+    const userMessage = question;
+    setQuestion('');
+    
+    // Generate session ID on first message (chat started)
+    let currentSessionId = sessionId;
+    if (!isChatMode) {
+      currentSessionId = generateSessionId();
+      setSessionId(currentSessionId);
+      setIsChatMode(true);
+      setHasAnimated(true);
+      trackChatStarted(currentSessionId);
+    }
+    
+    // Track user message in Google Analytics
+    trackSearch(userMessage, currentSessionId, 'user');
+    
+    // Add user message
+    setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
+
+    // Make API call - backend will detect language
+    console.log('📞 Making API call - backend will detect language');
+    setIsLoading(true);
+    await performAPICall(userMessage);
+  };
+
+  const performAPICall = async (userMessage: string) => {
+    setIsLoading(true);
+
+    try {
+      // Build conversation history (include system messages as assistant messages so AI is context-aware)
+      const conversationHistory: ChatMessage[] = messages
+        .filter(m => m.type !== 'error') // Only exclude error messages
+        .map(m => ({
+          role: m.type === 'user' ? 'user' : 'assistant', // system and assistant both become 'assistant'
+          content: m.content,
+        }));
+
+      // Don't send userLanguage - let backend detect it
+      const result = await sendChatMessage(userMessage, conversationHistory);
+      
+      // Check if backend detected 'other' language
+      if (result.detectedLanguage === 'other') {
+        console.log('🌍 Backend detected other language');
+        setMessages(prev => [...prev, { type: 'ai', content: result.message }]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // If language was detected and is different from current, switch UI language
+      if (result.detectedLanguage && result.detectedLanguage !== language) {
+        console.log(`🔄 Backend detected ${result.detectedLanguage}, switching UI...`);
+        
+        // Start skeleton animation sequence
+        setTimeout(() => {
+          setSkeletonStage('navbar');
+          
+          setTimeout(() => {
+            setNavbarLanguage(result.detectedLanguage!);
+            setSkeletonStage('search');
+            
+            setTimeout(() => {
+              setSearchLanguage(result.detectedLanguage!);
+              setSkeletonStage('disclaimer');
+              
+              setTimeout(() => {
+                setDisclaimerLanguage(result.detectedLanguage!);
+                setSkeletonStage(null);
+                setLanguage(result.detectedLanguage!);
+                saveLanguagePreference(result.detectedLanguage!);
+              }, 800);
+            }, 800);
+          }, 800);
+        }, 300);
+      }
+      
+      // Detect if this is an "unknown" response
+      const isUnknownResponse = detectUnknownResponse(result.message);
+      
+      // Track the AI response in Google Analytics
+      if (isUnknownResponse) {
+        trackSearch(result.message, sessionId, 'ai', 'unknown');
+      } else {
+        trackSearch(result.message, sessionId, 'ai', 'success');
+      }
+      
+      // Add AI message
+      setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+      const lowerMessage = errorMessage.toLowerCase();
+      
+      // Check if it's a quota error (OpenAI quota exceeded)
+      if (lowerMessage.includes('quota') && lowerMessage.includes('exceeded')) {
+        const newCount = quotaErrorCount + 1;
+        setQuotaErrorCount(newCount);
+        
+        // After 7th sarcastic message (10th total attempt): show infinite loading
+        if (newCount > 10) {
+          // Just leave loading spinner on forever - don't add any message or turn off loading
+          return;
+        }
+        
+        let errorMsg: string;
+        const currentLang = language; // Use current language for error messages
+        
+        if (newCount === 1) {
+          // First attempt: Always show the MAX pun (language-aware)
+          errorMsg = currentLang === 'sv' 
+            ? "Ser ut som att jag är bokstavligen MAXAD! 😅 (ser du vad jag gjorde där? 😉) Min API-kvot har nått sin gräns. Kom tillbaka imorgon när jag är fräsch, eller kontakta riktiga mig via [LinkedIn](https://www.linkedin.com/in/maxthunberg) eller [email](mailto:max@maxthunberg.com)."
+            : "Looks like I'm literally MAXED out! 😅 (see what I did there? 😉) My API quota has hit its limit. Come back tomorrow when I'm fresh, or contact the real me via [LinkedIn](https://www.linkedin.com/in/maxthunberg) or [email](mailto:max@maxthunberg.com).";
+        } else if (newCount <= 3) {
+          // Attempts 2-3: show random funny messages
+          const messages = QUOTA_EXCEEDED_MESSAGES[currentLang];
+          errorMsg = messages[Math.floor(Math.random() * messages.length)];
+        } else {
+          // Attempts 4-10: show increasingly sarcastic messages
+          const sarcasticMessages = SARCASTIC_QUOTA_MESSAGES[currentLang];
+          const sarcasticIndex = Math.min(newCount - 4, sarcasticMessages.length - 1);
+          errorMsg = sarcasticMessages[sarcasticIndex];
+        }
+        
+        setMessages(prev => [...prev, { type: 'error', content: errorMsg }]);
+        // Track error response from AI
+        trackSearch(errorMsg, sessionId, 'ai', 'error');
+      } else {
+        setMessages(prev => [...prev, { type: 'error', content: errorMessage }]);
+        // Track error response from AI
+        trackSearch(errorMessage, sessionId, 'ai', 'error');
+      }
+    } finally {
+      // Only turn off loading if we're not in infinite loading mode
+      if (quotaErrorCount <= 10) {
+        setIsLoading(false);
+        // Refocus the input after response is received
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 100);
+      }
+    }
+  };

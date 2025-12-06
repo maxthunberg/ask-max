@@ -11,14 +11,15 @@
 //    - search_term: the user's question OR AI's response
 //    - chat_id: the session ID
 //    - sender_type: 'user' or 'ai'
+//    - message_number: sequential number of message in conversation (1, 2, 3...)
 //    - response_type (optional): 'success', 'unknown', or 'error' (only for AI responses)
 //
 // Example GA data:
 // chat_started { chat_id: "chat_1733..." }
-// search { search_term: "what is ux", chat_id: "chat_1733...", sender_type: "user" }
-// search { search_term: "UX is about...", chat_id: "chat_1733...", sender_type: "ai", response_type: "success" }
-// search { search_term: "who are you", chat_id: "chat_1733...", sender_type: "user" }
-// search { search_term: "I don't have that...", chat_id: "chat_1733...", sender_type: "ai", response_type: "unknown" }
+// search { search_term: "what is ux", chat_id: "chat_1733...", sender_type: "user", message_number: 1 }
+// search { search_term: "UX is about...", chat_id: "chat_1733...", sender_type: "ai", message_number: 2, response_type: "success" }
+// search { search_term: "who are you", chat_id: "chat_1733...", sender_type: "user", message_number: 3 }
+// search { search_term: "I don't have that...", chat_id: "chat_1733...", sender_type: "ai", message_number: 4, response_type: "unknown" }
 
 // Type for the gtag function
 declare global {
@@ -44,12 +45,14 @@ export function generateSessionId(): string {
  * @param searchTerm The search query/chat message
  * @param sessionId The unique session/chat ID
  * @param senderType 'user' or 'ai'
+ * @param messageNumber Sequential number of message in conversation
  * @param responseType Optional type of response (e.g., "unknown", "success") for AI responses
  */
 export function trackSearch(
   searchTerm: string,
   sessionId: string,
   senderType: 'user' | 'ai',
+  messageNumber: number,
   responseType?: 'success' | 'unknown' | 'error'
 ) {
   if (typeof window !== 'undefined' && window.gtag) {
@@ -57,6 +60,7 @@ export function trackSearch(
       search_term: searchTerm,
       chat_id: sessionId,
       sender_type: senderType,
+      message_number: messageNumber,
     };
     
     if (responseType) {

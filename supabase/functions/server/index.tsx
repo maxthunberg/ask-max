@@ -619,15 +619,127 @@ app.post("/make-server-2b0a7158/init-kb", async (c) => {
 app.post("/make-server-2b0a7158/chat", async (c) => {
   try {
     const body = await c.req.json();
-    const { message, conversationHistory = [], userLanguage } = body;
+    const { message, conversationHistory = [], userLanguage, currentUILanguage } = body;
 
     if (!message || typeof message !== "string") {
       return c.json({ error: "Message is required" }, 400);
     }
 
     console.log(
-      `Chat request: "${message.substring(0, 100)}..." (detected language: ${userLanguage || 'auto'})`,
+      `Chat request: "${message.substring(0, 100)}..." (current UI: ${currentUILanguage || 'unknown'})`,
     );
+
+    // Detect language using OpenAI with conversation context
+    let detectedLanguage: 'en' | 'sv' | 'other' = 'en'; // Default to English
+    let shouldSwitchUI = false; // Only switch if it's a clear language change
+    
+    if (!userLanguage) {
+      console.log("Detecting language and UI switch intent using OpenAI...");
+      try {
+        const apiKey = Deno.env.get("OPENAI_API_KEY");
+        if (!apiKey) {
+          return c.json(
+            { error: "OpenAI API key not configured" },
+            500,
+          );
+        }
+
+        // Build conversation context for smarter detection
+        const recentMessages = conversationHistory.slice(-4).map((m: any) => 
+          `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
+        ).join('\n');
+        
+        // Determine what language AI is currently speaking
+        const lastAIMessage = conversationHistory.slice().reverse().find((m: any) => m.role === 'assistant');
+        const aiCurrentLanguage = lastAIMessage ? 
+          (lastAIMessage.content.match(/[\u00C0-\u017F\u0400-\u04FF]/) || lastAIMessage.content.includes('å') || lastAIMessage.content.includes('ä') || lastAIMessage.content.includes('ö') ? 'sv' : 'en') 
+          : currentUILanguage;
+
+        const languageDetectionResponse = await fetch(
+          "https://api.openai.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "system",
+                  content: `You are a smart language detector for a bilingual Swedish/English chat interface.
+
+IMPORTANT CONTEXT:
+- The AI assistant is currently speaking: ${aiCurrentLanguage === 'sv' ? 'SWEDISH' : 'ENGLISH'}
+- Current UI language: ${currentUILanguage || 'en'}
+
+CRITICAL RULES:
+1. Detect the PRIMARY language of the user's message: 'en', 'sv', or 'other'
+2. Decide if the UI should switch language:
+   - Swedes often mix English words into Swedish sentences (like "Jadu, I don't know. Kanske lite om UX?") → This is SWEDISH, DON'T switch UI
+   - If the sentence structure and most words are Swedish → language is 'sv', DON'T switch
+   - ONLY switch UI if user writes MULTIPLE complete sentences in a DIFFERENT language
+   - Short responses like "Nice!", "Cool!", "Okej" → NEVER switch UI
+   - If AI is already speaking in the detected language → DON'T switch UI
+   
+3. The AI should respond in the language that makes most sense based on:
+   - What language AI is currently speaking
+   - What the user's message indicates
+   - Continuity of conversation
+
+Respond in JSON format:
+{
+  "language": "en" | "sv" | "other",
+  "shouldSwitchUI": true | false
+}
+
+Examples:
+- AI speaking Swedish, user wrote "Nice!" → {"language": "en", "shouldSwitchUI": false}
+- AI speaking Swedish, user wrote "Jadu, I don't know. Kanske lite om UX?" → {"language": "sv", "shouldSwitchUI": false}
+- AI speaking Swedish, user wrote "Hello there, how are you doing? I want to know more about your work." → {"language": "en", "shouldSwitchUI": true}
+- AI speaking English, user wrote "Hej! Vad gör du?" → {"language": "sv", "shouldSwitchUI": true}
+- AI speaking English, user wrote "okej" → {"language": "sv", "shouldSwitchUI": false}`
+                },
+                {
+                  role: "user",
+                  content: `Recent conversation context:\n${recentMessages}\n\nNew user message: "${message}"\n\nWhat language is this and should the UI switch?`
+                }
+              ],
+              temperature: 0,
+              max_tokens: 50,
+              response_format: { type: "json_object" }
+            }),
+          }
+        );
+
+        if (languageDetectionResponse.ok) {
+          const data = await languageDetectionResponse.json();
+          const result = JSON.parse(data.choices[0].message.content);
+          if (result.language === 'en' || result.language === 'sv' || result.language === 'other') {
+            detectedLanguage = result.language;
+            shouldSwitchUI = result.shouldSwitchUI || false;
+            console.log(`Language detected: ${detectedLanguage}, should switch UI: ${shouldSwitchUI}`);
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to detect language, defaulting to English:", error);
+      }
+    } else {
+      detectedLanguage = userLanguage;
+      shouldSwitchUI = true; // If language was explicitly provided, switch
+    }
+
+    // If other language, return early with error message
+    if (detectedLanguage === 'other') {
+      console.log("Other language detected, returning error message");
+      return c.json({
+        message: "I only speak English and Swedish, sorry! 🇬🇧🇸🇪\n\nPlease try again in one of these languages.",
+        sources: [],
+        detectedLanguage: 'other',
+        shouldSwitchUI: false
+      });
+    }
 
     // Check if knowledge base is initialized
     const initialized = await kv.get("kb_initialized");
@@ -672,10 +784,32 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
       )
       .join("\n\n---\n\n");
 
+    // Determine what language AI has been speaking
+    const lastAIMessage = conversationHistory.slice().reverse().find((m: any) => m.role === 'assistant');
+    const aiAlreadySpeaking = lastAIMessage ? 
+      (lastAIMessage.content.match(/[\u00C0-\u017F\u0400-\u04FF]/) || lastAIMessage.content.includes('å') || lastAIMessage.content.includes('ä') || lastAIMessage.content.includes('ö') ? 'sv' : 'en') 
+      : null;
+    
     // Add explicit language instruction based on detected language
-    const languageInstruction = userLanguage === 'sv' 
-      ? '\n\n🚨🚨🚨 CRITICAL: The user is writing in SWEDISH. You MUST respond 100% in SWEDISH. NO ENGLISH ALLOWED. 🚨🚨🚨'
-      : '\n\n🚨🚨🚨 CRITICAL: The user is writing in ENGLISH. You MUST respond 100% in ENGLISH. NO SWEDISH ALLOWED. 🚨🚨🚨';
+    let languageInstruction = '';
+    
+    if (detectedLanguage === 'sv') {
+      if (aiAlreadySpeaking === 'sv') {
+        // AI is already speaking Swedish, so just continue naturally
+        languageInstruction = '\n\n🚨🚨🚨 CRITICAL: Continue responding in SWEDISH. You are ALREADY speaking Swedish, so DO NOT act surprised about the language. Just continue the conversation naturally in Swedish. 🚨🚨🚨';
+      } else {
+        // AI was speaking English, now switching to Swedish
+        languageInstruction = '\n\n🚨🚨🚨 CRITICAL: The user is writing in SWEDISH. You MUST respond 100% in SWEDISH. NO ENGLISH ALLOWED. 🚨🚨🚨';
+      }
+    } else {
+      if (aiAlreadySpeaking === 'en') {
+        // AI is already speaking English, so just continue naturally
+        languageInstruction = '\n\n🚨🚨🚨 CRITICAL: Continue responding in ENGLISH. You are ALREADY speaking English, so DO NOT act surprised about the language. Just continue the conversation naturally in English. 🚨🚨🚨';
+      } else {
+        // AI was speaking Swedish, now switching to English
+        languageInstruction = '\n\n🚨🚨🚨 CRITICAL: The user is writing in ENGLISH. You MUST respond 100% in ENGLISH. NO SWEDISH ALLOWED. 🚨🚨🚨';
+      }
+    }
 
     // Build messages for OpenAI
     const messages = [
@@ -814,6 +948,8 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
     return c.json({
       message: assistantMessage,
       sources: relevantChunks.map((c) => c.source),
+      detectedLanguage: detectedLanguage,
+      shouldSwitchUI: shouldSwitchUI
     });
   } catch (error) {
     console.error("Error in chat endpoint:", error);

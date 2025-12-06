@@ -112,10 +112,7 @@ export function PortfolioPage() {
   
   // Session ID for analytics tracking
   const [sessionId, setSessionId] = useState<string>('');
-  
-  // Track if we're waiting for user to decide on language switch
-  const [waitingForLanguageDecision, setWaitingForLanguageDecision] = useState(false);
-  
+  const [messageNumber, setMessageNumber] = useState<number>(0); // Track message order in conversation
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<SearchInputRef>(null);
 
@@ -239,12 +236,19 @@ export function PortfolioPage() {
       'jag', 'du', 'är', 'hur', 'vad', 'och', 'att', 'det', 'på', 'för', 'med',
       'kan', 'som', 'har', 'från', 'om', 'till', 'så', 'men', 'när', 'hej', 'tack',
       'varför', 'vilken', 'skulle', 'kunde', 'varit', 'något', 'någon', 'allt',
-      'även', 'över', 'efter', 'där', 'hr', 'själv', 'får', 'göra', 'säger',
+      'även', 'över', 'efter', 'där', 'själv', 'får', 'göra', 'säger',
       'eller', 'denna', 'dessa', 'under', 'sedan', 'fanns', 'blev', 'fick',
       'måste', 'mycket', 'andra', 'första', 'samma', 'bara', 'också', 'redan',
       'nya', 'stora', 'hela', 'heter', 'bra', 'mig', 'dig', 'sig', 'oss', 'dem',
       'vi', 'vet', 'vill', 'jobbar', 'tror', 'tycker', 'gillar', 'brukar', 'kör',
       'blir', 'varit', 'gjort', 'sett', 'tänker', 'börja', 'säga', 'berätta'
+    ];
+    
+    // Common English words for comparison (to avoid false positives)
+    const commonEnglishWords = [
+      'the', 'is', 'are', 'was', 'were', 'what', 'how', 'why', 'who', 'where', 'when',
+      'you', 'your', 'my', 'me', 'we', 'our', 'they', 'their', 'this', 'that',
+      'have', 'has', 'had', 'can', 'could', 'would', 'should', 'will'
     ];
     
     // Split into words and filter out capitalized words (likely proper nouns/names)
@@ -260,33 +264,44 @@ export function PortfolioPage() {
       const originalWord = originalWords[index];
       if (originalWord && /^[A-Z]/.test(originalWord) && index !== 0) return false;
       
+      // Ignore nonsense words (no vowels like "asdf", "xcvb", etc.)
+      if (!/[aeiouyåäö]/i.test(word)) return false;
+      
       return true;
     });
     
-    // Count Swedish words among meaningful words
-    const swedishWordCount = meaningfulWords.filter(word => swedishWords.includes(word)).length;
+    // Need at least 2 meaningful words to make a judgment
+    if (meaningfulWords.length < 2) return false;
     
-    // REQUIRE AT LEAST 2 SWEDISH WORDS to trigger language switch
-    // This prevents random strings like "asdf" from triggering the switch
-    if (swedishWordCount < 2) {
+    // Count Swedish and English words
+    const swedishWordCount = meaningfulWords.filter(word => swedishWords.includes(word)).length;
+    const englishWordCount = meaningfulWords.filter(word => commonEnglishWords.includes(word)).length;
+    
+    // Check if text contains Swedish-specific characters (strong indicator)
+    const hasSwedishChars = /[åäöÅÄÖ]/.test(text);
+    
+    // STRICT RULES to avoid false positives:
+    // 1. If Swedish chars exist AND at least 2 Swedish words → Swedish
+    if (hasSwedishChars && swedishWordCount >= 2) {
+      return true;
+    }
+    
+    // 2. If more English words than Swedish → NOT Swedish
+    if (englishWordCount > swedishWordCount) {
       return false;
     }
     
-    // For short sentences (less than 3 words), require 2 Swedish words
-    if (meaningfulWords.length < 3) {
-      return swedishWordCount >= 2;
+    // 3. Require at least 2-3 Swedish words depending on sentence length
+    if (meaningfulWords.length >= 5 && swedishWordCount < 3) {
+      return false;
+    }
+    if (meaningfulWords.length < 5 && swedishWordCount < 2) {
+      return false;
     }
     
-    // Check if text contains Swedish-specific characters
-    const hasSwedishChars = /[åäöÅÄÖ]/.test(text);
-    
-    // Calculate ratio for longer texts
+    // 4. At least 50% of words must be Swedish to trigger
     const swedishRatio = swedishWordCount / meaningfulWords.length;
-    
-    // Language is Swedish if:
-    // 1. Has Swedish characters AND at least 30% Swedish words, OR
-    // 2. At least 40% of meaningful words are Swedish words
-    return (hasSwedishChars && swedishRatio >= 0.3) || swedishRatio >= 0.4;
+    return swedishRatio >= 0.5;
   };
 
   // Detect if text is in English
@@ -313,30 +328,70 @@ export function PortfolioPage() {
       'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once',
       'here', 'there', 'all', 'both', 'each', 'few', 'more', 'most', 'other', 'some',
       'such', 'only', 'own', 'same', 'than', 'too', 'very', 'work', 'think', 'know',
-      'get', 'make', 'go', 'see', 'come', 'want', 'use', 'find', 'give', 'tell'
+      'get', 'make', 'go', 'see', 'come', 'want', 'use', 'find', 'give', 'tell',
+      // Additional common words
+      'really', 'just', 'like', 'good', 'bad', 'great', 'nice', 'difficult', 'easy',
+      'hard', 'well', 'best', 'better', 'worse', 'new', 'old', 'first', 'last',
+      'long', 'short', 'high', 'low', 'big', 'small', 'large', 'little', 'much',
+      'many', 'any', 'every', 'another', 'something', 'nothing', 'everything',
+      'someone', 'anyone', 'everyone', 'somewhere', 'anywhere', 'everywhere',
+      'always', 'never', 'sometimes', 'often', 'usually', 'maybe', 'perhaps',
+      'right', 'wrong', 'true', 'false', 'yes', 'no', 'okay', 'sure', 'please'
     ];
     
-    // Split into words
+    // Common Swedish words for comparison
+    const commonSwedishWords = [
+      'jag', 'du', 'är', 'hur', 'vad', 'och', 'att', 'det', 'på', 'för', 'med',
+      'kan', 'som', 'har', 'från', 'om', 'till', 'så', 'men', 'när', 'hej'
+    ];
+    
+    // Split into words and filter nonsense
     const words = lowerText.split(/\s+/).map(word => word.replace(/[.,!?;:]$/g, ''));
-    const meaningfulWords = words.filter(word => word.length > 1);
+    const meaningfulWords = words.filter(word => {
+      if (word.length <= 1) return false;
+      // Ignore nonsense words (no vowels)
+      if (!/[aeiouy]/i.test(word)) return false;
+      return true;
+    });
     
-    // Need at least 3 words to make a judgment
-    if (meaningfulWords.length < 3) {
-      // For short sentences, if there are Swedish chars, it's definitely NOT English
-      if (/[åäöÅÄÖ]/.test(text)) return false;
-      // Check if at least 1 English word exists
-      return meaningfulWords.some(word => englishWords.includes(word));
-    }
+    // Need at least 2 meaningful words
+    if (meaningfulWords.length < 2) return false;
     
-    // If text contains Swedish characters, it's not English
+    // If text contains Swedish characters, it's definitely NOT English
     if (/[åäöÅÄÖ]/.test(text)) return false;
     
-    // Count English words
+    // Count English and Swedish words
     const englishWordCount = meaningfulWords.filter(word => englishWords.includes(word)).length;
+    const swedishWordCount = meaningfulWords.filter(word => commonSwedishWords.includes(word)).length;
+    
+    // If more Swedish words than English → NOT English
+    if (swedishWordCount > englishWordCount) return false;
+    
+    // Require at least 2 English words for shorter sentences
+    if (meaningfulWords.length < 5 && englishWordCount < 2) return false;
+    
+    // Calculate ratio
     const englishRatio = englishWordCount / meaningfulWords.length;
     
-    // Text is English if at least 40% of words are common English words
-    return englishRatio >= 0.4;
+    // Text is English if at least 30% of words are common English words
+    return englishRatio >= 0.3;
+  };
+
+  // Detect if text is neither Swedish nor English (other language or nonsense)
+  const detectOtherLanguage = (text: string): boolean => {
+    const trimmed = text.trim();
+    
+    // If text is too short (less than 2 characters), consider it "other"
+    if (trimmed.length < 2) return true;
+    
+    // If it's just nonsense (no vowels), it's "other"
+    if (!/[aeiouyåäö]/i.test(trimmed)) return true;
+    
+    // If it's not Swedish and not English, it's "other"
+    const isSwedish = detectSwedish(text);
+    const isEnglish = detectEnglish(text);
+    
+    return !isSwedish && !isEnglish;
   };
 
   // Theme colors
@@ -384,168 +439,20 @@ export function PortfolioPage() {
     }
     
     // Track user message in Google Analytics
-    trackSearch(userMessage, currentSessionId, 'user');
-    
-    // Detect if this is a language switch (ONLY if we're not already waiting for a decision)
-    const shouldSwitchToSwedish = !waitingForLanguageDecision && language === 'en' && detectSwedish(userMessage);
-    const shouldSwitchToEnglish = !waitingForLanguageDecision && language === 'sv' && detectEnglish(userMessage);
-    
-    console.log('🔍 Language detection:', {
-      userMessage,
-      currentLanguage: language,
-      waitingForLanguageDecision,
-      shouldSwitchToSwedish,
-      shouldSwitchToEnglish,
-      detectSwedishResult: detectSwedish(userMessage),
-      detectEnglishResult: detectEnglish(userMessage)
-    });
+    const nextMessageNumber = messageNumber + 1;
+    setMessageNumber(nextMessageNumber);
+    trackSearch(userMessage, currentSessionId, 'user', nextMessageNumber);
     
     // Add user message
     setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
 
-    // If switching to Swedish, ask user first with action buttons
-    if (shouldSwitchToSwedish) {
-      console.log('🇸🇪 Showing Swedish language switch prompt (NO API call yet)');
-      // Add system message asking if user wants to switch language
-      const switchToSwedishMessage: any = {
-        type: 'system',
-        content: 'Du verkar prata svenska? Vill du att jag byter språk?',
-        actions: [
-          {
-            label: 'Ja, byt språk',
-            onClick: () => {
-              // Remove the action buttons from this message
-              setMessages(prev => prev.map(m => 
-                m === switchToSwedishMessage ? { ...m, actions: undefined } : m
-              ));
-              
-              // No longer waiting for decision
-              setWaitingForLanguageDecision(false);
-              
-              // Start skeleton animation sequence
-              setTimeout(() => {
-                setSkeletonStage('navbar');
-                
-                setTimeout(() => {
-                  setNavbarLanguage('sv');
-                  setSkeletonStage('search');
-                  
-                  setTimeout(() => {
-                    setSearchLanguage('sv');
-                    setSkeletonStage('disclaimer');
-                    
-                    setTimeout(() => {
-                      setDisclaimerLanguage('sv');
-                      setSkeletonStage(null);
-                      console.log('🇸🇪 Setting language to Swedish');
-                      setLanguage('sv');
-                      performAPICall(userMessage, true);
-                    }, 800);
-                  }, 800);
-                }, 800);
-              }, 300);
-            }
-          },
-          {
-            label: 'I don\'t understand',
-            onClick: () => {
-              // Remove the action buttons and just proceed with English
-              setMessages(prev => prev.map(m => 
-                m === switchToSwedishMessage ? { ...m, actions: undefined } : m
-              ));
-              
-              // No longer waiting for decision
-              setWaitingForLanguageDecision(false);
-              
-              performAPICall(userMessage, false);
-            }
-          }
-        ]
-      };
-      
-      setMessages(prev => [...prev, switchToSwedishMessage]);
-      
-      // Mark that we're waiting for user decision
-      setWaitingForLanguageDecision(true);
-      
-      return; // Exit early, waiting for user to click a button
-    }
-
-    // If switching to English, ask user first with action buttons
-    if (shouldSwitchToEnglish) {
-      // Add system message asking if user wants to switch language
-      const switchToEnglishMessage: any = {
-        type: 'system',
-        content: 'You seem to be speaking English? Would you like me to switch language?',
-        actions: [
-          {
-            label: 'Yes, switch language',
-            onClick: () => {
-              // Remove the action buttons from this message
-              setMessages(prev => prev.map(m => 
-                m === switchToEnglishMessage ? { ...m, actions: undefined } : m
-              ));
-              
-              // No longer waiting for decision
-              setWaitingForLanguageDecision(false);
-              
-              // Start skeleton animation sequence
-              setTimeout(() => {
-                setSkeletonStage('navbar');
-                
-                setTimeout(() => {
-                  setNavbarLanguage('en');
-                  setSkeletonStage('search');
-                  
-                  setTimeout(() => {
-                    setSearchLanguage('en');
-                    setSkeletonStage('disclaimer');
-                    
-                    setTimeout(() => {
-                      setDisclaimerLanguage('en');
-                      setSkeletonStage(null);
-                      console.log('🇬🇧 Setting language to English');
-                      setLanguage('en');
-                      performAPICall(userMessage, false);
-                    }, 800);
-                  }, 800);
-                }, 800);
-              }, 300);
-            }
-          },
-          {
-            label: 'Jag förstår inte',
-            onClick: () => {
-              // Remove the action buttons and just proceed with Swedish
-              setMessages(prev => prev.map(m => 
-                m === switchToEnglishMessage ? { ...m, actions: undefined } : m
-              ));
-              
-              // No longer waiting for decision
-              setWaitingForLanguageDecision(false);
-              
-              performAPICall(userMessage, false);
-            }
-          }
-        ]
-      };
-      
-      setMessages(prev => [...prev, switchToEnglishMessage]);
-      
-      // Mark that we're waiting for user decision
-      setWaitingForLanguageDecision(true);
-      
-      return; // Exit early, waiting for user to click a button
-    }
-
-    // Normal flow without language switch
-    console.log('📞 Normal flow: Making API call immediately (no language switch detected)');
+    // Make API call - backend will detect language
+    console.log('📞 Making API call - backend will detect language');
     setIsLoading(true);
-    // If we're waiting for language decision, use current language (not detected language)
-    await performAPICall(userMessage, false, waitingForLanguageDecision ? language : undefined);
+    await performAPICall(userMessage);
   };
 
-  const performAPICall = async (userMessage: string, userWroteInSwedish: boolean = false, forceLanguage?: 'en' | 'sv') => {
+  const performAPICall = async (userMessage: string) => {
     setIsLoading(true);
 
     try {
@@ -557,24 +464,60 @@ export function PortfolioPage() {
           content: m.content,
         }));
 
-      // Detect language from user message for explicit backend instruction
-      // If forceLanguage is provided, use that instead of detecting
-      // IMPORTANT: Always use current UI language, NOT detected language from message
-      const languageToSend = forceLanguage || language;
+      // Send current UI language so backend can make smart decision about switching
+      const result = await sendChatMessage(userMessage, conversationHistory, undefined, language);
       
-      const result = await sendChatMessage(userMessage, conversationHistory, languageToSend);
+      // Check if backend detected 'other' language
+      if (result.detectedLanguage === 'other') {
+        console.log('🌍 Backend detected other language');
+        setMessages(prev => [...prev, { type: 'ai', content: result.message }]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Only switch UI if backend says we should (full sentence in new language)
+      if (result.shouldSwitchUI && result.detectedLanguage && result.detectedLanguage !== language) {
+        console.log(`🔄 Backend says switch UI to ${result.detectedLanguage} (full sentence detected)`);
+        
+        // Start skeleton animation sequence
+        setTimeout(() => {
+          setSkeletonStage('navbar');
+          
+          setTimeout(() => {
+            setNavbarLanguage(result.detectedLanguage!);
+            setSkeletonStage('search');
+            
+            setTimeout(() => {
+              setSearchLanguage(result.detectedLanguage!);
+              setSkeletonStage('disclaimer');
+              
+              setTimeout(() => {
+                setDisclaimerLanguage(result.detectedLanguage!);
+                setSkeletonStage(null);
+                setLanguage(result.detectedLanguage!);
+                saveLanguagePreference(result.detectedLanguage!);
+              }, 800);
+            }, 800);
+          }, 800);
+        }, 300);
+      } else if (result.detectedLanguage && result.detectedLanguage !== language) {
+        console.log(`💬 Backend detected ${result.detectedLanguage} but not switching UI (short message/mixed language)`);
+      }
       
       // Detect if this is an "unknown" response
       const isUnknownResponse = detectUnknownResponse(result.message);
       
-      // Track the AI response in Google Analytics
+      // Track the AI response in Google Analytics (increment message number)
+      const aiMessageNumber = messageNumber + 1;
+      setMessageNumber(aiMessageNumber);
+      
       if (isUnknownResponse) {
-        trackSearch(result.message, sessionId, 'ai', 'unknown');
+        trackSearch(result.message, sessionId, 'ai', aiMessageNumber, 'unknown');
       } else {
-        trackSearch(result.message, sessionId, 'ai', 'success');
+        trackSearch(result.message, sessionId, 'ai', aiMessageNumber, 'success');
       }
       
-      // Add AI message (language switching is only triggered by user input, not AI responses)
+      // Add AI message
       setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
@@ -612,11 +555,15 @@ export function PortfolioPage() {
         
         setMessages(prev => [...prev, { type: 'error', content: errorMsg }]);
         // Track error response from AI
-        trackSearch(errorMsg, sessionId, 'ai', 'error');
+        const errorMessageNumber = messageNumber + 1;
+        setMessageNumber(errorMessageNumber);
+        trackSearch(errorMsg, sessionId, 'ai', errorMessageNumber, 'error');
       } else {
         setMessages(prev => [...prev, { type: 'error', content: errorMessage }]);
         // Track error response from AI
-        trackSearch(errorMessage, sessionId, 'ai', 'error');
+        const errorMessageNumber = messageNumber + 1;
+        setMessageNumber(errorMessageNumber);
+        trackSearch(errorMessage, sessionId, 'ai', errorMessageNumber, 'error');
       }
     } finally {
       // Only turn off loading if we're not in infinite loading mode
@@ -660,6 +607,7 @@ export function PortfolioPage() {
     setIsLoading(false); // Reset loading state in case they were in infinite loading
     setIsLanguageTransitioning(false); // Reset language transition state
     setSessionId(''); // Reset session ID for new chat
+    setMessageNumber(0); // Reset message counter for new conversation
     
     // KEEP language preference - language state should already be correct,
     // but we keep all individual language states in sync
@@ -889,38 +837,6 @@ export function PortfolioPage() {
                             <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">{message.content}</p>
                           </div>
                           <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[12px]" />
-                        </div>
-                      ) : message.type === 'system' ? (
-                        <div className="max-w-[480px] relative rounded-[12px] flex flex-col gap-3" data-name="System message">
-                          <div className="box-border flex gap-[10px] items-center justify-center overflow-clip relative rounded-[inherit]">
-                            <p className="font-normal leading-[24px] relative text-[16px] opacity-80 whitespace-pre-wrap" style={{ color: colors.textSecondary }}>
-                              {message.content}
-                            </p>
-                          </div>
-                          {(message as any).actions && (message as any).actions.length > 0 && (
-                            <div className="flex gap-2">
-                              {(message as any).actions.map((action: any, actionIndex: number) => (
-                                <button
-                                  key={actionIndex}
-                                  onClick={action.onClick}
-                                  className="px-4 py-2 rounded-lg transition-all duration-200"
-                                  style={{
-                                    backgroundColor: 'rgba(255,255,255,0.1)',
-                                    border: '1px solid rgba(255,255,255,0.2)',
-                                    color: colors.textPrimary,
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
-                                  }}
-                                >
-                                  {action.label}
-                                </button>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <div 

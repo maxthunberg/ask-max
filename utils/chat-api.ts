@@ -18,6 +18,8 @@ export interface ChatMessage {
 export interface ChatResponse {
   message: string;
   sources: string[];
+  detectedLanguage?: 'en' | 'sv' | 'other'; // Language detected from user's message
+  shouldSwitchUI?: boolean; // Whether UI should switch language
 }
 
 /**
@@ -26,7 +28,8 @@ export interface ChatResponse {
 export async function sendChatMessage(
   message: string,
   conversationHistory: ChatMessage[] = [],
-  userLanguage?: 'en' | 'sv'
+  userLanguage?: 'en' | 'sv',
+  currentUILanguage?: 'en' | 'sv'
 ): Promise<ChatResponse> {
   // Note: Tracking is now handled in PortfolioPage.tsx via utils/analytics.ts
   
@@ -42,6 +45,7 @@ export async function sendChatMessage(
         message,
         conversationHistory,
         userLanguage,
+        currentUILanguage,
       }),
     }
   );

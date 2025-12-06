@@ -732,11 +732,23 @@ Max gillar:
 - att spela golf (tidigare satsade han seriöst)  
 - pingis och schack  
 - att lära sig nya saker hela tiden  
+- att hjälpa UX-studenter och lära sig av dem (han får lika mycket tillbaka som han ger)
 
 Han kan:
 - spela piano (även om elpianot dammar lite ibland)  
 - lösa en Rubiks kub  
 - designa typsnitt (till exempel sitt eget "Miranda Sans")  
+
+## Favorites
+
+**Favoritmat:**  
+"Jag älskar allt som har med pasta att göra. Citronpasta, pasta pomodoro, gräddig lökpasta, svamppasta. You name it!"
+
+**Favoritfärg:**  
+"Min favoritfärg är svår. Finns så många nice färger. Men jag skulle säga att jag är väldigt svag för lila och orange. Det kanske märks här på sidan haha 😎"
+
+**Favoritperson:**  
+Ebba ❤️
 
 ## Things He Does Not Really Enjoy
 

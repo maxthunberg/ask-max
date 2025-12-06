@@ -1,0 +1,110 @@
+  const handleSubmit = async () => {
+    if (!question.trim() || isLoading) return;
+
+    const userMessage = question;
+    setQuestion('');
+    
+    // Generate session ID on first message (chat started)
+    let currentSessionId = sessionId;
+    if (!isChatMode) {
+      currentSessionId = generateSessionId();
+      setSessionId(currentSessionId);
+      setIsChatMode(true);
+      setHasAnimated(true);
+      trackChatStarted(currentSessionId);
+    }
+    
+    // Track user message in Google Analytics
+    trackSearch(userMessage, currentSessionId, 'user');
+    
+    // Detect language automatically
+    const isSwedish = detectSwedish(userMessage);
+    const isEnglish = detectEnglish(userMessage);
+    const isOtherLanguage = !isSwedish && !isEnglish;
+    
+    console.log('🔍 Language detection:', {
+      userMessage,
+      currentLanguage: language,
+      isSwedish,
+      isEnglish,
+      isOtherLanguage
+    });
+    
+    // Add user message
+    setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
+
+    // If other language (not Swedish or English), show error message
+    if (isOtherLanguage) {
+      console.log('🌍 Other language detected, showing language support message');
+      setMessages(prev => [...prev, { 
+        type: 'ai', 
+        content: 'I only speak English and Swedish, sorry! 🇬🇧🇸🇪\n\nPlease try again in one of these languages.' 
+      }]);
+      return; // Exit early, don't make API call
+    }
+
+    // Automatically switch to Swedish if user wrote in Swedish
+    if (isSwedish && language !== 'sv') {
+      console.log('🇸🇪 Swedish detected, switching to Swedish automatically');
+      
+      // Start skeleton animation sequence
+      setTimeout(() => {
+        setSkeletonStage('navbar');
+        
+        setTimeout(() => {
+          setNavbarLanguage('sv');
+          setSkeletonStage('search');
+          
+          setTimeout(() => {
+            setSearchLanguage('sv');
+            setSkeletonStage('disclaimer');
+            
+            setTimeout(() => {
+              setDisclaimerLanguage('sv');
+              setSkeletonStage(null);
+              setLanguage('sv');
+              saveLanguagePreference('sv');
+              performAPICall(userMessage, true);
+            }, 800);
+          }, 800);
+        }, 800);
+      }, 300);
+      
+      return; // Exit early, animation will trigger API call
+    }
+
+    // Automatically switch to English if user wrote in English
+    if (isEnglish && language !== 'en') {
+      console.log('🇬🇧 English detected, switching to English automatically');
+      
+      // Start skeleton animation sequence
+      setTimeout(() => {
+        setSkeletonStage('navbar');
+        
+        setTimeout(() => {
+          setNavbarLanguage('en');
+          setSkeletonStage('search');
+          
+          setTimeout(() => {
+            setSearchLanguage('en');
+            setSkeletonStage('disclaimer');
+            
+            setTimeout(() => {
+              setDisclaimerLanguage('en');
+              setSkeletonStage(null);
+              setLanguage('en');
+              saveLanguagePreference('en');
+              performAPICall(userMessage, false);
+            }, 800);
+          }, 800);
+        }, 800);
+      }, 300);
+      
+      return; // Exit early, animation will trigger API call
+    }
+
+    // Normal flow - no language switch needed
+    console.log('📞 Normal flow: Making API call with current language');
+    setIsLoading(true);
+    await performAPICall(userMessage, isSwedish);
+  };
