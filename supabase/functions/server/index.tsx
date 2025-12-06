@@ -679,7 +679,7 @@ CRITICAL RULES:
 2. Decide if the UI should switch language:
    - Swedes often mix English words into Swedish sentences (like "Jadu, I don't know. Kanske lite om UX?") → This is SWEDISH, DON'T switch UI
    - If the sentence structure and most words are Swedish → language is 'sv', DON'T switch
-   - ONLY switch UI if user writes MULTIPLE complete sentences in a DIFFERENT language
+   - ONLY switch UI if user writes a complete sentence (or multiple sentences) in a DIFFERENT language
    - Short responses like "Nice!", "Cool!", "Okej" → NEVER switch UI
    - If AI is already speaking in the detected language → DON'T switch UI
    
@@ -699,6 +699,7 @@ Examples:
 - AI speaking Swedish, user wrote "Jadu, I don't know. Kanske lite om UX?" → {"language": "sv", "shouldSwitchUI": false}
 - AI speaking Swedish, user wrote "Hello there, how are you doing? I want to know more about your work." → {"language": "en", "shouldSwitchUI": true}
 - AI speaking English, user wrote "Hej! Vad gör du?" → {"language": "sv", "shouldSwitchUI": true}
+- AI speaking English, user wrote "Fan det är riktigt nice ju!" → {"language": "sv", "shouldSwitchUI": true}
 - AI speaking English, user wrote "okej" → {"language": "sv", "shouldSwitchUI": false}`
                 },
                 {

@@ -449,10 +449,10 @@ export function PortfolioPage() {
     // Make API call - backend will detect language
     console.log('📞 Making API call - backend will detect language');
     setIsLoading(true);
-    await performAPICall(userMessage);
+    await performAPICall(userMessage, nextMessageNumber);
   };
 
-  const performAPICall = async (userMessage: string) => {
+  const performAPICall = async (userMessage: string, userMessageNumber: number) => {
     setIsLoading(true);
 
     try {
@@ -507,8 +507,8 @@ export function PortfolioPage() {
       // Detect if this is an "unknown" response
       const isUnknownResponse = detectUnknownResponse(result.message);
       
-      // Track the AI response in Google Analytics (increment message number)
-      const aiMessageNumber = messageNumber + 1;
+      // Track the AI response in Google Analytics (increment message number from user message)
+      const aiMessageNumber = userMessageNumber + 1;
       setMessageNumber(aiMessageNumber);
       
       if (isUnknownResponse) {
@@ -555,13 +555,13 @@ export function PortfolioPage() {
         
         setMessages(prev => [...prev, { type: 'error', content: errorMsg }]);
         // Track error response from AI
-        const errorMessageNumber = messageNumber + 1;
+        const errorMessageNumber = userMessageNumber + 1;
         setMessageNumber(errorMessageNumber);
         trackSearch(errorMsg, sessionId, 'ai', errorMessageNumber, 'error');
       } else {
         setMessages(prev => [...prev, { type: 'error', content: errorMessage }]);
         // Track error response from AI
-        const errorMessageNumber = messageNumber + 1;
+        const errorMessageNumber = userMessageNumber + 1;
         setMessageNumber(errorMessageNumber);
         trackSearch(errorMessage, sessionId, 'ai', errorMessageNumber, 'error');
       }
