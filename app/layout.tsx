@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   authors: [{ name: 'Max Thunberg' }],
   creator: 'Max Thunberg',
   publisher: 'Max Thunberg',
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
   openGraph: {
     title: 'Max Thunberg – UX Leadership, Design Strategy och Modernisering',
     description: 'Max Thunberg, UX Leader inom Volvo Group. Fokus på UX leadership, modernisering av verktyg för ingenjörer och designbaserad förändring. Fråga mig vad som helst.',

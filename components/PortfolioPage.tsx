@@ -745,7 +745,7 @@ export function PortfolioPage() {
             <div className="flex gap-[32px] items-center">
               <div className="flex items-center gap-[8px]">
                 <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap whitespace-pre transition-colors duration-300" style={{ color: colors.textPrimary }}>Max Thunberg</p>
-                <BetaTag />
+                <BetaTag version={APP_VERSION} />
               </div>
               {/* Desktop links - hidden on mobile */}
               <div className="hidden md:flex gap-[24px] items-center opacity-80 relative shrink-0" data-name="Links">
