@@ -180,7 +180,7 @@ This work has underlined the importance of:
     filename: 'max-ux-philosophy.md',
     content: `# Max UX Philosophy
 
-Det här är min syn på UX. Inte skolboken. Inte konsultsliden. Utan hur det faktiskt funkar i verkligheten, särskilt i komplexa miljöer som PLM/PDM på Volvo.
+Det här är min syn på UX. Inte skolboken. Inte konsultsliden. Utan hur det faktiskt funkar i verkligheten, särskilt i komplexa milj��er som PLM/PDM på Volvo.
 
 ---
 
@@ -739,6 +739,12 @@ Han kan:
 - lösa en Rubiks kub  
 - designa typsnitt (till exempel sitt eget "Miranda Sans")  
 
+## Pets
+
+Max har två kaniner:
+- **Lilla My** (kallas Mysan)  
+- **Benny** (Benny the bunny är ett otroligt bra namn haha)
+
 ## Favorites
 
 **Favoritmat:**  
@@ -757,7 +763,8 @@ Ebba ❤️
 ## Background Highlights
 
 - Uppvuxen i Växjö med ensamstående mamma  
-- Har en tvillingsyster som heter Miranda  
+- Född 17 maj 1991  
+- Har en tvillingsyster som heter Miranda som är 5 minuter äldre än Max. Genom åren har han fått höra \"Max, lyssna på din storasyster.\" Men Max ser det som att han är född gentleman, you know damerna först 😉  
 - Pluggade Enterprise & Business Development på Linnéuniversitetet  
 - Startade välgörenhetsprojektet "Project: Welldone" där han var med och byggde en vattenbrunn i Afrika – mycket drivet av idén att man kan samla in pengar utan att spela på dåligt samvete  
 
@@ -775,6 +782,66 @@ Max är ofta:
 - mer "kompis på jobbet" än stel corporate-person  
 
 Det här kan användas när någon vill få en känsla för vem Max är som människa, inte bara som UX Lead.`
+  },
+  {
+    filename: 'max-working-style.md',
+    content: `# Max Working Style
+
+## Att jobba tätt med mig
+
+Du kan förvänta dig väldigt öppen feedback för att vi ska jobba så bra ihop som möjligt och med så bra resultat vi bara kan.
+
+## När projekt blir röriga
+
+Det handlar om att ha en tydlig plan och struktur som man kan ha som referens så att man inte svävar iväg. Det är dock lätthänt, så här får vi alla hjälpas åt ☺️
+
+## Hur jag vill att folk flaggar problem
+
+Så öppet och tidigt som möjligt. Ju tidigare man lyfter en oro desto lättare är den att hantera.
+
+## När saker går åt helvete
+
+Jadu, det beror ju på. Om det går åt helvete med stakeholders så tror jag mycket på att prata och försöka mötas. Ofta handlar det om bristande kommunikation eller feltolkning. Trust me, jag har upplevt det några gånger 😅 Det är sällan någon som vill vara ovän.
+
+## Vad jag uppskattar hos folk jag jobbar med
+
+Vara genomsnäll och ambitiös så kommer vi långt. Ambitiös och prestigelös är nog den bästa kombon 💪`
+  },
+  {
+    filename: 'max-strengths-and-gaps.md',
+    content: `# Max Strengths and Gaps
+
+## Styrkor
+
+Jag är stark på kommunikation, jag ställer gärna upp och försöker underlätta för mina kollegor och designers. Jag tror att jag är en ganska bra storyteller som kan skapa en vision vi alla kan dela och jobba mot ☺️
+
+## Saker man inte ska vända sig till mig för
+
+Detaljförståelse av ingenjörskap, avancerad utveckling eller de allra senaste funktionerna i tekniska verktyg. Jag är bred, inte så spetsig, vilket ofta hjälper mig att se helheter.
+
+## Vad jag vill utvecklas inom
+
+Jag vill utvecklas som ledare och skapa positiv förändring på större skala. Jag vill bygga miljöer där designerteam kan lösa svåra problem och förbättra livet för våra användare. Sedan måste man såklart följa AI-utvecklingen. Hur kan man använda den för att få en edge mot alla andra 😎`
+  },
+  {
+    filename: 'max-mentorship.md',
+    content: `# Max Mentorship
+
+## Varför jag gillar att hjälpa juniora designers
+
+Jag har själv varit där. När man var ung och hungrig och uppskattade stöd från personer som varit med ett tag. Det känns naturligt att ge tillbaka till de nya stjärnorna som är på väg in i UX-världen ☺️
+
+## Vanligaste rådet jag ger studenter
+
+Gör tusentals timmar i designverktygen. Lär dig hantverket. Träna ditt öga för detaljer. Var empatisk och snäll. Och utveckla den analytiska förmågan att reflektera över sig själv och sitt arbete. Det är så man blir bättre över tid.
+
+## Hur man bäst använder min tid i mentorsamtal
+
+Var bara väldigt tydlig med vad du behöver hjälp med. Ju tydligare du är desto lättare är det för mig att stötta dig.
+
+## Vad jag tycker är överskattat i UX-utbildningar och portfolios
+
+Process-snack och perfekta case. I min värld räcker det med ett riktigt bra case. Det kan handla om när du failade totalt, men att du reflekterar och visar hur du lärt dig. Och att portfolion är snygg och genomtänkt. Spacing, kontrast, hierarki, typografi. Det räcker 🤷‍♂️`
   }
 ] as const;
 
