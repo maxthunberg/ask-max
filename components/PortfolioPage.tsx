@@ -8,7 +8,7 @@ const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909
 const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
 import { sendChatMessage, ChatMessage } from '../utils/chat-api';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
-import { BrainIllustration, ImageIllustration, BookIllustration, MicIllustration } from './ComingSoonIcons';
+import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag-251-299';
 import { CookieConsent } from './CookieConsent';
@@ -16,7 +16,7 @@ import { trackChatMessage, trackChatStarted, trackChatEnd, trackChatError, detec
 import { saveLanguagePreference, getLanguagePreference } from '../utils/language-cookie';
 
 // App version
-const APP_VERSION = 'v1.1';
+const APP_VERSION = 'v1.2';
 
 const QUOTA_EXCEEDED_MESSAGES = {
   en: [
@@ -180,9 +180,7 @@ export function PortfolioPage() {
       plan2Title: "Visual content in chat",
       plan2Description: "Build in support for displaying visual images and materials as responses in the chat",
       plan3Title: "Learning resources",
-      plan3Description: "Describe how the website was built and provide support for people who want to learn how",
-      plan4Title: "Voice prompt",
-      plan4Description: "Enable voice input functionality so visitors can speak their questions instead of typing them"
+      plan3Description: "Describe how the website was built and provide support for people who want to learn how"
     },
     sv: {
       home: "Hem",
@@ -208,9 +206,7 @@ export function PortfolioPage() {
       plan2Title: "Visuellt innehåll i chatten",
       plan2Description: "Bygga in stöd för att visa bilder och material som svar i chatten",
       plan3Title: "Läranderesurser",
-      plan3Description: "Beskriva hur webbplatsen byggdes och ge stöd till personer som vill lära sig hur",
-      plan4Title: "Röstinmatning",
-      plan4Description: "Aktivera röstinmatningsfunktionalitet så att besökare kan tala sina frågor istället för att skriva dem"
+      plan3Description: "Beskriva hur webbplatsen byggdes och ge stöd till personer som vill lära sig hur"
     }
   };
 
@@ -1030,6 +1026,7 @@ export function PortfolioPage() {
                   isChatMode={isChatMode}
                   showPlaceholderSkeleton={skeletonStage === 'search'}
                   showDisclaimerSkeleton={skeletonStage === 'disclaimer'}
+                  showVoiceButton={true}
                 />
               </div>
             </>
@@ -1089,6 +1086,7 @@ export function PortfolioPage() {
                       isChatMode={isChatMode}
                       showPlaceholderSkeleton={skeletonStage === 'search'}
                       showDisclaimerSkeleton={skeletonStage === 'disclaimer'}
+                      showVoiceButton={true}
                     />
                   </div>
                 </div>
@@ -1320,20 +1318,6 @@ export function PortfolioPage() {
                       </div>
                     </div>
 
-                    {/* Plan 4 */}
-                    <div className="flex gap-[16px] items-start">
-                      <div className="flex items-center justify-center w-[48px] h-[48px] shrink-0">
-                        <MicIllustration theme={theme} />
-                      </div>
-                      <div className="flex flex-col gap-[4px] flex-1">
-                        <p className="font-medium text-[15px] leading-[22px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
-                          {t.plan4Title}
-                        </p>
-                        <p className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
-                          {t.plan4Description}
-                        </p>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Close button */}

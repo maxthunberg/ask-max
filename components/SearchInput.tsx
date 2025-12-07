@@ -62,9 +62,11 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>((props, 
   } = props;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const uniqueId = useRef(`search-input-${Math.random().toString(36).substr(2, 9)}`);
+  const uniqueId = useRef(`search-input-${Math.random().toString(36).substr(2, 9)}`);;
   const recognitionRef = useRef<any>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
+  const initialValueRef = useRef<string>(''); // Track the initial value when voice starts
+  const submitButtonRef = useRef<HTMLButtonElement>(null); // Ref to submit button for auto-submit
   
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [displayedPlaceholder, setDisplayedPlaceholder] = useState('');
@@ -188,25 +190,54 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>((props, 
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = false;
-        recognitionRef.current.interimResults = false;
+        recognitionRef.current.continuous = true; // Changed to true for better Chrome compatibility
+        recognitionRef.current.interimResults = true; // Enable interim results for better UX
         recognitionRef.current.lang = language === 'sv' ? 'sv-SE' : 'en-US';
+        recognitionRef.current.maxAlternatives = 1;
 
         recognitionRef.current.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          onChange(value + (value ? ' ' : '') + transcript);
-          setIsListening(false);
+          // Build complete transcript from all results
+          let completeTranscript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            completeTranscript += event.results[i][0].transcript;
+          }
           
-          // Stop and cleanup audio stream after recognition
-          if (audioStreamRef.current) {
-            audioStreamRef.current.getTracks().forEach(track => track.stop());
-            audioStreamRef.current = null;
+          // Update input with initial value + complete transcript
+          const newValue = initialValueRef.current + (initialValueRef.current ? ' ' : '') + completeTranscript;
+          onChange(newValue);
+          
+          // Check if we have any final results
+          let hasFinalResult = false;
+          for (let i = 0; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              hasFinalResult = true;
+              break;
+            }
+          }
+          
+          // Stop listening when we have a final result (Chrome)
+          if (hasFinalResult) {
+            console.log('✅ Final result detected (Chrome), stopping recognition');
+            setIsListening(false);
+            setVoiceError(null);
+            
+            // Stop recognition
+            try {
+              recognitionRef.current?.stop();
+            } catch (e) {
+              // Ignore
+            }
+            
+            // Stop and cleanup audio stream after recognition
+            if (audioStreamRef.current) {
+              audioStreamRef.current.getTracks().forEach(track => track.stop());
+              audioStreamRef.current = null;
+            }
           }
         };
 
         recognitionRef.current.onerror = (event: any) => {
           console.error('Speech recognition error:', event.error);
-          setIsListening(false);
           
           // Cleanup audio stream on error
           if (audioStreamRef.current) {
@@ -214,23 +245,40 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>((props, 
             audioStreamRef.current = null;
           }
           
-          // Show user-friendly error messages
+          // Ignore "no-speech" errors - they happen too frequently in Chrome
+          if (event.error === 'no-speech') {
+            // Don't show error, don't stop listening
+            // User might just be pausing
+            return;
+          }
+          
+          setIsListening(false);
+          
+          // Show user-friendly error messages for other errors
           if (event.error === 'not-allowed') {
             setVoiceError(language === 'sv' 
               ? 'Mikrofon åtkomst nekad. Vänligen tillåt mikrofonåtkomst i din webbläsares inställningar.' 
               : 'Microphone access denied. Please allow microphone access in your browser settings.');
-          } else if (event.error === 'no-speech') {
-            setVoiceError(language === 'sv' 
-              ? 'Inget tal upptäckt. Försök igen.' 
-              : 'No speech detected. Please try again.');
           } else if (event.error === 'network') {
             setVoiceError(language === 'sv' 
               ? 'Nätverksfel. Kontrollera din internetanslutning.' 
               : 'Network error. Please check your internet connection.');
+          } else if (event.error === 'audio-capture') {
+            setVoiceError(language === 'sv' 
+              ? 'Kunde inte komma åt mikrofonen. Kontrollera att din mikrofon fungerar.' 
+              : 'Could not access microphone. Please check that your microphone is working.');
+          } else if (event.error === 'aborted') {
+            // Recognition was aborted - this is normal when user stops manually
+            // Don't show error
+          } else {
+            setVoiceError(language === 'sv' 
+              ? `Röstinmatningsfel: ${event.error}` 
+              : `Voice input error: ${event.error}`);
           }
         };
 
         recognitionRef.current.onend = () => {
+          console.log('🎤 Recognition ended - triggering auto-submit');
           setIsListening(false);
           
           // Cleanup audio stream when recognition ends
@@ -238,6 +286,16 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>((props, 
             audioStreamRef.current.getTracks().forEach(track => track.stop());
             audioStreamRef.current = null;
           }
+          
+          // Auto-submit after voice input
+          // Use timeout to ensure React state has fully updated
+          setTimeout(() => {
+            console.log('🚀 Auto-clicking submit button...');
+            // Programmatically click the submit button
+            if (submitButtonRef.current && !submitButtonRef.current.disabled) {
+              submitButtonRef.current.click();
+            }
+          }, 800); // 800ms should be enough for React state to update
         };
       }
     }
@@ -286,6 +344,7 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>((props, 
         audioStreamRef.current = stream;
         recognitionRef.current.start();
         setIsListening(true);
+        initialValueRef.current = value; // Store the initial value
       } catch (error: any) {
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
           setVoiceError(language === 'sv' 
@@ -351,6 +410,7 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>((props, 
         
         {/* Button */}
         <button
+          ref={submitButtonRef}
           onClick={(e) => {
             e.stopPropagation();
             onSubmit();
@@ -476,20 +536,41 @@ export const SearchInput = forwardRef<SearchInputRef, SearchInputProps>((props, 
       {/* Voice error message */}
       {voiceError && (
         <div 
-          className="w-full px-[12px] py-[8px] rounded-[8px] flex items-center gap-[8px] animate-in fade-in slide-in-from-top-2 duration-300"
+          className="w-full px-[16px] py-[10px] rounded-[12px] flex items-center gap-[10px] animate-in fade-in slide-in-from-top-2 duration-300 backdrop-blur-sm"
           style={{
-            backgroundColor: theme === 'light' ? 'rgba(255, 59, 48, 0.1)' : 'rgba(255, 69, 58, 0.15)',
-            borderLeft: '3px solid rgba(255, 59, 48, 0.8)'
+            backgroundColor: theme === 'light' ? 'rgba(255, 59, 48, 0.12)' : 'rgba(255, 69, 58, 0.12)',
+            border: `1px solid ${theme === 'light' ? 'rgba(255, 59, 48, 0.3)' : 'rgba(255, 69, 58, 0.25)'}`
           }}
           role="alert"
           aria-live="polite"
         >
-          <MicOff className="w-4 h-4 shrink-0" style={{ color: theme === 'light' ? '#ff3b30' : '#ff453a' }} />
+          <MicOff className="w-5 h-5 shrink-0" style={{ color: theme === 'light' ? '#ff3b30' : '#ff453a' }} />
           <p 
             className="font-normal text-[13px] leading-[18px]"
             style={{ color: colors.textPrimary }}
           >
             {voiceError}
+          </p>
+        </div>
+      )}
+
+      {/* Listening indicator */}
+      {isListening && (
+        <div 
+          className="w-full px-[16px] py-[10px] rounded-[12px] flex items-center gap-[10px] animate-in fade-in slide-in-from-top-2 duration-300 backdrop-blur-sm"
+          style={{
+            backgroundColor: theme === 'light' ? 'rgba(235, 212, 33, 0.18)' : 'rgba(235, 212, 33, 0.12)',
+            border: `1px solid ${theme === 'light' ? 'rgba(235, 212, 33, 0.4)' : 'rgba(235, 212, 33, 0.3)'}`
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          <AudioLines className="w-5 h-5 shrink-0 animate-pulse" style={{ color: '#EBD421' }} />
+          <p 
+            className="font-normal text-[13px] leading-[18px]"
+            style={{ color: colors.textPrimary }}
+          >
+            {language === 'sv' ? 'Lyssnar... Prata på svenska' : 'Listening... Speak in English'}
           </p>
         </div>
       )}

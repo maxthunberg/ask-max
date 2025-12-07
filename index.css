@@ -987,8 +987,8 @@
     padding-block: calc(var(--spacing) * 3);
   }
 
-  .py-\[8px\] {
-    padding-block: 8px;
+  .py-\[10px\] {
+    padding-block: 10px;
   }
 
   .py-\[11px\] {
