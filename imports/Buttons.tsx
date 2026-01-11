@@ -25,7 +25,7 @@ function Content() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
       <IconContainer />
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans,sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -72,7 +72,7 @@ function Content1() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
       <IconContainer1 />
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -119,7 +119,7 @@ function Content2() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
       <IconContainer2 />
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -166,7 +166,7 @@ function Content3() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
       <IconContainer3 />
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -216,7 +216,7 @@ function Content4() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
       <IconContainer4 />
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -270,7 +270,7 @@ function IconContainer5() {
 function Content5() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
       <IconContainer5 />
     </div>
   );
@@ -317,7 +317,7 @@ function IconContainer6() {
 function Content6() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
       <IconContainer6 />
     </div>
   );
@@ -364,7 +364,7 @@ function IconContainer7() {
 function Content7() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
       <IconContainer7 />
     </div>
   );
@@ -411,7 +411,7 @@ function IconContainer8() {
 function Content8() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
       <IconContainer8 />
     </div>
   );
@@ -461,7 +461,7 @@ function IconContainer9() {
 function Content9() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
       <IconContainer9 />
     </div>
   );
@@ -731,7 +731,7 @@ function Disabled2() {
 function Content15() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -756,7 +756,7 @@ function Default3() {
 function Content16() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -781,7 +781,7 @@ function Hover3() {
 function Content17() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -806,7 +806,7 @@ function Active3() {
 function Content18() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -834,7 +834,7 @@ function Focus3() {
 function Content19() {
   return (
     <div className="absolute content-stretch flex items-center left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]" data-name="Content">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Button text</p>
     </div>
   );
 }
@@ -887,11 +887,11 @@ export default function Buttons() {
       <Active3 />
       <Focus3 />
       <Disabled3 />
-      <p className="absolute font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] left-[78px] text-[16px] text-center text-nowrap text-white top-[90px] translate-x-[-50%] whitespace-pre">Default</p>
-      <p className="absolute font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] left-[78.5px] text-[16px] text-center text-nowrap text-white top-[180px] translate-x-[-50%] whitespace-pre">Hover</p>
-      <p className="absolute font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] left-[78px] text-[16px] text-center text-nowrap text-white top-[282px] translate-x-[-50%] whitespace-pre">Active</p>
-      <p className="absolute font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] left-[78px] text-[16px] text-center text-nowrap text-white top-[378px] translate-x-[-50%] whitespace-pre">Focus</p>
-      <p className="absolute font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] left-[78.5px] text-[16px] text-center text-nowrap text-white top-[468px] translate-x-[-50%] whitespace-pre">Disabled</p>
+      <p className="absolute font-sans font-semibold leading-[24px] left-[78px] text-[16px] text-center text-nowrap text-white top-[90px] translate-x-[-50%] whitespace-pre">Default</p>
+      <p className="absolute font-sans font-semibold leading-[24px] left-[78.5px] text-[16px] text-center text-nowrap text-white top-[180px] translate-x-[-50%] whitespace-pre">Hover</p>
+      <p className="absolute font-sans font-semibold leading-[24px] left-[78px] text-[16px] text-center text-nowrap text-white top-[282px] translate-x-[-50%] whitespace-pre">Active</p>
+      <p className="absolute font-sans font-semibold leading-[24px] left-[78px] text-[16px] text-center text-nowrap text-white top-[378px] translate-x-[-50%] whitespace-pre">Focus</p>
+      <p className="absolute font-sans font-semibold leading-[24px] left-[78.5px] text-[16px] text-center text-nowrap text-white top-[468px] translate-x-[-50%] whitespace-pre">Disabled</p>
     </div>
   );
 }

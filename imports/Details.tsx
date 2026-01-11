@@ -3,8 +3,8 @@ import svgPaths from "./svg-xk7s67zcxy";
 function Group() {
   return (
     <div className="absolute contents leading-[20px] left-0 text-[14px] text-right top-[69px]">
-      <p className="absolute font-['Figtree:Regular',sans-serif] font-normal left-[216px] opacity-80 text-[#c7c1cc] top-[89px] translate-x-[-100%] w-[216px]">Currently UX Lead at Volvo Group</p>
-      <p className="absolute font-['Figtree:SemiBold',sans-serif] font-semibold left-[216px] text-white top-[69px] translate-x-[-100%] w-[173px]">This is me</p>
+      <p className="absolute font-sans font-normal left-[216px] opacity-80 text-[#c7c1cc] top-[89px] translate-x-[-100%] w-[216px]">Currently UX Lead at Volvo Group</p>
+      <p className="absolute font-sans font-semibold left-[216px] text-white top-[69px] translate-x-[-100%] w-[173px]">This is me</p>
     </div>
   );
 }

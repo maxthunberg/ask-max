@@ -10,7 +10,7 @@ import { sendChatMessage, ChatMessage } from '../utils/chat-api';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
 import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
 import { SearchInput, SearchInputRef } from './SearchInput';
-import BetaTag from '../imports/BetaTag-251-299';
+import BetaTag from '../imports/BetaTag';
 import { CookieConsent } from './CookieConsent';
 import { trackChatMessage, trackChatStarted, trackChatEnd, trackChatError, detectUnknownResponse, generateSessionId } from '../utils/analytics';
 import { saveLanguagePreference, getLanguagePreference } from '../utils/language-cookie';

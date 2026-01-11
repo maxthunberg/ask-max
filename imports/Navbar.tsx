@@ -1,7 +1,7 @@
 function LinkBase() {
   return (
     <div className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full" data-name="Link Base">
-      <p className="font-['Figtree:Regular',sans-serif] font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Home</p>
+      <p className="font-sans font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Home</p>
     </div>
   );
 }
@@ -17,7 +17,7 @@ function Link() {
 function LinkBase1() {
   return (
     <div className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full" data-name="Link Base">
-      <p className="font-['Figtree:Regular',sans-serif] font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Leadership Philosophy</p>
+      <p className="font-sans font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Leadership Philosophy</p>
     </div>
   );
 }
@@ -33,7 +33,8 @@ function Link1() {
 function LinkBase2() {
   return (
     <div className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full" data-name="Link Base">
-      <p className="font-['Figtree:Regular',sans-serif] font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">LinkedIn</p>
+      <p className="font-sans font-normal
+       leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">LinkedIn</p>
     </div>
   );
 }
@@ -61,7 +62,7 @@ export default function Navbar() {
     <div className="relative size-full" data-name="Navbar">
       <div className="flex flex-row items-center size-full">
         <div className="box-border content-stretch flex gap-[32px] items-center px-[16px] py-[11px] relative size-full">
-          <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">Max Thunberg</p>
+          <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">Max Thunberg</p>
           <Links />
         </div>
       </div>

@@ -56,7 +56,7 @@ export function PrimaryButton({
         )}
         
         {!iconOnly && (
-          <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">
+          <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">
             {children}
           </p>
         )}

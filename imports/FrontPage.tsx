@@ -5,8 +5,8 @@ const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909
 function TextContainer() {
   return (
     <div className="absolute content-stretch flex flex-col gap-[12px] items-start left-[156px] top-[243px]" data-name="Text container">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[60px] relative shrink-0 text-[48px] text-white w-[689px]">Building teams with empathy, designing systems for impact.</p>
-      <p className="font-['Figtree:Regular',sans-serif] font-normal leading-[28px] relative shrink-0 text-[#c7c1cc] text-[18px] w-[689px]">I’m a servant leader who removes obstacles so my team can thrive. Driven by meaningful impact and prepared to do what it takes, a mindset that shaped my early golf career and still true today.</p>
+      <p className="font-sans font-semibold leading-[60px] relative shrink-0 text-[48px] text-white w-[689px]">Building teams with empathy, designing systems for impact.</p>
+      <p className="font-sans font-normal leading-[28px] relative shrink-0 text-[#c7c1cc] text-[18px] w-[689px]">I’m a servant leader who removes obstacles so my team can thrive. Driven by meaningful impact and prepared to do what it takes, a mindset that shaped my early golf career and still true today.</p>
     </div>
   );
 }
@@ -14,7 +14,7 @@ function TextContainer() {
 function Group3() {
   return (
     <div className="absolute contents left-[156px] top-[483px]">
-      <p className="absolute font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] left-[156px] text-[#f6f7fc] text-[16px] text-nowrap top-[483px] whitespace-pre">Talk to my digital twin</p>
+      <p className="absolute font-sans font-semibold leading-[24px] left-[156px] text-[#f6f7fc] text-[16px] text-nowrap top-[483px] whitespace-pre">Talk to my digital twin</p>
     </div>
   );
 }
@@ -31,7 +31,7 @@ function InputField() {
   return (
     <div className="absolute bg-[rgba(255,255,255,0.05)] box-border content-stretch flex gap-[12px] items-center left-[156px] p-[12px] rounded-[8px] top-[511px] w-[640px]" data-name="Input field">
       <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[8px]" />
-      <p className="font-['Figtree:Regular',sans-serif] font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Ask me anything about UX and leadership</p>
+      <p className="font-sans font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Ask me anything about UX and leadership</p>
     </div>
   );
 }
@@ -90,7 +90,7 @@ function ButtonSecondary() {
   return (
     <div className="absolute bg-[rgba(255,255,255,0.05)] box-border content-stretch flex gap-[12px] items-center justify-center left-[156px] px-[16px] py-[12px] rounded-[8px] top-[583px]" data-name="Button Secondary">
       <div aria-hidden="true" className="absolute border border-[rgba(255,255,255,0.2)] border-solid inset-0 pointer-events-none rounded-[8px]" />
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Talk to the real me</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[#f6f7fc] text-[16px] text-center text-nowrap whitespace-pre">Talk to the real me</p>
       <Frame1 />
     </div>
   );
@@ -118,8 +118,8 @@ function Image() {
 function Group1() {
   return (
     <div className="absolute contents leading-[20px] left-[600px] text-[14px] text-right top-[836px]">
-      <p className="absolute font-['Figtree:Regular',sans-serif] font-normal left-[816px] opacity-80 text-[#c7c1cc] top-[856px] translate-x-[-100%] w-[216px]">Currently UX Lead at Volvo Group</p>
-      <p className="absolute font-['Figtree:SemiBold',sans-serif] font-semibold left-[816px] text-white top-[836px] translate-x-[-100%] w-[173px]">This is me</p>
+      <p className="absolute font-sans font-normal left-[816px] opacity-80 text-[#c7c1cc] top-[856px] translate-x-[-100%] w-[216px]">Currently UX Lead at Volvo Group</p>
+      <p className="absolute font-sans font-semibold left-[816px] text-white top-[836px] translate-x-[-100%] w-[173px]">This is me</p>
     </div>
   );
 }
@@ -155,7 +155,7 @@ function HeroSection() {
 function LinkBase() {
   return (
     <div className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full" data-name="Link Base">
-      <p className="font-['Figtree:Regular',sans-serif] font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Home</p>
+      <p className="font-sans font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Home</p>
     </div>
   );
 }
@@ -171,7 +171,7 @@ function Link() {
 function LinkBase1() {
   return (
     <div className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full" data-name="Link Base">
-      <p className="font-['Figtree:Regular',sans-serif] font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Leadership Philosophy</p>
+      <p className="font-sans font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">Leadership Philosophy</p>
     </div>
   );
 }
@@ -187,7 +187,7 @@ function Link1() {
 function LinkBase2() {
   return (
     <div className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full" data-name="Link Base">
-      <p className="font-['Figtree:Regular',sans-serif] font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">LinkedIn</p>
+      <p className="font-sans font-normal leading-[24px] relative shrink-0 text-[#c7c1cc] text-[16px] text-nowrap whitespace-pre">LinkedIn</p>
     </div>
   );
 }
@@ -213,7 +213,7 @@ function Links() {
 function Navbar() {
   return (
     <div className="absolute box-border content-stretch flex gap-[32px] h-[64px] items-center left-1/2 px-[16px] py-[11px] top-0 translate-x-[-50%] w-[1232px]" data-name="Navbar">
-      <p className="font-['Figtree:SemiBold',sans-serif] font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">Max Thunberg</p>
+      <p className="font-sans font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">Max Thunberg</p>
       <Links />
     </div>
   );
