@@ -45,9 +45,17 @@
 
 @font-face {
   font-family: 'Gunilla Sans';
-  src: url('/fonts/GunillaSansVF.woff2') format('woff2-variations');
+  src: url('/fonts/GunillaSans[wght].woff2') format('woff2-variations');
   font-weight: 400 700;
   font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gunilla Sans';
+  src: url('/fonts/GunillaSans-Italic[wght].woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-style: italic;
   font-display: swap;
 }
 
