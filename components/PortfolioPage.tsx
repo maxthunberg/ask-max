@@ -6,8 +6,9 @@ import svgPaths from "../imports/svg-sevsv6x2yc";
 // Using Cloudinary hosted image
 const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
 const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
-import { sendChatMessage, ChatMessage } from '../utils/chat-api';
+import { sendChatMessage, ChatMessage, ChatSuggestion } from '../utils/chat-api';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
+import { ThinkingSpinner } from './ThinkingSpinner';
 import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag';
@@ -17,6 +18,17 @@ import { saveLanguagePreference, getLanguagePreference } from '../utils/language
 
 // App version
 const APP_VERSION = 'v1.3.0';
+
+// ?who=<company> shows a "Why should <company> hire you?" prompt card.
+// Returns a cleaned, display-cased company name, or null if missing/invalid.
+function parseWhoParam(raw: string | null): string | null {
+  const cleaned = (raw ?? '').replace(/[^\p{L}\p{N} &.'-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  if (!cleaned) return null;
+  // Keep the visitor's own casing (e.g. "IKEA"), but capitalize all-lowercase names
+  return cleaned === cleaned.toLowerCase()
+    ? cleaned.replace(/(^|[\s-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase())
+    : cleaned;
+}
 
 const QUOTA_EXCEEDED_MESSAGES = {
   en: [
@@ -88,7 +100,7 @@ const SARCASTIC_QUOTA_MESSAGES = {
 
 export function PortfolioPage() {
   const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<Array<{ type: 'user' | 'assistant' | 'error' | 'system'; content: string }>>([]);
+  const [messages, setMessages] = useState<Array<{ type: 'user' | 'assistant' | 'error' | 'system'; content: string; suggestions?: ChatSuggestion[] }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -96,6 +108,7 @@ export function PortfolioPage() {
   const [quotaErrorCount, setQuotaErrorCount] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [language, setLanguage] = useState<'en' | 'sv'>('en');
+  const [whoName, setWhoName] = useState<string | null>(null);
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
   const [skeletonStage, setSkeletonStage] = useState<'navbar' | 'search' | 'disclaimer' | null>(null);
   
@@ -126,6 +139,10 @@ export function PortfolioPage() {
     setSearchLanguage(savedLanguage);
     setDisclaimerLanguage(savedLanguage);
     console.log(`🌍 Loaded ${savedLanguage === 'sv' ? 'Swedish' : 'English'} language preference from cookie`);
+  }, []);
+
+  useEffect(() => {
+    setWhoName(parseWhoParam(new URLSearchParams(window.location.search).get('who')));
   }, []);
 
   // Save language preference to cookie when it changes
@@ -419,10 +436,10 @@ export function PortfolioPage() {
     }
   }, [messages, isLoading]);
 
-  const handleSubmit = async () => {
-    if (!question.trim() || isLoading) return;
+  const handleSubmit = async (overrideMessage?: string) => {
+    const userMessage = overrideMessage ?? question;
+    if (!userMessage.trim() || isLoading) return;
 
-    const userMessage = question;
     setQuestion('');
     
     // Generate session ID on first message (chat started)
@@ -463,7 +480,14 @@ export function PortfolioPage() {
         }));
 
       // Send current UI language so backend can make smart decision about switching
-      const result = await sendChatMessage(userMessage, conversationHistory, undefined, language);
+      const result = await sendChatMessage(
+        userMessage,
+        conversationHistory,
+        undefined,
+        language,
+        whoName?.toLowerCase() === 'airon' ? 'airon' : undefined,
+        whoName ?? undefined
+      );
       
       // Check if backend detected 'other' language
       if (result.detectedLanguage === 'other') {
@@ -516,7 +540,7 @@ export function PortfolioPage() {
       }
       
       // Add AI message
-      setMessages(prev => [...prev, { type: 'assistant', content: result.message }]);
+      setMessages(prev => [...prev, { type: 'assistant', content: result.message, suggestions: result.suggestions }]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       const lowerMessage = errorMessage.toLowerCase();
@@ -740,7 +764,14 @@ export function PortfolioPage() {
           <nav className="box-border flex gap-[32px] h-[64px] items-center px-[12px] md:px-[16px] py-[11px] relative shrink-0 w-full justify-between transition-colors duration-300" data-name="Navbar" aria-label="Main navigation">
             <div className="flex gap-[32px] items-center">
               <div className="flex items-center gap-[8px]">
-                <p className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap whitespace-pre transition-colors duration-300" style={{ color: colors.textPrimary }}>Max Thunberg</p>
+                <button
+                  onClick={handleHomeClick}
+                  className="font-semibold leading-[24px] relative shrink-0 text-[16px] text-nowrap whitespace-pre transition-all duration-200 cursor-pointer hover:opacity-80 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff] focus-visible:ring-opacity-50 rounded-md"
+                  style={{ color: colors.textPrimary }}
+                  aria-label="Max Thunberg, go to home page"
+                >
+                  Max Thunberg
+                </button>
                 <BetaTag version={APP_VERSION} />
               </div>
               {/* Desktop links - hidden on mobile */}
@@ -816,13 +847,15 @@ export function PortfolioPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                  className="custom-scrollbar basis-0 box-border flex flex-col gap-[16px] grow items-center min-h-px min-w-px overflow-x-clip overflow-y-auto px-[12px] md:px-[16px] py-[16px] relative shrink-0 w-full max-w-[768px] mx-auto"
+                  className="custom-scrollbar basis-0 box-border grow min-h-px min-w-px overflow-x-clip overflow-y-auto py-[16px] relative shrink-0 w-full"
                   data-name="Chat"
                   role="log"
                   aria-live="polite"
                   aria-atomic="false"
                   id="main-content"
                 >
+                  {/* Content keeps max width while the scrollbar sits at the screen edge */}
+                  <div className="flex flex-col gap-[16px] items-center w-full max-w-[768px] mx-auto px-[12px] md:px-[16px]">
                   {messages.map((message, index) => (
                     <motion.div
                       key={index}
@@ -866,6 +899,26 @@ export function PortfolioPage() {
                           />
                         </div>
                       )}
+                      {message.suggestions && message.suggestions.length > 0 && (
+                        <div className="flex flex-wrap gap-[8px] w-full max-w-[480px]" data-name="Suggestion cards">
+                          {message.suggestions.map((suggestion) => (
+                            <a
+                              key={suggestion.url}
+                              href={suggestion.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group flex flex-1 min-w-[140px] flex-col gap-[2px] rounded-[12px] border px-[14px] py-[10px] transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#7339ff]"
+                              style={{ borderColor: colors.border }}
+                            >
+                              <span className="flex items-center justify-between gap-[8px] text-[14px] font-semibold" style={{ color: colors.textPrimary }}>
+                                {suggestion.label}
+                                <ExternalLink className="h-[14px] w-[14px] opacity-60 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+                              </span>
+                              <span className="text-[13px]" style={{ color: colors.textSecondary }}>{suggestion.description}</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                   
@@ -876,136 +929,12 @@ export function PortfolioPage() {
                       className="flex flex-col gap-[10px] items-start relative w-full"
                       aria-label="Loading response"
                     >
-                      <div className="relative w-[32px] h-[32px]">
-                        {/* Star 1 - Fast */}
-                        <motion.div
-                          className="absolute"
-                          initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
-                          animate={{
-                            x: [0, 12, 24],
-                            y: [32, 18, 4],
-                            rotate: [0, 180, 360],
-                            opacity: [0, 1, 0],
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "easeOut",
-                            times: [0, 0.3, 1],
-                          }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                            <path
-                              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                              fill="url(#star-gradient-1)"
-                            />
-                            <defs>
-                              <linearGradient id="star-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#FFD27F" />
-                                <stop offset="100%" stopColor="#E4BE3A" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                        </motion.div>
-
-                        {/* Star 2 - Medium */}
-                        <motion.div
-                          className="absolute"
-                          initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
-                          animate={{
-                            x: [-3, 9, 21],
-                            y: [34, 20, 6],
-                            rotate: [0, 180, 360],
-                            opacity: [0, 1, 0],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeOut",
-                            delay: 0.3,
-                            times: [0, 0.3, 1],
-                          }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path
-                              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                              fill="url(#star-gradient-2)"
-                            />
-                            <defs>
-                              <linearGradient id="star-gradient-2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#FFE5A3" />
-                                <stop offset="100%" stopColor="#FFB84D" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                        </motion.div>
-
-                        {/* Star 3 - Slow */}
-                        <motion.div
-                          className="absolute"
-                          initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
-                          animate={{
-                            x: [3, 14, 25],
-                            y: [35, 21, 7],
-                            rotate: [0, 180, 360],
-                            opacity: [0, 1, 0],
-                          }}
-                          transition={{
-                            duration: 2.5,
-                            repeat: Infinity,
-                            ease: "easeOut",
-                            delay: 0.6,
-                            times: [0, 0.3, 1],
-                          }}
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                            <path
-                              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                              fill="url(#star-gradient-3)"
-                            />
-                            <defs>
-                              <linearGradient id="star-gradient-3" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#FFF4D6" />
-                                <stop offset="100%" stopColor="#FFD27F" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                        </motion.div>
-
-                        {/* Star 4 - Very fast, small */}
-                        <motion.div
-                          className="absolute"
-                          initial={{ x: 0, y: 0, rotate: 0, opacity: 0 }}
-                          animate={{
-                            x: [-5, 7, 19],
-                            y: [31, 17, 3],
-                            rotate: [0, 180, 360],
-                            opacity: [0, 1, 0],
-                          }}
-                          transition={{
-                            duration: 1.2,
-                            repeat: Infinity,
-                            ease: "easeOut",
-                            delay: 0.9,
-                            times: [0, 0.3, 1],
-                          }}
-                        >
-                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none">
-                            <path
-                              d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                              fill="url(#star-gradient-4)"
-                            />
-                            <defs>
-                              <linearGradient id="star-gradient-4" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#FFFAEB" />
-                                <stop offset="100%" stopColor="#FFE5A3" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                        </motion.div>
+                      <div style={{ color: colors.textPrimary }}>
+                        <ThinkingSpinner />
                       </div>
                     </motion.div>
                   )}
+                  </div>
                 </motion.div>
               </AnimatePresence>
 
@@ -1088,6 +1017,29 @@ export function PortfolioPage() {
                       showDisclaimerSkeleton={skeletonStage === 'disclaimer'}
                       showVoiceButton={true}
                     />
+                    {whoName && (
+                      <div className="flex flex-wrap gap-[12px] w-full pt-[8px]" data-name="Prompt suggestions">
+                        <button
+                          type="button"
+                          onClick={() => handleSubmit(`Why should ${whoName} hire you?`)}
+                          disabled={isLoading}
+                          className="flex items-center gap-[12px] min-w-[220px] max-w-full rounded-[16px] px-[16px] py-[12px] text-left transition-colors duration-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff]"
+                          style={{ backgroundColor: colors.messageBg }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : 'rgba(255, 255, 255, 0.1)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.messageBg}
+                        >
+                          <span className="text-[18px] leading-none shrink-0" aria-hidden="true">🤔</span>
+                          <span className="flex flex-col gap-[2px] min-w-0">
+                            <span className="font-semibold text-[14px] leading-[20px] truncate" style={{ color: colors.textPrimary }}>
+                              Why should {whoName} hire you?
+                            </span>
+                            <span className="text-[13px] leading-[18px]" style={{ color: colors.textSecondary }}>
+                              Quick pitch, portfolio &amp; CV
+                            </span>
+                          </span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

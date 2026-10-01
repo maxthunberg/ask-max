@@ -15,8 +15,15 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface ChatSuggestion {
+  label: string;
+  description: string;
+  url: string;
+}
+
 export interface ChatResponse {
   message: string;
+  suggestions?: ChatSuggestion[]; // Link cards shown under the answer
   sources: string[];
   detectedLanguage?: 'en' | 'sv' | 'other'; // Language detected from user's message
   shouldSwitchUI?: boolean; // Whether UI should switch language
@@ -29,7 +36,9 @@ export async function sendChatMessage(
   message: string,
   conversationHistory: ChatMessage[] = [],
   userLanguage?: 'en' | 'sv',
-  currentUILanguage?: 'en' | 'sv'
+  currentUILanguage?: 'en' | 'sv',
+  audience?: 'airon',
+  who?: string // Company from ?who=, enables the fixed "Why should X hire you?" answer
 ): Promise<ChatResponse> {
   // Note: Tracking is now handled in PortfolioPage.tsx via utils/analytics.ts
   
@@ -46,6 +55,8 @@ export async function sendChatMessage(
         conversationHistory,
         userLanguage,
         currentUILanguage,
+        audience,
+        who,
       }),
     }
   );
@@ -73,15 +84,19 @@ export async function sendChatMessage(
 /**
  * Initialize the knowledge base with Max's portfolio data
  */
-export async function initializeKnowledgeBase(): Promise<void> {
+export async function initializeKnowledgeBase(
+  audience?: 'airon',
+  force = false
+): Promise<void> {
   const response = await fetch(
-    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/initialize`,
+    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/init-kb`,
     {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${publicAnonKey}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ audience, force }),
     }
   );
 

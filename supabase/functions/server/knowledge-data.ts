@@ -550,7 +550,7 @@ Jag har egentligen tränat ledarskap långt innan jag visste att det var ledarsk
 
 Formellt har jag läst affärsutveckling och företagsekonomi på Linnéuniversitetet, där ledarskap ingick i utbildningen. Men om jag ska vara ärlig, så är det framförallt genom praktiken som jag utvecklats som ledare.
 
-Idag leder jag ett team med fyra designers på Volvo Group, där mitt fokus ligger på att skapa en miljö med transparens, tillit och självledarskap. Jag tror inte på micromanagement. Så länge du tar ägarskap och levererar det som förväntas så behöver jag inte styra hur du gör det. Vi är vuxna människor, och det funkar bäst när vi litar på varandra och snackar öppet om saker.
+Idag leder jag ett team med sex designers på Volvo Group, där mitt fokus ligger på att skapa en miljö med transparens, tillit och självledarskap. Jag tror inte på micromanagement. Så länge du tar ägarskap och levererar det som förväntas så behöver jag inte styra hur du gör det. Vi är vuxna människor, och det funkar bäst när vi litar på varandra och snackar öppet om saker.
 
 Innan Volvo var jag lead för designteam hos Agrowth och redan under min studietid var jag ordförande för studentföreningen EHVS, med runt 1 000 aktiva medlemmar och ett par miljoner i omsättning. Det var en crash-course i ledarskap, kommunikation, konflikter, vision och att få saker gjorda tillsammans.
 
@@ -729,7 +729,8 @@ Max gillar:
 - vänner, sociala sammanhang och att hitta på saker  
 - konserter och live-musik  
 - att gymma  
-- att spela golf (tidigare satsade han seriöst)  
+- att spela golf (tidigare satsade han seriöst, se mer nedan)
+- att gamea
 - pingis och schack  
 - att lära sig nya saker hela tiden  
 - att hjälpa UX-studenter och lära sig av dem (han får lika mycket tillbaka som han ger)
@@ -738,6 +739,23 @@ Han kan:
 - spela piano (även om elpianot dammar lite ibland)  
 - lösa en Rubiks kub  
 - designa typsnitt (till exempel sitt eget "Miranda Sans")  
+
+## Golf Q&A: What is your hcp / golf handicap?
+
+Golf hcp (handicap): Max's golf handicap (hcp) is 2.8 today. His lowest golf hcp was +0.5. Max har 2,8 i hcp (golfhandicap), som lägst +0,5.
+
+## Golf
+
+Max har spelat golf länge och satsade seriöst under flera år. Idag har han 2,8 i handicap (hcp). Som lägst hade han +0,5 i handicap.
+
+Varför han slutade satsa:
+"Under tre år tyckte jag inte att träningen var rolig längre, men perfektionisten i mig pushade ändå på. Till slut fick det vara nog. Jag satt på bussen till Alvesta klockan 06 en söndagsmorgon, som jag gjorde varje söndag, för ett fyspass. Där och då insåg jag att nu fick det räcka."
+
+Golfen lärde honom självledarskap, disciplin och att vara sin egen tränare (se även hans ledarskap). Idag spelar han för att det är roligt.
+
+## En vanlig helg
+
+"En vanlig helg gillar jag att hitta på saker. Gamea till exempel, couch co-op med Ebba eller CS med min bästa vän. Eller spela golf, gå på event och sånt. Sen har jag ett hus nu som jag måste ta tag i 😅"
 
 ## Pets
 
@@ -842,7 +860,136 @@ Var bara väldigt tydlig med vad du behöver hjälp med. Ju tydligare du är des
 ## Vad jag tycker är överskattat i UX-utbildningar och portfolios
 
 Process-snack och perfekta case. I min värld räcker det med ett riktigt bra case. Det kan handla om när du failade totalt, men att du reflekterar och visar hur du lärt dig. Och att portfolion är snygg och genomtänkt. Spacing, kontrast, hierarki, typografi. Det räcker 🤷‍♂️`
+  },
+  {
+    filename: 'max-career-and-ownership.md',
+    content: `# Max Career, Ownership and Scope
+
+## Karriärväg
+
+Max har jobbat på bland annat Sendify, Skyltmax, Agrowth och idag Volvo Group. Från Sendify och framåt har han på alla ställen drivit och ägt designfrågan och stakeholder management.
+
+## Nuvarande roll och scope på Volvo
+
+Max är en väldigt hands-on UX Lead. Han har ett team med sex designers som han stöttar med sin expertis och sitt ledarskap. Han ansvarar för UX-leveranser i ett område med 20+ produktteam.
+
+"Jag vill stötta andra och älskar att jobba med folk mot gemensamma mål. Snälla ha tydliga mål!"
+
+## Från enskilda system till en helhet (Volvo)
+
+På Volvo handlar jobbet om att stötta en bredare end-to-end-upplevelse. Det kräver mer service design-tänk och mappning, för att förbättra inte bara enskilda system utan hur alla system byggs ihop på ett holistiskt sätt. Tänk en appsvit likt Microsoft 365 snarare än fragmenterade appupplevelser för Volvos 16 000+ designingenjörer.
+
+## Jobba utan färdig spec
+
+"Det gör vi hela tiden på Volvo. Vi är mitt i en modernisering där vi hela tiden behöver skapa tydlig förståelse för önskad riktning, problem och mål innan vi kan förbättra något. Vi har gjort enormt mycket research de senaste tre åren. Idag kan vi därför gå in i epics och tydliggöra scope snabbare, med leveranser förankrade i verkligheten. Inte bara gissande!"
+
+## Skyltmax: e-handel, CRO och interna system
+
+På Skyltmax låg mycket fokus på CRO (konverteringsoptimering) och att datadrivet ta fram förbättringar i e-handeln. Det finns cases med siffror och förbättringar från Skyltmax i Max portfolio (några år gamla). Skyltmax byggde också de flesta interna systemen själva, så Max designade många olika typer av verktyg där.
+
+## Dashboards, adminverktyg och tekniska användare
+
+Max har designat dashboards, adminverktyg och verktyg för tekniska användare, framförallt på Volvo (PLM/PDM, data management, ingenjörer) och på Skyltmax (interna system).
+
+## Länkar: portfolio, CV och varumärkesarbete
+
+- Portfolio (lite daterad): [maxthunberg.com](https://maxthunberg.com), med bland annat cases från Skyltmax med siffror
+- CV/Resume: enklast via [LinkedIn](https://www.linkedin.com/in/maxthunberg), som alltid är uppdaterad
+- Varumärke och typsnitt: [thunatype.com](https://thunatype.com)`
+  },
+  {
+    filename: 'max-craft-brand-and-ai.md',
+    content: `# Max Craft: Brand, Typography, Code and AI
+
+## Thuna type och typsnittsdesign
+
+Thuna type är Max typsnittsstudio (font foundry), hans "vid sidan av"-grej där han designar typsnitt. Det är alltså en studio, inte ett enskilt typsnitt. Tanken är att sälja licenser på sikt. Han har bland annat designat Miranda Sans, ett typsnitt som finns på Google Fonts under en fri licens. Arbetet finns på thunatype.com. Namnet skrivs alltid med gemener: "thuna type", och "Thuna type" bara i början av en mening.
+
+## Varumärkesarbete och visuellt
+
+Max har gjort varumärkes- och visuellt arbete genom åren. En del äldre arbete finns i hans portfolio, men det är runt 8 år gammalt. Hans mest aktuella visuella arbete är typsnitten på thuna type och den här sajten (Ask Max).
+
+## Enhetlighet mellan produkt och varumärke
+
+"Det är superviktigt att skapa enhetlighet, åtminstone när det är kundnära. Interna system är en annan sak. De måste få gå 100 % på tidseffektivitet och användarvänlighet utan begränsningar från branding, framförallt applikationer som handlar om dataanalys och data management. Där blir Volvos stora klumpiga marketing-komponenter inte lika uppskattade 😉"
+
+## Hur Ask Max byggdes
+
+Koden till Ask Max är skriven av AI. Max har byggt den med Claude Code, Codex, Figma Design och Figma Make, med Supabase och Vercel för databas och hosting. Själva chatten använder OpenAI:s API. Max har stått för idé, design, innehåll och styrning av bygget.
+
+## Hur Max använder AI i designarbetet
+
+"Hela tiden. Primärt för snabba prototyper och för att ta fram vision och koncept snabbt. Då slipper man bygga prototyper manuellt som tar tid, och vi kan få en mer verklighetstrogen upplevelse att testa med användare direkt, utan att vänta på utvecklare och en QA-miljö. Skitnice!"
+
+"Research-mässigt tycker jag fortfarande att AI är opålitlig, även om den hjälper mycket om man har bra koll på rådatan. Då blir syntes och analys enklare och snabbare så klart."
+
+## Frontend och kod
+
+"Jag kan ganska mycket. Jag har utvecklat WordPress-teman (innan AI fanns), så jag har grundläggande förståelse för frontendutveckling och PHP. Glad amatör 😊 Jag är inte utvecklare, men jag har nog bättre förståelse än de flesta designers."
+
+## Verktyg
+
+Mest Figma, Microsoft-sviten och olika AI-verktyg som Figma Make, Claude och Copilot.`
   }
 ] as const;
 
 export type KnowledgeFile = (typeof KNOWLEDGE_BASE)[number];
+
+export type KnowledgeAudience = 'airon';
+
+export const AIRON_KNOWLEDGE_BASE = [
+  {
+    filename: 'airon-founding-designer-application.md',
+    audience: 'airon',
+    content: `# Max Thunberg - Airon Founding Designer application
+
+## Why should Airon hire you?
+
+Airon is looking for someone who can own both the product and the brand, turn a technically complex product into something that feels obvious, and work fast with engineers and AI tools. That is a good match for me:
+- 10+ years of UX across e-commerce, startups, agencies and complex enterprise systems
+- Today a hands-on UX Lead at Volvo Group with six designers and UX responsibility across 20+ product teams, making complex engineering tools usable for 16,000+ design engineers
+- Real craft in type and brand: I run thuna type on the side and designed Miranda Sans, which is on Google Fonts
+- AI-native way of working: I built Ask Max, this site, with Claude Code, Codex, Figma Make, Supabase, Vercel and the OpenAI API
+
+## Product design for technical users (Airon's console)
+
+At Volvo I design for engineers in PLM/PDM, data management and data analysis tools, where efficiency and clarity matter more than decoration. At Skyltmax we built most internal systems ourselves, so I designed dashboards and admin tools there too. I have not designed GPU or AI compute platforms before, so that is transferable experience. The challenge is the same: understand a complex technical product and make the important tasks obvious.
+
+## Brand and one visual system (Airon's brand)
+
+Thuna type is my type foundry side project, see thunatype.com. Miranda Sans is free on Google Fonts. My older brand work in my portfolio is about 8 years old. I believe customer-facing touchpoints (product, website, everything a company puts out) should look like one company. Internal tools are different: there efficiency wins over branding.
+
+## Using AI tools and code (Airon's requirements)
+
+I use AI all the time to prototype quickly and make vision and concepts testable with real users without waiting for developers or a QA environment. Ask Max is an example: the code is written by AI, steered by me. I have built WordPress themes, so I understand frontend and some PHP. I'm not a developer, but I understand code better than most designers. For research I'm more careful: AI helps synthesis when you know the raw data well, but it is still unreliable on its own.
+
+## Owning work end-to-end without a full spec
+
+From Sendify onwards (Sendify, Skyltmax, Agrowth, Volvo) I have owned design and stakeholder management. At Skyltmax the focus was CRO and data-driven improvements in e-commerce, with cases and numbers in my portfolio at maxthunberg.com. At Volvo we have done three years of heavy research in a modernisation, so we can now enter epics and clarify scope quickly, grounded in reality rather than guesses.
+
+## Why Airon, and why now?
+
+Enterprise life at Volvo means a lot of pushing back and forth with stakeholders, a lot of legacy and a modernisation journey that will probably take ten years. I want to move faster and work closer to the cutting edge. Airon is building foundational AI infrastructure while the market is still taking shape, and that is exactly the kind of pace and problem I want.
+
+## What would you do in your first 6-12 months?
+
+- Get a clear picture of where I can create value and get the foundations in place
+- Go full speed on the clear wins
+- Ship and test the things that are unclear
+- Do more research on what is both unclear and risky
+- Map a first version of the customer journey and where to improve, so we never lose track of who the customer is
+
+That is the hard part. With AI, building is easy. We need to build fast, but also understand faster what is needed and what sets us apart, so we solve customers' problems in a smooth and simple way.
+
+## Location and working setup
+
+I live in Gothenburg. I expect to work mainly from the office 3-4 days a week, and partly from home.
+
+## Where can I see your work, portfolio and CV?
+
+- Branding and type design: [thunatype.com](https://thunatype.com), my font foundry
+- Portfolio cases (a bit dated): [maxthunberg.com](https://maxthunberg.com)
+- CV/Resume: [LinkedIn](https://www.linkedin.com/in/maxthunberg), always up to date
+- Best of all: talk to me IRL`
+  }
+] as const;
