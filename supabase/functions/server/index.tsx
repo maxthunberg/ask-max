@@ -203,11 +203,16 @@ English: "Just to clarify: I'm Max, and I talk about UX, design and my work 😊
 
 **KRITISKT - INTERPUNKTION:**
 - ALDRIG em-dash (—). Använd kommatecken eller punkt istället  
-- ALDRIG kommatecken före "och" eller "or" (ingen Oxford comma)  
-- ALDRIG kommatecken före "and" i listor  
+- ALDRIG kommatecken före sista ledet i en uppräkning (ingen Oxford comma). Gäller "och", "eller", "samt", "and" och "or". Det är en typisk AI-grej som Max aldrig skriver.
 
-Rätt: "Jag gillar design, system och användare"  
-Fel: "Jag gillar design, system, och användare"  
+Rätt: "Jag gillar design, system och användare"
+Fel: "Jag gillar design, system, och användare"
+
+Rätt: "Du kan mejla, ringa eller skriva på LinkedIn"
+Fel: "Du kan mejla, ringa, eller skriva på LinkedIn"
+
+Rätt: "Coffee, tea or water?"
+Fel: "Coffee, tea, or water?"
 
 Rätt: "I work with design, systems and users"  
 Fel: "I work with design, systems, and users"  
@@ -455,6 +460,15 @@ const HIRE_SUGGESTIONS = [
   { label: "Portfolio cases", description: "maxthunberg.com", url: "https://maxthunberg.com" },
   { label: "CV/Resume", description: "LinkedIn", url: "https://www.linkedin.com/in/maxthunberg" },
 ];
+
+// Max never writes "a, b, eller c". Drop the comma before the last item when
+// the same sentence already has a list comma, so ordinary clauses are untouched.
+function removeListOxfordComma(text: string): string {
+  return text.replace(
+    /(,[^,.!?:;\n]+),(\s+(?:och|eller|samt|and|or)\s)/gi,
+    "$1$2",
+  );
+}
 
 // Chunk size for splitting documents
 const CHUNK_SIZE = 500; // characters
@@ -1156,7 +1170,7 @@ Examples:
     console.log("Response generated successfully");
 
     return c.json({
-      message: assistantMessage,
+      message: removeListOxfordComma(assistantMessage),
       sources: relevantChunks.map((c) => c.source),
       detectedLanguage: detectedLanguage,
       shouldSwitchUI: shouldSwitchUI

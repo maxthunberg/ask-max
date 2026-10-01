@@ -17,7 +17,7 @@ import { trackChatMessage, trackChatStarted, trackChatEnd, trackChatError, detec
 import { saveLanguagePreference, getLanguagePreference } from '../utils/language-cookie';
 
 // App version
-const APP_VERSION = 'v1.3.0';
+const APP_VERSION = 'v1.3.1';
 
 // ?who=<company> shows a "Why should <company> hire you?" prompt card.
 // Returns a cleaned, display-cased company name, or null if missing/invalid.
