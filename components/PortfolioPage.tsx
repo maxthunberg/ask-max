@@ -19,7 +19,7 @@ import { saveLanguagePreference, getLanguagePreference } from '../utils/language
 // App version
 const APP_VERSION = 'v1.3.1';
 
-// ?who=<company> shows a "Why should <company> hire you?" prompt card.
+// ?who=<company> shows a "Why should <company> hire me?" prompt card.
 // Returns a cleaned, display-cased company name, or null if missing/invalid.
 function parseWhoParam(raw: string | null): string | null {
   const cleaned = (raw ?? '').replace(/[^\p{L}\p{N} &.'-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 40);
@@ -1021,7 +1021,7 @@ export function PortfolioPage() {
                       <div className="flex flex-wrap gap-[12px] w-full pt-[8px]" data-name="Prompt suggestions">
                         <button
                           type="button"
-                          onClick={() => handleSubmit(`Why should ${whoName} hire you?`)}
+                          onClick={() => handleSubmit(`Why should ${whoName} hire me?`)}
                           disabled={isLoading}
                           className="flex items-center gap-[12px] min-w-[220px] max-w-full rounded-[16px] px-[16px] py-[12px] text-left transition-colors duration-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff]"
                           style={{ backgroundColor: colors.messageBg }}
@@ -1031,7 +1031,7 @@ export function PortfolioPage() {
                           <span className="text-[18px] leading-none shrink-0" aria-hidden="true">🤔</span>
                           <span className="flex flex-col gap-[2px] min-w-0">
                             <span className="font-semibold text-[14px] leading-[20px] truncate" style={{ color: colors.textPrimary }}>
-                              Why should {whoName} hire you?
+                              Why should {whoName} hire me?
                             </span>
                             <span className="text-[13px] leading-[18px]" style={{ color: colors.textSecondary }}>
                               Quick pitch, portfolio &amp; CV
