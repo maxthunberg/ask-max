@@ -847,7 +847,7 @@ export function PortfolioPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                  className="custom-scrollbar basis-0 box-border grow min-h-px min-w-px overflow-x-clip overflow-y-auto py-[16px] relative shrink-0 w-full"
+                  className="custom-scrollbar basis-0 box-border grow min-h-px min-w-px overflow-x-clip overflow-y-auto py-[16px] relative shrink-0 w-screen ml-[calc(50%-50vw)]"
                   data-name="Chat"
                   role="log"
                   aria-live="polite"
