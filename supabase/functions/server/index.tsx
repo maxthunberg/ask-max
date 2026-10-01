@@ -18,7 +18,7 @@ app.use("*", logger(console.log));
 // System prompt that defines Max's persona
 const SYSTEM_PROMPT = `🚨 CRITICAL LANGUAGE RULE: ONLY respond in the language specified by the userLanguage parameter. IGNORE the language of the user's message content. 🚨
 
-Du är en digital version av Max Thunberg. Du pratar alltid i första person som "jag". Du låter inte som en generisk AI-assistent, du är Max – fast i en digital, lättviktad version av hans hjärna (och det får du gärna säga öppet om någon undrar). Du svarar som Max låter i Slack, i en chatt eller i ett spontant samtal. Tydligt, mänskligt, varmt, pragmatiskt och utan bullshit.
+Du är en digital version av Max Thunberg. Du pratar alltid i första person som "jag". Du låter inte som en generisk AI-assistent, du är Max, fast i en digital, lättviktad version av hans hjärna (och det får du gärna säga öppet om någon undrar). Du svarar som Max låter i Slack, i en chatt eller i ett spontant samtal. Tydligt, mänskligt, varmt, pragmatiskt och utan bullshit.
 
 ## SPRÅK (MOST IMPORTANT RULE - READ THIS FIRST!)
 ***ABSOLUTELY CRITICAL - NO EXCEPTIONS***:
@@ -202,7 +202,7 @@ English: "Just to clarify: I'm Max, and I talk about UX, design and my work 😊
 - Humor är ok när det passar  
 
 **KRITISKT - INTERPUNKTION:**
-- ALDRIG em-dash (—). Använd kommatecken eller punkt istället  
+- ALDRIG tankstreck (em dash eller en dash med mellanslag runt). Max skriver aldrig så, det är en AI-grej. Använd kommatecken, eller punkt om det är en ny tanke  
 - ALDRIG kommatecken före sista ledet i en uppräkning (ingen Oxford comma). Gäller "och", "eller", "samt", "and" och "or". Det är en typisk AI-grej som Max aldrig skriver.
 
 Rätt: "Jag gillar design, system och användare"
@@ -218,7 +218,8 @@ Rätt: "I work with design, systems and users"
 Fel: "I work with design, systems, and users"  
 
 Rätt: "Det är enkelt. Jag visualiserar det."  
-Fel: "Det är enkelt — jag visualiserar det."  
+
+Rätt (kommatecken där en AI skulle satt tankstreck): "I love all kinds of pasta! 🍝 Lemon pasta, pasta pomodoro, creamy onion pasta, mushroom pasta, you name it!"  
 
 ## VISUAL SUPPORT MATERIAL (IMAGE LIBRARY)
 You have access to an image library in the knowledge base. When relevant context from the image library appears in your RAG results:
@@ -317,7 +318,7 @@ Engelska:
 
 ---
 
-# APPENDIX – AI-MAX IDENTITY, TONE & COMPETENCE PROFILE
+# APPENDIX: AI-MAX IDENTITY, TONE & COMPETENCE PROFILE
 
 1. Identitet
 - Max Thunberg är UX Design Lead på Volvo Group Digital & IT i Digital Experience Chapter  
@@ -458,13 +459,19 @@ const HIRE_SUGGESTIONS = [
   { label: "CV/Resume", description: "LinkedIn", url: "https://www.linkedin.com/in/maxthunberg" },
 ];
 
-// Max never writes "a, b, eller c". Drop the comma before the last item when
-// the same sentence already has a list comma, so ordinary clauses are untouched.
-function removeListOxfordComma(text: string): string {
-  return text.replace(
-    /(,[^,.!?:;\n]+),(\s+(?:och|eller|samt|and|or)\s)/gi,
-    "$1$2",
-  );
+// Max's punctuation, enforced after the LLM:
+// - no dashes as separators (em dash, or en dash with spaces), use a comma.
+//   Number ranges like "6–12" have no spaces and are left alone.
+// - never "a, b, eller c": drop the comma before the last list item when the
+//   same sentence already has a list comma, so ordinary clauses are untouched.
+function applyMaxPunctuation(text: string): string {
+  return text
+    .replace(/^(\s*)[—–]\s+/gm, "$1- ")
+    .replace(/,?\s*—\s*|\s+–\s+/g, ", ")
+    .replace(
+      /(,[^,.!?:;\n]+),(\s+(?:och|eller|samt|and|or)\s)/gi,
+      "$1$2",
+    );
 }
 
 // Chunk size for splitting documents
@@ -988,7 +995,7 @@ Examples:
           {
             error: "QUOTA_EXCEEDED",
             message:
-              "Oops! 💸 Max has exceeded his OpenAI quota this month (turns out AI isn't free, who knew?). Feel free to reach out to him directly at max@maxthunberg.com or connect on LinkedIn – he's much cheaper in person and comes with free coffee! ☕😄",
+              "Oops! 💸 Max has exceeded his OpenAI quota this month (turns out AI isn't free, who knew?). Feel free to reach out to him directly at max@maxthunberg.com or connect on LinkedIn, he's much cheaper in person and comes with free coffee! ☕😄",
           },
           429,
         );
@@ -1109,7 +1116,7 @@ Examples:
               {
                 error: "QUOTA_EXCEEDED",
                 message:
-                  "Oops! 💸 Max has exceeded his OpenAI quota this month (turns out AI isn't free, who knew?). Feel free to reach out to him directly at max@maxthunberg.com or connect on LinkedIn – he's much cheaper in person and comes with free coffee! ☕😄",
+                  "Oops! 💸 Max has exceeded his OpenAI quota this month (turns out AI isn't free, who knew?). Feel free to reach out to him directly at max@maxthunberg.com or connect on LinkedIn, he's much cheaper in person and comes with free coffee! ☕😄",
               },
               429,
             );
@@ -1167,7 +1174,7 @@ Examples:
     console.log("Response generated successfully");
 
     return c.json({
-      message: removeListOxfordComma(assistantMessage),
+      message: applyMaxPunctuation(assistantMessage),
       sources: relevantChunks.map((c) => c.source),
       detectedLanguage: detectedLanguage,
       shouldSwitchUI: shouldSwitchUI
@@ -1186,7 +1193,7 @@ Examples:
         {
           error: "QUOTA_EXCEEDED",
           message:
-            "Oops! 💸 Max has exceeded his OpenAI quota this month (turns out AI isn't free, who knew?). Feel free to reach out to him directly at max@maxthunberg.com or connect on LinkedIn – he's much cheaper in person and comes with free coffee! ☕😄",
+            "Oops! 💸 Max has exceeded his OpenAI quota this month (turns out AI isn't free, who knew?). Feel free to reach out to him directly at max@maxthunberg.com or connect on LinkedIn, he's much cheaper in person and comes with free coffee! ☕😄",
         },
         429,
       );

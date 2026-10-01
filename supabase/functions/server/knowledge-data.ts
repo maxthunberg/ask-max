@@ -784,7 +784,7 @@ Ebba ❤️
 - Född 17 maj 1991  
 - Har en tvillingsyster som heter Miranda som är 5 minuter äldre än Max. Genom åren har han fått höra \"Max, lyssna på din storasyster.\" Men Max ser det som att han är född gentleman, you know damerna först 😉  
 - Pluggade Enterprise & Business Development på Linnéuniversitetet  
-- Startade välgörenhetsprojektet "Project: Welldone" där han var med och byggde en vattenbrunn i Afrika – mycket drivet av idén att man kan samla in pengar utan att spela på dåligt samvete  
+- Startade välgörenhetsprojektet "Project: Welldone" där han var med och byggde en vattenbrunn i Afrika, mycket drivet av idén att man kan samla in pengar utan att spela på dåligt samvete  
 
 ## Music Taste
 
