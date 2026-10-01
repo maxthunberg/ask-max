@@ -438,17 +438,14 @@ function buildHireAnswer(company: string): string {
   const opener = company
     ? `Well, there are just sooo many reasons why ${company} should hire me, right? 😉`
     : "Well, there are just sooo many reasons, right? 😉";
-  const lookAt = company
-    ? `Before that, I'd suggest the ${company} team takes a look at some of my stuff.`
-    : "Before that, I'd suggest looking at some of my stuff.";
   return `${opener}
 
-${HIRE_ANSWER_BODY.replace("{lookAt}", lookAt)}`;
+${HIRE_ANSWER_BODY}`;
 }
 
 const HIRE_ANSWER_BODY = `Joking aside. I'm a highly experienced designer, both in leading teams and projects and in delivering impactful design work, visually and in improving my users' lives. Before Volvo, that meant making sure we had the best possible e-commerce experience, where we improved conversion enormously during my time there, especially on mobile. Now, as UX Lead at Volvo, it's about making sure my 16k+ engineers have internal tools that support them in their highly complex work life.
 
-It's easier to just talk to me IRL. {lookAt}
+It's easier to talk to me IRL. But until then, check out some of my stuff below.
 
 Want something branding related? Check out my font foundry [thunatype.com](https://thunatype.com). I design fonts for fun 😎
 
