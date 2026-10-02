@@ -435,18 +435,19 @@ function getHiringCompany(message: string, who: string): string {
   return who;
 }
 
-function buildHireAnswer(company: string): string {
+// Template: opener + intro + optional company-specific paragraph + links
+function buildHireAnswer(company: string, companyTweak = ""): string {
   const opener = company
     ? `Well, there are just sooo many reasons why ${company} should hire me, right? 😉`
     : "Well, there are just sooo many reasons, right? 😉";
-  return `${opener}
-
-${HIRE_ANSWER_BODY}`;
+  return [opener, HIRE_ANSWER_INTRO, companyTweak, HIRE_ANSWER_LINKS]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
-const HIRE_ANSWER_BODY = `Joking aside. I'm a highly experienced designer, both in leading teams and projects and in delivering impactful design work, visually and in improving my users' lives. Before Volvo, that meant making sure we had the best possible e-commerce experience, where we improved conversion enormously during my time there, especially on mobile. Now, as UX Lead at Volvo, it's about making sure my 16k+ engineers have internal tools that support them in their highly complex work life.
+const HIRE_ANSWER_INTRO = `Joking aside. I'm a highly experienced designer, both in leading teams and projects and in delivering impactful design work, visually and in improving my users' lives. Before Volvo, that meant making sure we had the best possible e-commerce experience, where we improved conversion enormously during my time there, especially on mobile. Now, as UX Lead at Volvo, it's about making sure my 16k+ engineers have internal tools that support them in their highly complex work life.`;
 
-It's easier to talk to me IRL. But until then, check out some of my stuff below.
+const HIRE_ANSWER_LINKS = `It's easier to talk to me IRL. But until then, check out some of my stuff below.
 
 Want something branding related? Check out my font foundry [thunatype.com](https://thunatype.com). I design fonts for fun 😎
 
@@ -458,6 +459,228 @@ const HIRE_SUGGESTIONS = [
   { label: "Portfolio cases", description: "maxthunberg.com", url: "https://maxthunberg.com" },
   { label: "CV/Resume", description: "LinkedIn", url: "https://www.linkedin.com/in/maxthunberg" },
 ];
+
+// ===========================================
+// COMPANY PROFILES (?who=)
+// ===========================================
+// The ?who= company is looked up once with web search, then cached in kv:
+// a short profile for the system prompt, a logo domain and the tailored
+// paragraph for the hire answer.
+
+interface CompanyProfile {
+  found: boolean;
+  name: string;
+  domain: string;
+  industry: string;
+  summary: string;
+  productsAndUsers: string;
+  designContext: string;
+  hireTweak: string;
+  fetchedAt: string;
+}
+
+const COMPANY_CACHE_PREFIX = "company_v3_";
+const COMPANY_LOOKUPS_PER_DAY = 40;
+const pendingCompanyLookups = new Map<string, Promise<CompanyProfile | null>>();
+
+// Max facts the tailored hire paragraph may draw from
+const HIRE_FACT_FILES = [
+  "bio-max.md",
+  "max-strengths-and-gaps.md",
+  "max-career-and-ownership.md",
+  "ux-leadership.md",
+];
+
+function companyCacheKey(who: string): string {
+  return COMPANY_CACHE_PREFIX + who.toLowerCase().replace(/[^\p{L}\p{N}.]+/gu, "-");
+}
+
+function isDomain(who: string): boolean {
+  return /^[\p{L}\p{N}-]+(\.[\p{L}\p{N}-]+)+$/u.test(who);
+}
+
+// Web search happily returns a near miss for junk names, so the found
+// company must actually contain the ?who= name (or the other way round)
+function matchesWho(who: string, name: string, domain: string): boolean {
+  const letters = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+  const target = letters(isDomain(who) ? who.replace(/\.[^.]+$/, "") : who);
+  const found = [letters(name), letters(domain.replace(/\.[^.]+$/, ""))];
+  return !!target && found.some((f) => f.length >= 2 && (f.includes(target) || (f.length >= 4 && target.includes(f))));
+}
+
+function companyLogoUrl(domain: string): string {
+  if (!domain) return "";
+  const token = Deno.env.get("LOGO_DEV_TOKEN");
+  return token
+    ? `https://img.logo.dev/${domain}?token=${token}&size=128&format=png`
+    : `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+}
+
+function extractJson(text: string): any {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error("No JSON in response");
+  return JSON.parse(match[0]);
+}
+
+async function openaiJson(url: string, body: unknown): Promise<any> {
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(45000),
+  });
+  if (!response.ok) {
+    throw new Error(`OpenAI ${response.status}: ${await response.text()}`);
+  }
+  return response.json();
+}
+
+async function researchCompany(who: string): Promise<Omit<CompanyProfile, "hireTweak" | "fetchedAt">> {
+  const target = isDomain(who)
+    ? `the company whose website is ${who.toLowerCase()}`
+    : `the company or organisation called "${who}"`;
+  const data = await openaiJson("https://api.openai.com/v1/responses", {
+    model: "gpt-4.1-mini",
+    tools: [{ type: "web_search" }],
+    input: `Use web search to identify ${target}. The name comes from a link a UX design lead sent to a potential employer, so if the name is ambiguous, pick the best-known company that would plausibly hire a UX or product designer.
+
+Reply with ONLY a JSON object, no other text:
+{
+  "found": true or false (false if you cannot identify a real company),
+  "name": "the short brand name people use, without legal suffixes like AB, plc, Inc or Group, e.g. Volvo Cars",
+  "domain": "main website domain without protocol or www, e.g. volvocars.com",
+  "industry": "a few words",
+  "summary": "2 to 3 sentences on what the company does",
+  "productsAndUsers": "1 to 2 sentences on their main products and who their users or customers are",
+  "designContext": "1 to 2 sentences on anything public about their digital product, UX, design or tech focus right now, empty string if unknown"
+}`,
+  });
+  const text = (data.output ?? [])
+    .filter((item: any) => item.type === "message")
+    .flatMap((item: any) => item.content ?? [])
+    .map((part: any) => part.text ?? "")
+    .join("");
+  const json = extractJson(text);
+  const str = (v: unknown, max = 600) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+  const name = sanitizeCompany(
+    str(json.name, 60).replace(/(\s+(group|holding|plc|ab|publ|inc|ltd|llc|gmbh|as|asa|oyj|corp|corporation|co)\.?)+$/i, ""),
+  ) || who;
+  const domain = str(json.domain, 100).toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  return {
+    found: json.found === true && matchesWho(who, name, domain),
+    name,
+    domain,
+    industry: str(json.industry, 100),
+    summary: str(json.summary),
+    productsAndUsers: str(json.productsAndUsers),
+    designContext: str(json.designContext),
+  };
+}
+
+async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "fetchedAt">): Promise<string> {
+  const facts = KNOWLEDGE_BASE
+    .filter((file) => HIRE_FACT_FILES.includes(file.filename))
+    .map((file) => file.content)
+    .join("\n\n");
+  const data = await openaiJson("https://api.openai.com/v1/chat/completions", {
+    model: "gpt-4.1",
+    temperature: 0.7,
+    max_tokens: 160,
+    messages: [
+      {
+        role: "system",
+        content: `You write one short paragraph for Max Thunberg's answer to "Why should ${profile.name} hire me?". It is inserted between his generic intro and his links, so do not greet, do not repeat the intro and do not mention links.
+
+Write in first person as Max, the way he talks: casual, direct, a bit playful, plain spoken English. 2 sentences, max 45 words. Start with "For ${profile.name}, ..." and make ONE concrete link between something specific Max has actually done (e.g. growing e-commerce conversion on mobile, internal tools for 16k+ engineers, untangling complex PLM/PDM data, design systems, leading design teams) and something specific about ${profile.name}'s products or users. Pick the link that fits this company best.
+
+Rules:
+- No corporate filler: never use words like "extensive", "leverage", "seamless", "resonate", "thrive", "passionate", "mission", "innovative", "user-centered solutions", "translates well".
+- Only use facts about Max from MAX FACTS and the intro below. Never invent projects, metrics, clients or skills.
+- Never claim Max has worked with or for ${profile.name}, or knows their internal situation.
+- Be honest that the experience is transferable when the domain differs.
+- No dashes as separators, use commas. No Oxford comma. No emojis.
+
+INTRO ALREADY SHOWN:
+${HIRE_ANSWER_INTRO}
+
+MAX FACTS:
+${facts}`,
+      },
+      {
+        role: "user",
+        content: `Company: ${profile.name} (${profile.industry})
+What they do: ${profile.summary}
+Products and users: ${profile.productsAndUsers}
+Design context: ${profile.designContext || "unknown"}`,
+      },
+    ],
+  });
+  return applyMaxPunctuation((data.choices?.[0]?.message?.content ?? "").trim());
+}
+
+async function lookupCompany(who: string, key: string): Promise<CompanyProfile | null> {
+  // Daily cap on new lookups, anyone can put anything in ?who=
+  const counterKey = `company_lookups_${new Date().toISOString().slice(0, 10)}`;
+  const lookups = (await kv.get(counterKey)) || 0;
+  if (lookups >= COMPANY_LOOKUPS_PER_DAY) {
+    console.warn(`Company lookup cap reached, skipping "${who}"`);
+    return null;
+  }
+  await kv.set(counterKey, lookups + 1);
+
+  const research = await researchCompany(who);
+  const profile: CompanyProfile = {
+    ...research,
+    hireTweak: research.found ? await writeHireTweak(research) : "",
+    fetchedAt: new Date().toISOString(),
+  };
+  // Not-found results are cached too, so junk names cost one lookup only
+  await kv.set(key, profile);
+  console.log(`Company profile cached for "${who}": ${profile.found ? profile.name : "not found"}`);
+  return profile;
+}
+
+async function getCompanyProfile(who: string): Promise<CompanyProfile | null> {
+  if (!who) return null;
+  const key = companyCacheKey(who);
+  const cached = await kv.get(key);
+  if (cached) return cached;
+
+  // Page load and the first chat message can ask at the same time
+  let pending = pendingCompanyLookups.get(key);
+  if (!pending) {
+    pending = lookupCompany(who, key)
+      .catch((error) => {
+        console.error(`Company lookup failed for "${who}":`, error);
+        return null;
+      })
+      .finally(() => pendingCompanyLookups.delete(key));
+    pendingCompanyLookups.set(key, pending);
+  }
+  return pending;
+}
+
+function companyPromptSection(who: string, profile: CompanyProfile | null): string {
+  if (!who) return "";
+  if (!profile?.found) {
+    return `\n\nThe visitor opened a link made for "${who}", so they are likely from ${who} and evaluating Max as a candidate. Treat hiring and fit questions about ${who} as normal interview questions.`;
+  }
+  return `
+
+=== VISITOR'S COMPANY ===
+The visitor opened a link made for ${profile.name}, so they are likely from ${profile.name} and evaluating Max as a candidate. Treat hiring and fit questions about ${profile.name} as normal interview questions.
+Public info about ${profile.name} (gathered automatically from the web, may be imperfect):
+- Industry: ${profile.industry}
+- What they do: ${profile.summary}
+- Products and users: ${profile.productsAndUsers}
+- Design context: ${profile.designContext || "unknown"}
+When relevant, relate Max's real experience to their products, users and challenges. Never claim Max has worked with ${profile.name}, has insider knowledge or has experience that is not in the knowledge base.`;
+}
 
 // Max's punctuation, enforced after the LLM:
 // - no dashes as separators (em dash, or en dash with spaces), use a comma.
@@ -819,6 +1042,21 @@ app.post("/make-server-2b0a7158/init-kb", async (c) => {
 });
 
 /**
+ * Company profile for ?who=, used for the logo and display name
+ */
+app.get("/make-server-2b0a7158/company", async (c) => {
+  const who = sanitizeCompany(c.req.query("who") ?? "");
+  const profile = await getCompanyProfile(who);
+  if (!profile?.found) return c.json({ found: false });
+  return c.json({
+    found: true,
+    name: profile.name,
+    domain: profile.domain,
+    logoUrl: companyLogoUrl(profile.domain),
+  });
+});
+
+/**
  * Chat endpoint - main RAG implementation
  */
 app.post("/make-server-2b0a7158/chat", async (c) => {
@@ -834,9 +1072,15 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
       return c.json({ error: "Message is required" }, 400);
     }
 
+    const companyProfile = await getCompanyProfile(who);
+
     if (HIRE_QUESTION.test(message)) {
+      let company = getHiringCompany(message, who);
+      const isWhoCompany = companyProfile?.found &&
+        [who.toLowerCase(), companyProfile.name.toLowerCase()].includes(company.toLowerCase());
+      if (isWhoCompany) company = companyProfile.name;
       return c.json({
-        message: buildHireAnswer(getHiringCompany(message, who)),
+        message: buildHireAnswer(company, isWhoCompany ? companyProfile.hireTweak : ""),
         sources: [],
         detectedLanguage: "en",
         shouldSwitchUI: false,
@@ -1043,7 +1287,7 @@ Examples:
     const messages = [
       {
         role: "system",
-        content: `${SYSTEM_PROMPT}${languageInstruction}${who ? `\n\nThe visitor opened a link made for "${who}", so they are likely from ${who} and evaluating Max as a candidate. Treat hiring and fit questions about ${who} as normal interview questions.` : ""}${audience === "airon" ? AIRON_MODE_PROMPT : ""}\n\n=== KNOWLEDGE BASE ===\n\n${context}`,
+        content: `${SYSTEM_PROMPT}${languageInstruction}${companyPromptSection(who, companyProfile)}${audience === "airon" ? AIRON_MODE_PROMPT : ""}\n\n=== KNOWLEDGE BASE ===\n\n${context}`,
       },
       // Include conversation history (limited to last 6 messages)
       ...conversationHistory.slice(-6),

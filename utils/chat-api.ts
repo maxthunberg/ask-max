@@ -105,3 +105,21 @@ export async function initializeKnowledgeBase(
     throw new Error(error.error || 'Failed to initialize knowledge base');
   }
 }
+export interface CompanyProfile {
+  found: boolean;
+  name?: string;
+  domain?: string;
+  logoUrl?: string;
+}
+
+/**
+ * Look up the ?who= company (name, logo). First call per company runs a web search server side.
+ */
+export async function fetchCompanyProfile(who: string): Promise<CompanyProfile> {
+  const response = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/company?who=${encodeURIComponent(who)}`,
+    { headers: { 'Authorization': `Bearer ${publicAnonKey}` } }
+  );
+  if (!response.ok) return { found: false };
+  return response.json();
+}

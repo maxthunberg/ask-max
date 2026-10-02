@@ -6,7 +6,7 @@ import svgPaths from "../imports/svg-sevsv6x2yc";
 // Using Cloudinary hosted image
 const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
 const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
-import { sendChatMessage, ChatMessage, ChatSuggestion } from '../utils/chat-api';
+import { sendChatMessage, fetchCompanyProfile, ChatMessage, ChatSuggestion, CompanyProfile } from '../utils/chat-api';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
 import { ThinkingSpinner } from './ThinkingSpinner';
 import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
@@ -109,6 +109,10 @@ export function PortfolioPage() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [language, setLanguage] = useState<'en' | 'sv'>('en');
   const [whoName, setWhoName] = useState<string | null>(null);
+  const [whoCompany, setWhoCompany] = useState<CompanyProfile | null>(null);
+  const [whoLogoFailed, setWhoLogoFailed] = useState(false);
+  // Official name from the lookup (e.g. ?who=volvocars.com -> Volvo Cars)
+  const whoDisplayName = (whoCompany?.found && whoCompany.name) || whoName;
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
   const [skeletonStage, setSkeletonStage] = useState<'navbar' | 'search' | 'disclaimer' | null>(null);
   
@@ -144,6 +148,13 @@ export function PortfolioPage() {
   useEffect(() => {
     setWhoName(parseWhoParam(new URLSearchParams(window.location.search).get('who')));
   }, []);
+
+  useEffect(() => {
+    if (!whoName) return;
+    fetchCompanyProfile(whoName)
+      .then(setWhoCompany)
+      .catch((error) => console.warn('Company lookup failed:', error));
+  }, [whoName]);
 
   // Save language preference to cookie when it changes
   useEffect(() => {
@@ -1021,17 +1032,26 @@ export function PortfolioPage() {
                       <div className="flex flex-wrap gap-[12px] w-full pt-[8px]" data-name="Prompt suggestions">
                         <button
                           type="button"
-                          onClick={() => handleSubmit(`Why should ${whoName} hire me?`)}
+                          onClick={() => handleSubmit(`Why should ${whoDisplayName} hire me?`)}
                           disabled={isLoading}
                           className="flex items-center gap-[12px] min-w-[220px] max-w-full rounded-[16px] px-[16px] py-[12px] text-left transition-colors duration-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff]"
                           style={{ backgroundColor: colors.messageBg }}
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : 'rgba(255, 255, 255, 0.1)'}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.messageBg}
                         >
-                          <span className="text-[18px] leading-none shrink-0" aria-hidden="true">🤔</span>
+                          {whoCompany?.logoUrl && !whoLogoFailed ? (
+                            <img
+                              src={whoCompany.logoUrl}
+                              alt=""
+                              className="w-[32px] h-[32px] rounded-[8px] object-contain bg-white p-[3px] shrink-0"
+                              onError={() => setWhoLogoFailed(true)}
+                            />
+                          ) : (
+                            <span className="text-[18px] leading-none shrink-0" aria-hidden="true">🤔</span>
+                          )}
                           <span className="flex flex-col gap-[2px] min-w-0">
                             <span className="font-semibold text-[14px] leading-[20px] truncate" style={{ color: colors.textPrimary }}>
-                              Why should {whoName} hire me?
+                              Why should {whoDisplayName} hire me?
                             </span>
                             <span className="text-[13px] leading-[18px]" style={{ color: colors.textSecondary }}>
                               Quick pitch, portfolio &amp; CV
