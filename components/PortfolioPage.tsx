@@ -19,6 +19,9 @@ import { saveLanguagePreference, getLanguagePreference } from '../utils/language
 // App version
 const APP_VERSION = 'v1.3.1';
 
+// Seconds into the ?who= lookup when each loading message starts
+const WHO_LOADING_STEP_STARTS = [0, 2.5, 5, 9];
+
 // ?who=<company> shows a "Why should <company> hire me?" prompt card.
 // Returns a cleaned, display-cased company name, or null if missing/invalid.
 function parseWhoParam(raw: string | null): string | null {
@@ -187,10 +190,15 @@ export function PortfolioPage() {
     return () => { cancelled = true; };
   }, [whoName]);
 
-  // Step through loading messages while the lookup runs
+  // Step through loading messages while the lookup runs (an uncached lookup,
+  // research + logo + pitch, takes roughly 5-10s)
   useEffect(() => {
     if (!whoName || whoReady) return;
-    const interval = setInterval(() => setWhoLoadingStep((step) => step + 1), 2500);
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      setWhoLoadingStep(WHO_LOADING_STEP_STARTS.filter((s) => elapsed >= s).length - 1);
+    }, 250);
     return () => clearInterval(interval);
   }, [whoName, whoReady]);
 
@@ -1124,7 +1132,7 @@ export function PortfolioPage() {
                             <span className="relative h-[18px] overflow-hidden">
                               <AnimatePresence mode="wait" initial={false}>
                                 <motion.span
-                                  key={whoReady ? 'ready' : `step-${Math.min(whoLoadingStep, 3)}`}
+                                  key={whoReady ? 'ready' : `step-${whoLoadingStep}`}
                                   initial={{ opacity: 0, y: 6 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: -6 }}
@@ -1134,19 +1142,20 @@ export function PortfolioPage() {
                                 >
                                   {whoReady
                                     ? <>Quick pitch, portfolio &amp; CV</>
-                                    : [`Looking up ${whoName}…`, 'Finding their logo…', 'Tailoring my pitch…', 'Almost there…'][Math.min(whoLoadingStep, 3)]}
+                                    : [`Researching ${whoName}…`, 'Finding their logo…', `Writing my pitch for ${whoName}…`, 'Almost there…'][whoLoadingStep]}
                                 </motion.span>
                               </AnimatePresence>
                             </span>
                           </span>
-                          {/* Progress bar: eases towards 90% over ~10s, completes when the lookup is done */}
+                          {/* Progress bar: keeps creeping towards 95% (~65% at 6s, ~85% at 10s)
+                              so it never stalls, then completes when the lookup is done */}
                           <motion.span
                             className="absolute left-0 bottom-0 h-[2px] bg-[#7339ff]"
                             initial={{ width: '0%', opacity: 1 }}
-                            animate={whoReady ? { width: '100%', opacity: 0 } : { width: '90%', opacity: 1 }}
+                            animate={whoReady ? { width: '100%', opacity: 0 } : { width: '95%', opacity: 1 }}
                             transition={whoReady
                               ? { width: { duration: 0.3 }, opacity: { duration: 0.4, delay: 0.3 } }
-                              : { width: { duration: 10, ease: [0.1, 0.6, 0.3, 1] } }}
+                              : { width: { duration: 20, ease: (t: number) => 1 - Math.pow(1 - t, 3) } }}
                             aria-hidden="true"
                           />
                         </button>
