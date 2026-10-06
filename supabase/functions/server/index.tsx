@@ -471,6 +471,7 @@ interface CompanyProfile {
   found: boolean;
   name: string;
   domain: string;
+  logoDomain?: string; // Brand site with the brand's own favicon, can differ from domain
   industry: string;
   summary: string;
   productsAndUsers: string;
@@ -479,7 +480,7 @@ interface CompanyProfile {
   fetchedAt: string;
 }
 
-const COMPANY_CACHE_PREFIX = "company_v3_";
+const COMPANY_CACHE_PREFIX = "company_v6_";
 const COMPANY_LOOKUPS_PER_DAY = 40;
 const pendingCompanyLookups = new Map<string, Promise<CompanyProfile | null>>();
 
@@ -506,6 +507,30 @@ function matchesWho(who: string, name: string, domain: string): boolean {
   const target = letters(isDomain(who) ? who.replace(/\.[^.]+$/, "") : who);
   const found = [letters(name), letters(domain.replace(/\.[^.]+$/, ""))];
   return !!target && found.some((f) => f.length >= 2 && (f.includes(target) || (f.length >= 4 && target.includes(f))));
+}
+
+// Group/corporate sites show the group's favicon (renaultgroup.com shows "RG",
+// and renault.com redirects there), so for those we use the brand's Swedish
+// site when it exists (renault.se)
+const GROUP_DOMAIN = /(group|groupe|gruppen|corporate|corporation|holding|holdings)$/;
+const domainStem = (host: string) => host.replace(/^www\./, "").replace(/\.[^.]+$/, "");
+
+async function siteHost(domain: string): Promise<string | null> {
+  try {
+    const response = await fetch(`https://${domain}`, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(5000) });
+    return response.ok ? new URL(response.url).hostname : null;
+  } catch {
+    return null;
+  }
+}
+
+async function brandLogoDomain(logoDomain: string): Promise<string> {
+  const stem = domainStem(logoDomain);
+  const finalHost = GROUP_DOMAIN.test(stem) ? logoDomain : await siteHost(logoDomain);
+  if (!finalHost || !GROUP_DOMAIN.test(domainStem(finalHost))) return logoDomain;
+  const brandSite = `${domainStem(finalHost).replace(GROUP_DOMAIN, "").replace(/-$/, "")}.se`;
+  const brandHost = await siteHost(brandSite);
+  return brandHost && !GROUP_DOMAIN.test(domainStem(brandHost)) ? brandSite : logoDomain;
 }
 
 function companyLogoUrl(domain: string): string {
@@ -554,6 +579,7 @@ Reply with ONLY a JSON object, no other text:
   "found": true or false (false if you cannot identify a real company),
   "name": "the short brand name people use, without legal suffixes like AB, plc, Inc or Group, e.g. Volvo Cars",
   "domain": "main website domain without protocol or www, e.g. volvocars.com",
+  "logoDomain": "the consumer facing brand website whose favicon shows the brand's own logo, without protocol or www. Usually the same as domain, but if the main .com belongs to a parent group or redirects to a corporate site (e.g. renault.com shows the Renault Group logo), use the brand's Swedish site instead, e.g. renault.se. Never a group, corporate or investor site",
   "industry": "a few words",
   "summary": "2 to 3 sentences on what the company does",
   "productsAndUsers": "1 to 2 sentences on their main products and who their users or customers are",
@@ -570,11 +596,14 @@ Reply with ONLY a JSON object, no other text:
   const name = sanitizeCompany(
     str(json.name, 60).replace(/(\s+(group|holding|plc|ab|publ|inc|ltd|llc|gmbh|as|asa|oyj|corp|corporation|co)\.?)+$/i, ""),
   ) || who;
-  const domain = str(json.domain, 100).toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  const cleanDomain = (v: unknown) => str(v, 100).toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+  const domain = cleanDomain(json.domain);
+  const logoDomain = await brandLogoDomain(cleanDomain(json.logoDomain) || domain);
   return {
     found: json.found === true && matchesWho(who, name, domain),
     name,
     domain,
+    logoDomain,
     industry: str(json.industry, 100),
     summary: str(json.summary),
     productsAndUsers: str(json.productsAndUsers),
@@ -1052,7 +1081,7 @@ app.get("/make-server-2b0a7158/company", async (c) => {
     found: true,
     name: profile.name,
     domain: profile.domain,
-    logoUrl: companyLogoUrl(profile.domain),
+    logoUrl: companyLogoUrl(profile.logoDomain || profile.domain),
   });
 });
 
