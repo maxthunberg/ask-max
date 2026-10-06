@@ -435,25 +435,29 @@ function getHiringCompany(message: string, who: string): string {
   return who;
 }
 
-// Template: opener + intro + optional company-specific paragraph + links
+// Template: opener + company paragraph (or the generic intro when the company
+// is unknown) + links with reasons + outro pointing to the real Max
 function buildHireAnswer(company: string, companyTweak = ""): string {
   const opener = company
     ? `Well, there are just sooo many reasons why ${company} should hire me, right? 😉`
     : "Well, there are just sooo many reasons, right? 😉";
-  return [opener, HIRE_ANSWER_INTRO, companyTweak, HIRE_ANSWER_LINKS]
-    .filter(Boolean)
+  return [opener, companyTweak || HIRE_ANSWER_INTRO, HIRE_ANSWER_LINKS, HIRE_ANSWER_OUTRO]
     .join("\n\n");
 }
 
 const HIRE_ANSWER_INTRO = `Joking aside. I'm a highly experienced designer, both in leading teams and projects and in delivering impactful design work, visually and in improving my users' lives. Before Volvo, that meant making sure we had the best possible e-commerce experience, where we improved conversion enormously during my time there, especially on mobile. Now, as UX Lead at Volvo, it's about making sure my 16k+ engineers have internal tools that support them in their highly complex work life.`;
 
-const HIRE_ANSWER_LINKS = `It's easier to talk to me IRL. But until then, check out some of my stuff below.
+const HIRE_ANSWER_LINKS = `Want to dig deeper? Here's where to look:
 
-Want something branding related? Check out my font foundry [thunatype.com](https://thunatype.com). I design fonts for fun 😎
+[LinkedIn](https://www.linkedin.com/in/maxthunberg) for my CV and the full career story. It's always up to date ☺️💪
 
-Want more portfolio cases? Have a look at my (a bit dated) site [maxthunberg.com](https://maxthunberg.com).
+[maxthunberg.com](https://maxthunberg.com) for portfolio cases. A bit dated, but the thinking holds up.
 
-Want my resume/CV? Easiest is my [LinkedIn](https://www.linkedin.com/in/maxthunberg). It's always up to date ☺️💪`;
+[thunatype.com](https://thunatype.com), my font foundry. Proof that I sweat the visual details, I design fonts for fun 😎
+
+[ask.maxthunberg.com](https://ask.maxthunberg.com), this page. I built it myself with AI, so it's a live example of how I prototype and work with AI. Keep asking me stuff here!`;
+
+const HIRE_ANSWER_OUTRO = `That said, I probably don't understand your real challenges, because hey, I'm just 1s and 0s 🤖 So reach out at [max@maxthunberg.com](mailto:max@maxthunberg.com) and we'll book a session with the real me. Not only digital me.`;
 const HIRE_SUGGESTIONS = [
   { label: "Branding", description: "thunatype.com", url: "https://thunatype.com" },
   { label: "Portfolio cases", description: "maxthunberg.com", url: "https://maxthunberg.com" },
@@ -480,7 +484,7 @@ interface CompanyProfile {
   fetchedAt: string;
 }
 
-const COMPANY_CACHE_PREFIX = "company_v6_";
+const COMPANY_CACHE_PREFIX = "company_v7_";
 const COMPANY_LOOKUPS_PER_DAY = 40;
 const pendingCompanyLookups = new Map<string, Promise<CompanyProfile | null>>();
 
@@ -619,23 +623,23 @@ async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "fetch
   const data = await openaiJson("https://api.openai.com/v1/chat/completions", {
     model: "gpt-4.1",
     temperature: 0.7,
-    max_tokens: 160,
+    max_tokens: 280,
     messages: [
       {
         role: "system",
-        content: `You write one short paragraph for Max Thunberg's answer to "Why should ${profile.name} hire me?". It is inserted between his generic intro and his links, so do not greet, do not repeat the intro and do not mention links.
+        content: `You write one paragraph for Max Thunberg's answer to "Why should ${profile.name} hire me?". It comes right after his joke opener ("Well, there are just sooo many reasons why ${profile.name} should hire me, right? 😉") and before his links, so do not greet, do not repeat the joke and do not mention links or contact details.
 
-Write in first person as Max, the way he talks: casual, direct, a bit playful, plain spoken English. 2 sentences, max 45 words. Start with "For ${profile.name}, ..." and make ONE concrete link between something specific Max has actually done (e.g. growing e-commerce conversion on mobile, internal tools for 16k+ engineers, untangling complex PLM/PDM data, design systems, leading design teams) and something specific about ${profile.name}'s products or users. Pick the link that fits this company best.
+Write in first person as Max, talking directly to someone from ${profile.name} ("you"). Casual, direct, a bit playful, plain spoken English. 3 to 4 sentences, max 90 words. Follow this structure:
+1. Start with "After looking at ${profile.name}, my understanding is that you work within ..." and name their context (industry, B2C/B2B, market) and their main product or service in plain words.
+2. Guess 2 typical UX challenges a company like that usually has, framed as guesses ("I'd guess...", "my bet is..."), specific to their product and users, not generic UX buzz.
+3. Say how Max, as a UX lead or principal UX designer, would help solve them, tying in ONE concrete thing Max has actually done (e.g. growing e-commerce conversion on mobile, internal tools for 16k+ engineers, untangling complex PLM/PDM data, design systems, leading design teams). Pick what fits this company best.
 
 Rules:
-- No corporate filler: never use words like "extensive", "leverage", "seamless", "resonate", "thrive", "passionate", "mission", "innovative", "user-centered solutions", "translates well".
-- Only use facts about Max from MAX FACTS and the intro below. Never invent projects, metrics, clients or skills.
-- Never claim Max has worked with or for ${profile.name}, or knows their internal situation.
+- No corporate filler: never use words like "extensive", "leverage", "seamless", "resonate", "thrive", "passionate", "mission", "innovative", "user-centered solutions", "translates well", "landscape", "journey".
+- Only use facts about Max from MAX FACTS. Never invent projects, metrics, clients or skills.
+- Never claim Max has worked with or for ${profile.name}, or knows their internal situation. The challenges are guesses, keep them sounding like guesses.
 - Be honest that the experience is transferable when the domain differs.
 - No dashes as separators, use commas. No Oxford comma. No emojis.
-
-INTRO ALREADY SHOWN:
-${HIRE_ANSWER_INTRO}
 
 MAX FACTS:
 ${facts}`,
