@@ -19,8 +19,34 @@ import { saveLanguagePreference, getLanguagePreference } from '../utils/language
 // App version
 const APP_VERSION = 'v1.3.1';
 
-// Seconds into the ?who= lookup when each loading message starts
-const WHO_LOADING_STEP_STARTS = [0, 2.5, 5, 9];
+// Loading messages for the ?who= lookup (research, logo and pitch, roughly 5-10s
+// uncached). Shown in order, then the stalling ones loop until the lookup is done.
+const WHO_LOADING_STEP_MS = 1800;
+const WHO_LOADING_MESSAGES = (who: string) => [
+  `Researching ${who}…`,
+  `Reading up on what ${who} does…`,
+  `Looking at ${who}'s products…`,
+  'Finding their logo…',
+  `Figuring out who ${who}'s users are…`,
+  `Matching ${who} with my experience…`,
+  `Picking my best case for ${who}…`,
+  `Writing my pitch for ${who}…`,
+  'Polishing the pitch…',
+  'Double checking the facts…',
+];
+const WHO_STALLING_MESSAGES = [
+  'Almost there…',
+  'Still on it…',
+  'Making it worth the wait…',
+  'Any second now…',
+  'Good things take time…',
+];
+function whoLoadingMessage(who: string, step: number): string {
+  const messages = WHO_LOADING_MESSAGES(who);
+  return step < messages.length
+    ? messages[step]
+    : WHO_STALLING_MESSAGES[(step - messages.length) % WHO_STALLING_MESSAGES.length];
+}
 
 // ?who=<company> shows a "Why should <company> hire me?" prompt card.
 // Returns a cleaned, display-cased company name, or null if missing/invalid.
@@ -190,15 +216,10 @@ export function PortfolioPage() {
     return () => { cancelled = true; };
   }, [whoName]);
 
-  // Step through loading messages while the lookup runs (an uncached lookup,
-  // research + logo + pitch, takes roughly 5-10s)
+  // Keep the loading messages flowing until the lookup is really done
   useEffect(() => {
     if (!whoName || whoReady) return;
-    const start = Date.now();
-    const interval = setInterval(() => {
-      const elapsed = (Date.now() - start) / 1000;
-      setWhoLoadingStep(WHO_LOADING_STEP_STARTS.filter((s) => elapsed >= s).length - 1);
-    }, 250);
+    const interval = setInterval(() => setWhoLoadingStep((step) => step + 1), WHO_LOADING_STEP_MS);
     return () => clearInterval(interval);
   }, [whoName, whoReady]);
 
@@ -1093,8 +1114,9 @@ export function PortfolioPage() {
                                   key="loading"
                                   initial={{ opacity: 0 }}
                                   animate={{ opacity: [0.45, 1, 0.45] }}
-                                  exit={{ opacity: 0, scale: 0.8 }}
-                                  transition={{ opacity: { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 0.2 } }}
+                                  // Exit needs its own transition, the infinite pulse would otherwise block the swap to the logo
+                                  exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                                  transition={{ opacity: { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } }}
                                   className="absolute inset-0 rounded-[8px] flex items-center justify-center font-semibold text-[14px]"
                                   style={{ backgroundColor: theme === 'light' ? '#dcdce2' : 'rgba(255, 255, 255, 0.12)', color: colors.textSecondary }}
                                   aria-hidden="true"
@@ -1142,20 +1164,20 @@ export function PortfolioPage() {
                                 >
                                   {whoReady
                                     ? <>Quick pitch, portfolio &amp; CV</>
-                                    : [`Researching ${whoName}…`, 'Finding their logo…', `Writing my pitch for ${whoName}…`, 'Almost there…'][whoLoadingStep]}
+                                    : whoLoadingMessage(whoName, whoLoadingStep)}
                                 </motion.span>
                               </AnimatePresence>
                             </span>
                           </span>
-                          {/* Progress bar: keeps creeping towards 95% (~65% at 6s, ~85% at 10s)
-                              so it never stalls, then completes when the lookup is done */}
+                          {/* Progress bar: keeps creeping towards 95% (~45% at 6s, ~65% at 10s,
+                              ~85% at 20s) so it never stalls, then completes when the lookup is done */}
                           <motion.span
                             className="absolute left-0 bottom-0 h-[2px] bg-[#7339ff]"
                             initial={{ width: '0%', opacity: 1 }}
                             animate={whoReady ? { width: '100%', opacity: 0 } : { width: '95%', opacity: 1 }}
                             transition={whoReady
                               ? { width: { duration: 0.3 }, opacity: { duration: 0.4, delay: 0.3 } }
-                              : { width: { duration: 20, ease: (t: number) => 1 - Math.pow(1 - t, 3) } }}
+                              : { width: { duration: 60, ease: (t: number) => 1 - Math.pow(1 - t, 6) } }}
                             aria-hidden="true"
                           />
                         </button>
