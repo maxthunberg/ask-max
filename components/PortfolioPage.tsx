@@ -111,6 +111,8 @@ export function PortfolioPage() {
   const [whoName, setWhoName] = useState<string | null>(null);
   const [whoCompany, setWhoCompany] = useState<CompanyProfile | null>(null);
   const [whoLogoFailed, setWhoLogoFailed] = useState(false);
+  const [whoReady, setWhoReady] = useState(false);
+  const [whoLoadingStep, setWhoLoadingStep] = useState(0);
   // Official name from the lookup (e.g. ?who=volvocars.com -> Volvo Cars)
   const whoDisplayName = (whoCompany?.found && whoCompany.name) || whoName;
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
@@ -149,12 +151,48 @@ export function PortfolioPage() {
     setWhoName(parseWhoParam(new URLSearchParams(window.location.search).get('who')));
   }, []);
 
+  // Lookup + logo preload; the card shows a loading state until both are done.
+  // Found profiles are cached in localStorage so repeat visits are instant.
   useEffect(() => {
     if (!whoName) return;
+    let cancelled = false;
+    const cacheKey = `who_profile_${whoName.toLowerCase()}`;
+    const finish = (profile: CompanyProfile | null) => {
+      if (cancelled) return;
+      if (profile) setWhoCompany(profile);
+      setWhoReady(true);
+    };
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) return finish(JSON.parse(cached));
+    } catch {}
     fetchCompanyProfile(whoName)
-      .then(setWhoCompany)
-      .catch((error) => console.warn('Company lookup failed:', error));
+      .then((profile) => new Promise<CompanyProfile>((resolve) => {
+        if (!profile.logoUrl) return resolve(profile);
+        const img = new Image();
+        img.onload = () => resolve(profile);
+        img.onerror = () => { setWhoLogoFailed(true); resolve(profile); };
+        img.src = profile.logoUrl;
+      }))
+      .then((profile) => {
+        if (profile.found) {
+          try { localStorage.setItem(cacheKey, JSON.stringify(profile)); } catch {}
+        }
+        finish(profile);
+      })
+      .catch((error) => {
+        console.warn('Company lookup failed:', error);
+        finish(null);
+      });
+    return () => { cancelled = true; };
   }, [whoName]);
+
+  // Step through loading messages while the lookup runs
+  useEffect(() => {
+    if (!whoName || whoReady) return;
+    const interval = setInterval(() => setWhoLoadingStep((step) => step + 1), 2500);
+    return () => clearInterval(interval);
+  }, [whoName, whoReady]);
 
   // Save language preference to cookie when it changes
   useEffect(() => {
@@ -1034,29 +1072,83 @@ export function PortfolioPage() {
                           type="button"
                           onClick={() => handleSubmit(`Why should ${whoDisplayName} hire me?`)}
                           disabled={isLoading}
-                          className="flex items-center gap-[12px] min-w-[220px] max-w-full rounded-[16px] px-[16px] py-[12px] text-left transition-colors duration-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff]"
+                          className="relative overflow-hidden flex items-center gap-[12px] min-w-[220px] max-w-full rounded-[16px] px-[16px] py-[12px] text-left transition-colors duration-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff]"
                           style={{ backgroundColor: colors.messageBg }}
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : 'rgba(255, 255, 255, 0.1)'}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.messageBg}
+                          aria-busy={!whoReady}
                         >
-                          {whoCompany?.logoUrl && !whoLogoFailed ? (
-                            <img
-                              src={whoCompany.logoUrl}
-                              alt=""
-                              className="w-[32px] h-[32px] rounded-[8px] object-contain bg-white p-[3px] shrink-0"
-                              onError={() => setWhoLogoFailed(true)}
-                            />
-                          ) : (
-                            <span className="text-[18px] leading-none shrink-0" aria-hidden="true">🤔</span>
-                          )}
+                          <span className="relative w-[32px] h-[32px] shrink-0 flex items-center justify-center">
+                            <AnimatePresence mode="wait" initial={false}>
+                              {!whoReady ? (
+                                <motion.span
+                                  key="loading"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: [0.45, 1, 0.45] }}
+                                  exit={{ opacity: 0, scale: 0.8 }}
+                                  transition={{ opacity: { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 0.2 } }}
+                                  className="absolute inset-0 rounded-[8px] flex items-center justify-center font-semibold text-[14px]"
+                                  style={{ backgroundColor: theme === 'light' ? '#dcdce2' : 'rgba(255, 255, 255, 0.12)', color: colors.textSecondary }}
+                                  aria-hidden="true"
+                                >
+                                  {whoName.charAt(0).toUpperCase()}
+                                </motion.span>
+                              ) : whoCompany?.logoUrl && !whoLogoFailed ? (
+                                <motion.img
+                                  key="logo"
+                                  src={whoCompany.logoUrl}
+                                  alt=""
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                  className="w-[32px] h-[32px] rounded-[8px] object-contain bg-white p-[3px]"
+                                  onError={() => setWhoLogoFailed(true)}
+                                />
+                              ) : (
+                                <motion.span
+                                  key="fallback"
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className="text-[18px] leading-none"
+                                  aria-hidden="true"
+                                >
+                                  🤔
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </span>
                           <span className="flex flex-col gap-[2px] min-w-0">
                             <span className="font-semibold text-[14px] leading-[20px] truncate" style={{ color: colors.textPrimary }}>
                               Why should {whoDisplayName} hire me?
                             </span>
-                            <span className="text-[13px] leading-[18px]" style={{ color: colors.textSecondary }}>
-                              Quick pitch, portfolio &amp; CV
+                            <span className="relative h-[18px] overflow-hidden">
+                              <AnimatePresence mode="wait" initial={false}>
+                                <motion.span
+                                  key={whoReady ? 'ready' : `step-${Math.min(whoLoadingStep, 3)}`}
+                                  initial={{ opacity: 0, y: 6 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -6 }}
+                                  transition={{ duration: 0.25 }}
+                                  className="block text-[13px] leading-[18px] whitespace-nowrap"
+                                  style={{ color: colors.textSecondary }}
+                                >
+                                  {whoReady
+                                    ? <>Quick pitch, portfolio &amp; CV</>
+                                    : [`Looking up ${whoName}…`, 'Finding their logo…', 'Tailoring my pitch…', 'Almost there…'][Math.min(whoLoadingStep, 3)]}
+                                </motion.span>
+                              </AnimatePresence>
                             </span>
                           </span>
+                          {/* Progress bar: eases towards 90% over ~10s, completes when the lookup is done */}
+                          <motion.span
+                            className="absolute left-0 bottom-0 h-[2px] bg-[#7339ff]"
+                            initial={{ width: '0%', opacity: 1 }}
+                            animate={whoReady ? { width: '100%', opacity: 0 } : { width: '90%', opacity: 1 }}
+                            transition={whoReady
+                              ? { width: { duration: 0.3 }, opacity: { duration: 0.4, delay: 0.3 } }
+                              : { width: { duration: 10, ease: [0.1, 0.6, 0.3, 1] } }}
+                            aria-hidden="true"
+                          />
                         </button>
                       </div>
                     )}
