@@ -1003,8 +1003,13 @@ export function PortfolioPage() {
                                 href={suggestion.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="group flex gap-[12px] rounded-[12px] border px-[12px] py-[12px] transition-all hover:-translate-y-0.5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#7339ff]"
-                                style={{ borderColor: colors.border, backgroundColor: 'rgba(255,255,255,0.04)' }}
+                                className="group flex gap-[12px] rounded-[12px] border px-[12px] py-[12px] bg-[var(--card-bg)] hover:bg-[var(--card-bg-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#7339ff]"
+                                style={{
+                                  borderColor: colors.border,
+                                  // Same background and hover as the search input
+                                  '--card-bg': theme === 'light' ? '#e8e8ed' : '#21123c',
+                                  '--card-bg-hover': theme === 'light' ? '#dcdce0' : '#271641',
+                                } as React.CSSProperties}
                               >
                                 {suggestion.emoji && (
                                   <span className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[10px] text-[20px]" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} aria-hidden="true">
