@@ -6,7 +6,8 @@ import svgPaths from "../imports/svg-sevsv6x2yc";
 // Using Cloudinary hosted image
 const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
 const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
-import { sendChatMessage, fetchCompanyProfile, ChatMessage, ChatSuggestion, CompanyProfile } from '../utils/chat-api';
+import { sendChatMessage, sendHandoff, fetchCompanyProfile, ChatMessage, ChatSuggestion, CompanyProfile, FitCheck, FitCheckStatus, VisitorBrief } from '../utils/chat-api';
+import { FitCheckCard } from './FitCheckCard';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
 import { ThinkingSpinner } from './ThinkingSpinner';
 import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
@@ -132,8 +133,21 @@ const SARCASTIC_QUOTA_MESSAGES = {
 const SAVED_CONVERSATION_KEY = 'askmax-conversation';
 const SAVED_CONVERSATION_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
 
-type ChatEntry = { type: 'user' | 'assistant' | 'error' | 'system'; content: string; suggestions?: ChatSuggestion[]; suggestionFooter?: string };
-type SavedConversation = { messages: ChatEntry[]; savedAt: number };
+type ChatEntry = { type: 'user' | 'assistant' | 'error' | 'system'; content: string; suggestions?: ChatSuggestion[]; suggestionFooter?: string; fitCheck?: FitCheck; fitCheckOffered?: boolean };
+type SavedConversation = { messages: ChatEntry[]; savedAt: number; visitorBrief?: VisitorBrief; fitCheckStatus?: FitCheckStatus };
+
+// The fit check is shown as a card, the model gets it back as text
+function entryToHistoryText(entry: ChatEntry): string {
+  if (!entry.fitCheck) return entry.content;
+  const { matches, risks, unknowns, question } = entry.fitCheck;
+  return [
+    entry.content,
+    `Where we match: ${matches.join(' ')}`,
+    `Where I might not fit: ${risks.join(' ')}`,
+    `Still unclear: ${unknowns.join(' ')}`,
+    question,
+  ].join('\n');
+}
 
 function loadSavedConversation(): SavedConversation | null {
   try {
@@ -164,6 +178,9 @@ export function PortfolioPage() {
   // Official name from the lookup (e.g. ?who=volvocars.com -> Volvo Cars)
   const whoDisplayName = (whoCompany?.found && whoCompany.name) || whoName;
   const [savedConversation, setSavedConversation] = useState<SavedConversation | null>(null);
+  // What Digital Max has learned about the visitor, updated by the server
+  const [visitorBrief, setVisitorBrief] = useState<VisitorBrief | undefined>(undefined);
+  const [fitCheckStatus, setFitCheckStatus] = useState<FitCheckStatus>('none');
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
   const [skeletonStage, setSkeletonStage] = useState<'navbar' | 'search' | 'disclaimer' | null>(null);
   
@@ -543,15 +560,17 @@ export function PortfolioPage() {
     const toSave = messages.filter((m) => m.type !== 'error');
     if (!toSave.some((m) => m.type === 'user')) return;
     try {
-      localStorage.setItem(SAVED_CONVERSATION_KEY, JSON.stringify({ messages: toSave, savedAt: Date.now() }));
+      localStorage.setItem(SAVED_CONVERSATION_KEY, JSON.stringify({ messages: toSave, savedAt: Date.now(), visitorBrief, fitCheckStatus }));
     } catch {}
-  }, [messages]);
+  }, [messages, visitorBrief, fitCheckStatus]);
 
   const handleContinueConversation = () => {
     if (!savedConversation || isLoading) return;
     const newSessionId = generateSessionId();
     setSessionId(newSessionId);
     setMessages(savedConversation.messages);
+    setVisitorBrief(savedConversation.visitorBrief);
+    setFitCheckStatus(savedConversation.fitCheckStatus ?? 'none');
     setMessageNumber(savedConversation.messages.length);
     setIsChatMode(true);
     setHasAnimated(true);
@@ -559,7 +578,7 @@ export function PortfolioPage() {
     trackChatStarted(newSessionId, language, language);
   };
 
-  const handleSubmit = async (overrideMessage?: string) => {
+  const handleSubmit = async (overrideMessage?: string, runFitCheck = false) => {
     const userMessage = overrideMessage ?? question;
     if (!userMessage.trim() || isLoading) return;
 
@@ -587,10 +606,21 @@ export function PortfolioPage() {
     // Make API call - backend will detect language
     console.log('📞 Making API call - backend will detect language');
     setIsLoading(true);
-    await performAPICall(userMessage, nextMessageNumber);
+    await performAPICall(userMessage, nextMessageNumber, runFitCheck);
   };
 
-  const performAPICall = async (userMessage: string, userMessageNumber: number) => {
+  const handleHandoff = (contact: { email: string; name: string; note: string }) =>
+    sendHandoff({
+      ...contact,
+      who: whoName ?? undefined,
+      visitorBrief,
+      fitCheck: [...messages].reverse().find((m) => m.fitCheck)?.fitCheck,
+      transcript: messages
+        .filter((m) => m.type !== 'error')
+        .map((m) => ({ role: m.type === 'user' ? 'user' : 'assistant', content: entryToHistoryText(m) })),
+    });
+
+  const performAPICall = async (userMessage: string, userMessageNumber: number, runFitCheck = false) => {
     setIsLoading(true);
 
     try {
@@ -599,7 +629,7 @@ export function PortfolioPage() {
         .filter(m => m.type !== 'error') // Only exclude error messages
         .map(m => ({
           role: m.type === 'user' ? 'user' : 'assistant', // system and assistant both become 'assistant'
-          content: m.content,
+          content: entryToHistoryText(m),
         }));
 
       // Send current UI language so backend can make smart decision about switching
@@ -609,8 +639,11 @@ export function PortfolioPage() {
         undefined,
         language,
         whoName?.toLowerCase() === 'airon' ? 'airon' : undefined,
-        whoName ?? undefined
+        whoName ?? undefined,
+        { visitorBrief, fitCheckStatus, runFitCheck }
       );
+      if (result.visitorBrief) setVisitorBrief(result.visitorBrief);
+      if (result.fitCheckStatus) setFitCheckStatus(result.fitCheckStatus);
       
       // Check if backend detected 'other' language
       if (result.detectedLanguage === 'other') {
@@ -668,6 +701,8 @@ export function PortfolioPage() {
         content: result.message,
         suggestions: result.suggestions,
         suggestionFooter: result.suggestionFooter,
+        fitCheck: result.fitCheck,
+        fitCheckOffered: result.fitCheckOffered,
       }]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
@@ -763,6 +798,8 @@ export function PortfolioPage() {
     setSessionId(''); // Reset session ID for new chat
     setMessageNumber(0); // Reset message counter for new conversation
     setChatStartTime(null); // Reset chat start time
+    setVisitorBrief(undefined);
+    setFitCheckStatus('none');
     
     // KEEP language preference - language state should already be correct,
     // but we keep all individual language states in sync
@@ -829,6 +866,7 @@ export function PortfolioPage() {
             alt={altText}
             className="w-full max-w-[400px] rounded-[8px] my-[12px] border border-[rgba(255,255,255,0.2)]"
             loading="lazy"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
         );
       } else if (match[4]) {
@@ -1076,6 +1114,30 @@ export function PortfolioPage() {
                             ))}
                           </div>
                         </div>
+                      )}
+                      {message.fitCheck && (
+                        <FitCheckCard
+                          fitCheck={message.fitCheck}
+                          language={language}
+                          theme={theme}
+                          onHandoff={handleHandoff}
+                        />
+                      )}
+                      {message.fitCheckOffered && fitCheckStatus === 'offered' && index === messages.length - 1 && !isLoading && (
+                        <button
+                          type="button"
+                          onClick={() => handleSubmit(language === 'sv' ? 'Ja, kör en fit check! ✅' : "Yes, let's do the fit check! ✅", true)}
+                          className="rounded-[12px] border px-[16px] py-[10px] text-[14px] font-semibold bg-[var(--card-bg)] hover:bg-[var(--card-bg-hover)] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff]"
+                          style={{
+                            borderColor: colors.border,
+                            color: colors.textPrimary,
+                            // Same background and hover as the search input
+                            '--card-bg': theme === 'light' ? '#e8e8ed' : '#21123c',
+                            '--card-bg-hover': theme === 'light' ? '#dcdce0' : '#271641',
+                          } as React.CSSProperties}
+                        >
+                          {language === 'sv' ? 'Ja, kör en fit check! ✅' : "Yes, let's do the fit check! ✅"}
+                        </button>
                       )}
                       {message.suggestionFooter && (
                         <div className="max-w-[480px]" data-name="Suggestion footer">

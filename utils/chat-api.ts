@@ -23,8 +23,32 @@ export interface ChatSuggestion {
   domain?: string; // Where the link goes, shown next to the label
 }
 
+// What Digital Max remembers about the visitor. Kept in the browser and sent
+// with every message, the server updates it
+export type VisitorBrief = Record<string, unknown>;
+
+export type FitCheckStatus = 'none' | 'offered' | 'done';
+
+export interface FitCheck {
+  intro: string;
+  matches: string[]; // Where Max fits
+  risks: string[]; // Where Max might not be the right person
+  unknowns: string[]; // Still unclear
+  question: string; // Follow-up about the most important unknown
+}
+
+export interface ChatOptions {
+  visitorBrief?: VisitorBrief;
+  fitCheckStatus?: FitCheckStatus;
+  runFitCheck?: boolean; // Visitor clicked "do the fit check"
+}
+
 export interface ChatResponse {
   message: string;
+  visitorBrief?: VisitorBrief;
+  fitCheckStatus?: FitCheckStatus;
+  fitCheckOffered?: boolean; // This answer offers a fit check
+  fitCheck?: FitCheck;
   suggestions?: ChatSuggestion[]; // Link cards shown under the answer
   suggestionFooter?: string; // Closing text shown after the suggestion cards
   sources: string[];
@@ -41,7 +65,8 @@ export async function sendChatMessage(
   userLanguage?: 'en' | 'sv',
   currentUILanguage?: 'en' | 'sv',
   audience?: 'airon',
-  who?: string // Company from ?who=, enables the fixed "Why should X hire you?" answer
+  who?: string, // Company from ?who=, enables the fixed "Why should X hire you?" answer
+  options: ChatOptions = {}
 ): Promise<ChatResponse> {
   // Note: Tracking is now handled in PortfolioPage.tsx via utils/analytics.ts
   
@@ -60,6 +85,7 @@ export async function sendChatMessage(
         currentUILanguage,
         audience,
         who,
+        ...options,
       }),
     }
   );
@@ -125,4 +151,35 @@ export async function fetchCompanyProfile(who: string): Promise<CompanyProfile> 
   );
   if (!response.ok) return { found: false };
   return response.json();
+}
+
+export interface HandoffRequest {
+  email: string;
+  name?: string;
+  note?: string;
+  who?: string;
+  visitorBrief?: VisitorBrief;
+  fitCheck?: FitCheck;
+  transcript: ChatMessage[];
+}
+
+/**
+ * Send the conversation to the real Max by email
+ */
+export async function sendHandoff(request: HandoffRequest): Promise<void> {
+  const response = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/handoff`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${publicAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'SEND_FAILED' }));
+    throw new Error(error.error || 'SEND_FAILED');
+  }
 }

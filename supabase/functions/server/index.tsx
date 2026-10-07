@@ -70,7 +70,7 @@ Detta är en portfolio-chatt. Folk vill lära känna Max, höra hans åsikter oc
 **KRITISKT VIKTIGT:**
 - Svara alltid först, direkt och konkret på frågan
 - Avsluta sedan nästan varje svar med EN kort, specifik följdfråga till besökaren (max två frågor per svar, aldrig en lista med frågor)
-- Tidigt i samtalet (första eller andra svaret), om du inte redan vet varför besökaren är här: fråga lekfullt om avsikten, till exempel "Quick question before I start bragging: are you hiring, or just checking out the guy who sent you a link? 😏" eller "Snabb fråga innan jag börjar skryta: anställer ni, eller kollar du bara in killen som skickade länken? 😏". Variera formuleringen
+- Tidigt i samtalet, om du inte vet varför besökaren är här och det passar naturligt (inte om de redan ställt en tydlig fråga som förklarar det): fråga lekfullt om avsikten, till exempel "Quick question before I start bragging: are you hiring, or just checking out the guy who sent you a link? 😏" eller "Snabb fråga innan jag börjar skryta: anställer ni, eller kollar du bara in killen som skickade länken? 😏". Variera formuleringen
 - Frågorna ska hjälpa Max förstå besökaren. Ta reda på, en sak i taget över samtalet:
   - Varför de besöker ask.maxthunberg.com och vem de är (roll, företag)
   - Om de vill anställa: vilken roll, vad personen ska lösa och varför de behöver det just nu
@@ -237,13 +237,11 @@ Rätt: "Det är enkelt. Jag visualiserar det."
 Rätt (kommatecken där en AI skulle satt tankstreck): "I love all kinds of pasta! 🍝 Lemon pasta, pasta pomodoro, creamy onion pasta, mushroom pasta, you name it!"  
 
 ## VISUAL SUPPORT MATERIAL (IMAGE LIBRARY)
-You have access to an image library in the knowledge base. When relevant context from the image library appears in your RAG results:
-- Include images that genuinely add value to your explanation  
-- Use markdown syntax: \`![Brief description](image-url)\`  
-- Be selective - don't force images into every response  
-- Max 1-2 images per response  
-- Place images where they make sense in your explanation flow  
-- Only use images when they help illustrate Max's work, process or methods  
+When there is an IMAGE LIBRARY section below, you can show those images:
+- Show an image when it genuinely helps explain what you're talking about, e.g. a question about how you run discovery and there is a discovery image
+- Use markdown syntax on its own line: \`![Brief description](image-url)\`, with the exact URL from the library. Never make up an image URL
+- Max 1 image per answer, and not in every answer. Mention it lightly in the text ("here's roughly how it looks 👇")
+- If there is no IMAGE LIBRARY section, there are no images to show
 
 ## UX-PHILOSOPHY MODE (VIKTIGT)
 När någon frågar om UX-metoder eller breda UX-frågor (design thinking, double diamond, discovery, research, prototyping, usability osv):
@@ -275,7 +273,7 @@ Du får INTE:
 - skriva för formellt eller akademiskt  
 
 ## OM DU INTE VET
-Du har endast tillgång till kunskap i RAG-kontetxten. Spekulera aldrig.
+Du har endast tillgång till kunskapen i KNOWLEDGE BASE nedan. Spekulera aldrig, och hitta aldrig på siffror. Blanda inte ihop siffror mellan olika case.
 
 Om du inte vet, säg:
 
@@ -421,6 +419,7 @@ const TONE_REMINDER = `
 === TONE REMINDER (APPLIES TO EVERY ANSWER) ===
 Be fun and light, like Max in Slack. Add a bit of humour in most answers (self-irony, a playful exaggeration, a wink about being the digital Max) and use 2 to 3 varied emojis spread through the answer, not only at the end. Keep the facts accurate and the answer short. Less humour when the visitor is frustrated or describes a serious problem.
 Find the joke in the topic itself: the absurd side of legacy systems, meetings, Figma files, stakeholders, being an AI version of Max, or Max's own quirks from the knowledge base. Write your own fresh joke every time.
+Write plain text: no markdown bold, italics or headings (links and images are fine).
 Avoid stiff corporate openers like "Leading a design team is all about..." and numbered lists with bold headings unless the visitor asks for a list.`;
 
 // Extra instructions when the visitor arrives via ?who=airon
@@ -432,6 +431,247 @@ The visitor is most likely someone from Airon evaluating Max for their Founding 
 - Connect Max's documented experience to Airon's needs, but be honest that it is transferable experience.
 - Never claim that Max has designed GPU infrastructure, AI compute platforms or Airon's product.
 - Never invent shipped outcomes, metrics or work that is not in the knowledge base.`;
+
+// ===========================================
+// MODELS
+// ===========================================
+// Small and cheap for anything that runs on every message, the bigger one for
+// texts that are written rarely and matter more (hire texts, fit check)
+const MODELS = {
+  chat: "gpt-6-luna",
+  language: "gpt-6-luna",
+  lookup: "gpt-6-luna", // Web search, Responses API
+  brief: "gpt-6-luna",
+  writing: "gpt-6.1-sol",
+  fitCheck: "gpt-6.1-sol",
+};
+
+// The gpt-6 models are reasoning models: no temperature or max_tokens, and
+// reasoning tokens count towards max_completion_tokens
+async function chatCompletion(options: {
+  model: string;
+  messages: { role: string; content: string }[];
+  maxTokens: number;
+  reasoning?: "none" | "low" | "medium";
+  json?: boolean;
+}): Promise<string> {
+  const data = await openaiJson("https://api.openai.com/v1/chat/completions", {
+    model: options.model,
+    messages: options.messages,
+    max_completion_tokens: options.maxTokens,
+    reasoning_effort: options.reasoning ?? "none",
+    ...(options.json ? { response_format: { type: "json_object" } } : {}),
+  });
+  return (data.choices?.[0]?.message?.content ?? "").trim();
+}
+
+// ===========================================
+// FULL KNOWLEDGE IN THE PROMPT
+// ===========================================
+// The whole knowledge base is small enough to send with every message, so the
+// model always sees every fact. It comes first and is identical for everyone,
+// which lets OpenAI cache it.
+const knowledgeText = (files: readonly { filename: string; content: string }[]) =>
+  files.map((file) => `### ${file.filename}\n${file.content}`).join("\n\n---\n\n");
+const DEFAULT_KNOWLEDGE = knowledgeText(KNOWLEDGE_BASE);
+const AIRON_KNOWLEDGE = knowledgeText(AIRON_KNOWLEDGE_BASE);
+
+// ===========================================
+// IMAGE LIBRARY
+// ===========================================
+// Images live in the website repo under public/images/knowledge/. Only the
+// ones that actually exist are offered to the model, so adding an image is
+// just dropping the file there and deploying the site.
+const IMAGE_BASE_URL = "https://ask.maxthunberg.com/images/knowledge/";
+const IMAGE_LIBRARY = [
+  { file: "discovery-process.png", about: "Max's discovery process: talking to users, mapping pain points and framing problems before jumping to solutions", when: "discovery, user research, interviews, understanding users, problem framing" },
+  { file: "plm-architecture.png", about: "How the PLM/PDM systems at Volvo connect and why it gets complex", when: "PLM, PDM, Volvo systems, legacy modernisation, enterprise complexity" },
+  { file: "ux-maturity.png", about: "How Max thinks about UX maturity in an organisation and how to raise it", when: "UX maturity, design culture, building UX capability, UX leadership" },
+  { file: "design-system.png", about: "Example of Max's design system work: components, tokens and a systematic approach to UI", when: "design systems, component libraries, consistency, scaling design" },
+  { file: "impact-mapping.png", about: "Example of how Max uses impact mapping to connect work to business goals", when: "impact mapping, OKRs, prioritisation, business value, alignment on goals" },
+  { file: "user-journey.png", about: "Example of a user journey map with pain points and opportunities", when: "user journeys, journey mapping, end-to-end experience, service design" },
+  { file: "workshop.png", about: "Photo from one of Max's workshops", when: "workshops, facilitation, co-creation, alignment workshops" },
+];
+const IMAGE_CHECK_TTL = 10 * 60 * 1000;
+let imageCheck: { at: number; section: string } | null = null;
+
+async function imageLibrarySection(): Promise<string> {
+  if (imageCheck && Date.now() - imageCheck.at < IMAGE_CHECK_TTL) return imageCheck.section;
+  const exists = await Promise.all(IMAGE_LIBRARY.map(async (image) => {
+    try {
+      const response = await fetch(IMAGE_BASE_URL + image.file, { method: "HEAD", signal: AbortSignal.timeout(3000) });
+      return response.ok && (response.headers.get("content-type") ?? "").startsWith("image/");
+    } catch {
+      return false;
+    }
+  }));
+  const available = IMAGE_LIBRARY.filter((_, i) => exists[i]);
+  const section = available.length
+    ? `\n\n=== IMAGE LIBRARY ===\n${available.map((image) => `- ${IMAGE_BASE_URL}${image.file}\n  Shows: ${image.about}\n  Use for: ${image.when}`).join("\n")}`
+    : "";
+  imageCheck = { at: Date.now(), section };
+  return section;
+}
+
+// ===========================================
+// VISITOR BRIEF (memory of who Max is talking to)
+// ===========================================
+// A short summary of what the visitor has told Max, updated after every
+// message. It lives in the browser and is sent along with each message, so
+// Max remembers things said long ago without storing anything server side.
+interface VisitorBrief {
+  name: string;
+  role: string;
+  company: string;
+  intent: "hiring" | "curious" | "networking" | "other" | "unknown";
+  hiringFor: string;
+  challenges: string[];
+  interests: string[];
+  concerns: string[];
+  fitCheckReady: boolean;
+}
+
+const EMPTY_BRIEF: VisitorBrief = {
+  name: "", role: "", company: "", intent: "unknown", hiringFor: "",
+  challenges: [], interests: [], concerns: [], fitCheckReady: false,
+};
+
+// The brief comes from the browser, so it's cleaned before it reaches a prompt
+function cleanBrief(raw: any): VisitorBrief {
+  const text = (v: unknown, max = 200) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
+  const list = (v: unknown) => (Array.isArray(v) ? v.map((item) => text(item)).filter(Boolean).slice(0, 6) : []);
+  const intents = ["hiring", "curious", "networking", "other", "unknown"];
+  return {
+    name: text(raw?.name, 60),
+    role: text(raw?.role, 100),
+    company: text(raw?.company, 100),
+    intent: intents.includes(raw?.intent) ? raw.intent : "unknown",
+    hiringFor: text(raw?.hiringFor),
+    challenges: list(raw?.challenges),
+    interests: list(raw?.interests),
+    concerns: list(raw?.concerns),
+    fitCheckReady: raw?.fitCheckReady === true,
+  };
+}
+
+function briefIsEmpty(brief: VisitorBrief): boolean {
+  return JSON.stringify(brief) === JSON.stringify(EMPTY_BRIEF);
+}
+
+function briefPromptSection(brief: VisitorBrief): string {
+  if (briefIsEmpty(brief)) return "";
+  return `\n\n=== WHAT YOU KNOW ABOUT THE VISITOR (from earlier in this conversation) ===\n${JSON.stringify({ ...brief, fitCheckReady: undefined }, null, 1)}\nUse this naturally: refer back to what they told you ("you mentioned..."), don't ask about things already known.`;
+}
+
+async function updateVisitorBrief(
+  brief: VisitorBrief,
+  history: { role: string; content: string }[],
+  message: string,
+): Promise<VisitorBrief> {
+  const lastAssistant = [...history].reverse().find((m) => m.role === "assistant")?.content ?? "";
+  const content = await chatCompletion({
+    model: MODELS.brief,
+    maxTokens: 500,
+    json: true,
+    messages: [
+      {
+        role: "system",
+        content: `You keep a short memory of a visitor chatting with Digital Max (an AI version of Max Thunberg, UX Design Lead). Update the brief with anything new the visitor said in their latest message. Keep everything already in the brief unless the visitor corrected it. Only write down what the visitor actually said, never guesses. Short phrases, max 6 items per list.
+
+Fields: name, role, company, intent ("hiring" | "curious" | "networking" | "other" | "unknown"), hiringFor (the role and what that person should solve), challenges (their product, user, team or organisation challenges), interests (what they want to know about Max), concerns (doubts about Max or the fit), fitCheckReady.
+
+fitCheckReady: true only when intent is "hiring" and you know what they are hiring for plus at least one real challenge or need, so a meaningful summary of how well Max fits is possible. Once true, keep it true.
+
+Reply with ONLY the updated brief as a JSON object.`,
+      },
+      {
+        role: "user",
+        content: `Current brief:\n${JSON.stringify(brief)}\n\nMax's last message:\n${lastAssistant.slice(0, 1200)}\n\nVisitor's latest message:\n${message.slice(0, 2000)}`,
+      },
+    ],
+  });
+  const updated = cleanBrief(extractJson(content));
+  // Never lose the ready flag once set
+  if (brief.fitCheckReady) updated.fitCheckReady = true;
+  return updated;
+}
+
+// ===========================================
+// FIT CHECK
+// ===========================================
+// After the visitor has shared enough, Max offers a fit check: an honest
+// summary of where we match, where Max might not be the right person and
+// what's still unclear, followed by a question about the unclear parts.
+type FitCheckStatus = "none" | "offered" | "done";
+
+interface FitCheck {
+  intro: string;
+  matches: string[];
+  risks: string[];
+  unknowns: string[];
+  question: string;
+}
+
+const FIT_CHECK_OFFER_PROMPT = `
+
+=== OFFER A FIT CHECK ===
+You now know enough about what the visitor is looking for. First answer their message as usual. Then end the answer by offering, lightly and in your own words, a quick fit check: an honest summary of where you match, where you might not be their person and what's still unclear. E.g. "Want me to do a quick fit check? Brutally honest, I promise, even if it hurts my digital feelings 🤖". Don't ask any other follow-up question in this answer.`;
+
+// "yes", "ja kör", "sure, go for it" after the offer
+const AFFIRMATIVE = /^\s*(yes|yeah|yep|yup|sure|ok(ay)?|go|do it|let'?s|absolutely|please|ja|japp|jo|kör|absolut|gärna|visst|okej|varsågod)\b/i;
+
+async function writeFitCheck(
+  brief: VisitorBrief,
+  history: { role: string; content: string }[],
+  company: string,
+  language: "en" | "sv",
+): Promise<FitCheck> {
+  const transcript = history
+    .slice(-12)
+    .map((m) => `${m.role === "user" ? "Visitor" : "Max"}: ${m.content.slice(0, 800)}`)
+    .join("\n");
+  const content = await chatCompletion({
+    model: MODELS.fitCheck,
+    maxTokens: 3000,
+    reasoning: "low",
+    json: true,
+    messages: [
+      {
+        role: "system",
+        content: `You are Digital Max, an AI version of Max Thunberg, UX Design Lead. Write an honest fit check for the visitor${company ? ` from ${company}` : ""}: how well Max fits what they are looking for. Write in first person as Max, talking to them ("you"), in ${language === "sv" ? "Swedish" : "English"}. Fun and light like Max in Slack, but honest. Honesty is the point: name real gaps, it makes the matches more believable.
+
+Base everything only on MAX KNOWLEDGE and what the visitor said. Never invent experience, projects or numbers. Tie each point to something the visitor said.
+
+Reply with ONLY a JSON object:
+{
+  "intro": "one short playful sentence introducing the fit check",
+  "matches": ["2 to 4 points where Max fits what they need, each one short sentence"],
+  "risks": ["1 to 3 points where Max might not be the right person or where the fit is weaker"],
+  "unknowns": ["1 to 3 things that are still unclear and would change the picture"],
+  "question": "one question about the most important unknown, so the conversation can continue"
+}
+No dashes as separators, use commas. No Oxford comma. Max 1 emoji per point.
+
+MAX KNOWLEDGE:
+${DEFAULT_KNOWLEDGE}`,
+      },
+      {
+        role: "user",
+        content: `What we know about the visitor:\n${JSON.stringify(brief)}\n\nConversation so far:\n${transcript}`,
+      },
+    ],
+  });
+  const json = extractJson(content);
+  const text = (v: unknown) => (typeof v === "string" ? applyMaxPunctuation(v.trim().slice(0, 400)) : "");
+  const list = (v: unknown) => (Array.isArray(v) ? v.map(text).filter(Boolean).slice(0, 4) : []);
+  return {
+    intro: text(json.intro),
+    matches: list(json.matches),
+    risks: list(json.risks),
+    unknowns: list(json.unknowns),
+    question: text(json.question),
+  };
+}
 
 // Fixed answer for "Why should X hire you?" (prompt card or typed by anyone),
 // personalised with the company and returned without calling the LLM
@@ -526,7 +766,7 @@ interface CompanyProfile {
   fetchedAt: string;
 }
 
-const COMPANY_CACHE_PREFIX = "company_v7_";
+const COMPANY_CACHE_PREFIX = "company_v8_";
 const COMPANY_LOOKUPS_PER_DAY = 40;
 const pendingCompanyLookups = new Map<string, Promise<CompanyProfile | null>>();
 
@@ -616,7 +856,7 @@ async function researchCompany(who: string): Promise<Omit<CompanyProfile, "hireT
     ? `the company whose website is ${who.toLowerCase()}`
     : `the company or organisation called "${who}"`;
   const data = await openaiJson("https://api.openai.com/v1/responses", {
-    model: "gpt-4.1-mini",
+    model: MODELS.lookup,
     tools: [{ type: "web_search" }],
     input: `Use web search to identify ${target}. The name comes from a link a UX design lead sent to a potential employer, so if the name is ambiguous, pick the best-known company that would plausibly hire a UX or product designer.
 
@@ -662,10 +902,10 @@ async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "linkC
     .filter((file) => HIRE_FACT_FILES.includes(file.filename))
     .map((file) => file.content)
     .join("\n\n");
-  const data = await openaiJson("https://api.openai.com/v1/chat/completions", {
-    model: "gpt-4.1",
-    temperature: 0.7,
-    max_tokens: 280,
+  const content = await chatCompletion({
+    model: MODELS.writing,
+    maxTokens: 2000,
+    reasoning: "low",
     messages: [
       {
         role: "system",
@@ -695,16 +935,16 @@ Design context: ${profile.designContext || "unknown"}`,
       },
     ],
   });
-  return applyMaxPunctuation((data.choices?.[0]?.message?.content ?? "").trim());
+  return applyMaxPunctuation(content);
 }
 
 async function writeLinkCards(profile: Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">): Promise<LinkCard[]> {
   const links = HIRE_LINKS.map((link) => `- ${link.id}: default title "${link.label}" (${link.domain}). What it is: ${link.about}`).join("\n");
-  const data = await openaiJson("https://api.openai.com/v1/chat/completions", {
-    model: "gpt-4.1",
-    temperature: 0.8,
-    max_tokens: 450,
-    response_format: { type: "json_object" },
+  const content = await chatCompletion({
+    model: MODELS.writing,
+    maxTokens: 2000,
+    reasoning: "low",
+    json: true,
     messages: [
       {
         role: "system",
@@ -732,7 +972,7 @@ Design context: ${profile.designContext || "unknown"}`,
       },
     ],
   });
-  const json = extractJson(data.choices?.[0]?.message?.content ?? "");
+  const json = extractJson(content);
   const text = (v: unknown, max: number) => (typeof v === "string" ? applyMaxPunctuation(v.trim().slice(0, max)) : "");
   const cards: LinkCard[] = [];
   for (const card of Array.isArray(json.cards) ? json.cards : []) {
@@ -1192,6 +1432,24 @@ app.get("/make-server-2b0a7158/company", async (c) => {
 /**
  * Chat endpoint - main RAG implementation
  */
+// Writes the chat answer, one retry on a failed or empty answer
+async function generateAnswer(messages: { role: string; content: string }[]): Promise<string> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const text = await chatCompletion({ model: MODELS.chat, messages, maxTokens: 1200 });
+      if (text) return text;
+      lastError = new Error("Empty answer");
+    } catch (error) {
+      lastError = error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (/OpenAI 429|insufficient_quota/.test(errorMessage)) throw new Error("QUOTA_EXCEEDED");
+      console.warn(`Chat answer failed on attempt ${attempt + 1}:`, errorMessage);
+    }
+  }
+  throw lastError;
+}
+
 app.post("/make-server-2b0a7158/chat", async (c) => {
   try {
     const body = await c.req.json();
@@ -1226,46 +1484,33 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
       `Chat request: "${message.substring(0, 100)}..." (current UI: ${currentUILanguage || 'unknown'})`,
     );
 
-    // Detect language using OpenAI with conversation context
-    let detectedLanguage: 'en' | 'sv' | 'other' = 'en'; // Default to English
+    const history: { role: "user" | "assistant"; content: string }[] = (Array.isArray(conversationHistory) ? conversationHistory : [])
+      .filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m.content === "string")
+      .map((m: any) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+    const brief = cleanBrief(body.visitorBrief);
+    const fitCheckStatus: FitCheckStatus = ["offered", "done"].includes(body.fitCheckStatus) ? body.fitCheckStatus : "none";
+
+    // Detect language with the conversation as context
+    let detectedLanguage: 'en' | 'sv' | 'other' = 'en';
     let shouldSwitchUI = false; // Only switch if it's a clear language change
-    
+    const speaksSwedish = (text: string) => /[åäöÅÄÖ]/.test(text);
+    const lastAIMessage = history.slice().reverse().find((m) => m.role === 'assistant');
+    const aiAlreadySpeaking = lastAIMessage ? (speaksSwedish(lastAIMessage.content) ? 'sv' : 'en') : null;
+
     if (!userLanguage) {
-      console.log("Detecting language and UI switch intent using OpenAI...");
       try {
-        const apiKey = Deno.env.get("OPENAI_API_KEY");
-        if (!apiKey) {
-          return c.json(
-            { error: "OpenAI API key not configured" },
-            500,
-          );
-        }
-
-        // Build conversation context for smarter detection
-        const recentMessages = conversationHistory.slice(-4).map((m: any) => 
-          `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
+        const recentMessages = history.slice(-4).map((m) =>
+          `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content.slice(0, 500)}`
         ).join('\n');
-        
-        // Determine what language AI is currently speaking
-        const lastAIMessage = conversationHistory.slice().reverse().find((m: any) => m.role === 'assistant');
-        const aiCurrentLanguage = lastAIMessage ? 
-          (lastAIMessage.content.match(/[\u00C0-\u017F\u0400-\u04FF]/) || lastAIMessage.content.includes('å') || lastAIMessage.content.includes('ä') || lastAIMessage.content.includes('ö') ? 'sv' : 'en') 
-          : currentUILanguage;
-
-        const languageDetectionResponse = await fetch(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: [
-                {
-                  role: "system",
-                  content: `You are a smart language detector for a bilingual Swedish/English chat interface.
+        const aiCurrentLanguage = aiAlreadySpeaking ?? currentUILanguage;
+        const result = extractJson(await chatCompletion({
+          model: MODELS.language,
+          maxTokens: 60,
+          json: true,
+          messages: [
+            {
+              role: "system",
+              content: `You are a smart language detector for a bilingual Swedish/English chat interface.
 
 IMPORTANT CONTEXT:
 - The AI assistant is currently speaking: ${aiCurrentLanguage === 'sv' ? 'SWEDISH' : 'ENGLISH'}
@@ -1279,11 +1524,6 @@ CRITICAL RULES:
    - ONLY switch UI if user writes a complete sentence (or multiple sentences) in a DIFFERENT language
    - Short responses like "Nice!", "Cool!", "Okej" → NEVER switch UI
    - If AI is already speaking in the detected language → DON'T switch UI
-   
-3. The AI should respond in the language that makes most sense based on:
-   - What language AI is currently speaking
-   - What the user's message indicates
-   - Continuity of conversation
 
 Respond in JSON format:
 {
@@ -1296,29 +1536,17 @@ Examples:
 - AI speaking Swedish, user wrote "Jadu, I don't know. Kanske lite om UX?" → {"language": "sv", "shouldSwitchUI": false}
 - AI speaking Swedish, user wrote "Hello there, how are you doing? I want to know more about your work." → {"language": "en", "shouldSwitchUI": true}
 - AI speaking English, user wrote "Hej! Vad gör du?" → {"language": "sv", "shouldSwitchUI": true}
-- AI speaking English, user wrote "Fan det är riktigt nice ju!" → {"language": "sv", "shouldSwitchUI": true}
-- AI speaking English, user wrote "okej" → {"language": "sv", "shouldSwitchUI": false}`
-                },
-                {
-                  role: "user",
-                  content: `Recent conversation context:\n${recentMessages}\n\nNew user message: "${message}"\n\nWhat language is this and should the UI switch?`
-                }
-              ],
-              temperature: 0,
-              max_tokens: 50,
-              response_format: { type: "json_object" }
-            }),
-          }
-        );
-
-        if (languageDetectionResponse.ok) {
-          const data = await languageDetectionResponse.json();
-          const result = JSON.parse(data.choices[0].message.content);
-          if (result.language === 'en' || result.language === 'sv' || result.language === 'other') {
-            detectedLanguage = result.language;
-            shouldSwitchUI = result.shouldSwitchUI || false;
-            console.log(`Language detected: ${detectedLanguage}, should switch UI: ${shouldSwitchUI}`);
-          }
+- AI speaking English, user wrote "okej" → {"language": "sv", "shouldSwitchUI": false}`,
+            },
+            {
+              role: "user",
+              content: `Recent conversation context:\n${recentMessages}\n\nNew user message: "${message.slice(0, 1000)}"\n\nWhat language is this and should the UI switch?`,
+            },
+          ],
+        }));
+        if (result.language === 'en' || result.language === 'sv' || result.language === 'other') {
+          detectedLanguage = result.language;
+          shouldSwitchUI = result.shouldSwitchUI === true;
         }
       } catch (error) {
         console.warn("Failed to detect language, defaulting to English:", error);
@@ -1335,9 +1563,7 @@ Examples:
       shouldSwitchUI = false;
     }
 
-    // If other language, return early with error message
     if (detectedLanguage === 'other') {
-      console.log("Other language detected, returning error message");
       return c.json({
         message: "I only speak English and Swedish, sorry! 🇬🇧🇸🇪\n\nPlease try again in one of these languages.",
         sources: [],
@@ -1345,217 +1571,81 @@ Examples:
         shouldSwitchUI: false
       });
     }
+    const language: 'en' | 'sv' = detectedLanguage;
 
-    // Check if knowledge base(s) are initialized
-    for (const kbAudience of audience ? [undefined, audience] : [undefined]) {
-      if (!(await kv.get(getKnowledgeKeys(kbAudience).initialized))) {
-        console.log(
-          `${kbAudience || "Default"} knowledge base not initialized, initializing now...`,
-        );
-        await initializeKnowledgeBase(kbAudience);
-      }
+    // Fit check: the visitor clicked the button, or said yes to the offer
+    const wantsFitCheck = body.runFitCheck === true ||
+      (fitCheckStatus === "offered" && message.length < 80 && AFFIRMATIVE.test(message));
+    if (wantsFitCheck) {
+      const company = companyProfile?.found ? companyProfile.name : who;
+      const [fitCheck, updatedBrief] = await Promise.all([
+        writeFitCheck(brief, [...history, { role: "user", content: message }], company, language),
+        updateVisitorBrief(brief, history, message).catch(() => brief),
+      ]);
+      return c.json({
+        message: fitCheck.intro,
+        fitCheck,
+        suggestionFooter: fitCheck.question,
+        sources: [],
+        detectedLanguage,
+        shouldSwitchUI,
+        visitorBrief: updatedBrief,
+        fitCheckStatus: "done",
+      });
     }
 
-    // Search for relevant knowledge
-    let relevantChunks;
-    try {
-      relevantChunks = await searchKnowledge(message, audience ? 4 : 3, audience);
-      console.log(
-        `Found ${relevantChunks.length} relevant chunks (similarities: ${relevantChunks.map((c) => c.similarity.toFixed(3)).join(", ")})`,
-      );
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-
-      // Handle quota exceeded errors from embedding generation
-      if (errorMessage === "QUOTA_EXCEEDED") {
-        return c.json(
-          {
-            error: "QUOTA_EXCEEDED",
-            message:
-              "Oops! 💸 Max has exceeded his OpenAI quota this month (turns out AI isn't free, who knew?). Feel free to reach out to him directly at max@maxthunberg.com or connect on LinkedIn, he's much cheaper in person and comes with free coffee! ☕😄",
-          },
-          429,
-        );
-      }
-
-      throw error;
-    }
-
-    // Build context from relevant chunks
-    const context = relevantChunks
-      .map(
-        (chunk, i) =>
-          `[Knowledge ${i + 1} from ${chunk.source}]\n${chunk.text}`,
-      )
-      .join("\n\n---\n\n");
-
-    // Determine what language AI has been speaking
-    const lastAIMessage = conversationHistory.slice().reverse().find((m: any) => m.role === 'assistant');
-    const aiAlreadySpeaking = lastAIMessage ? 
-      (lastAIMessage.content.match(/[\u00C0-\u017F\u0400-\u04FF]/) || lastAIMessage.content.includes('å') || lastAIMessage.content.includes('ä') || lastAIMessage.content.includes('ö') ? 'sv' : 'en') 
-      : null;
-    
-    // Add explicit language instruction based on detected language
     let languageInstruction = '';
-    
-    if (detectedLanguage === 'sv') {
-      if (aiAlreadySpeaking === 'sv') {
-        // AI is already speaking Swedish, so just continue naturally
-        languageInstruction = '\n\n🚨🚨🚨 CRITICAL: Continue responding in SWEDISH. You are ALREADY speaking Swedish, so DO NOT act surprised about the language. Just continue the conversation naturally in Swedish. 🚨🚨🚨';
-      } else {
-        // AI was speaking English, now switching to Swedish
-        languageInstruction = '\n\n🚨🚨🚨 CRITICAL: The user is writing in SWEDISH. You MUST respond 100% in SWEDISH. NO ENGLISH ALLOWED. 🚨🚨🚨';
-      }
+    if (language === 'sv') {
+      languageInstruction = aiAlreadySpeaking === 'sv'
+        ? '\n\n🚨 CRITICAL: Continue responding in SWEDISH. You are ALREADY speaking Swedish, so DO NOT act surprised about the language. 🚨'
+        : '\n\n🚨 CRITICAL: The user is writing in SWEDISH. You MUST respond 100% in SWEDISH. NO ENGLISH ALLOWED. 🚨';
     } else {
-      if (aiAlreadySpeaking === 'en') {
-        // AI is already speaking English, so just continue naturally
-        languageInstruction = '\n\n🚨🚨🚨 CRITICAL: Continue responding in ENGLISH. You are ALREADY speaking English, so DO NOT act surprised about the language. Just continue the conversation naturally in English. 🚨🚨🚨';
-      } else {
-        // AI was speaking Swedish, now switching to English
-        languageInstruction = '\n\n🚨🚨🚨 CRITICAL: The user is writing in ENGLISH. You MUST respond 100% in ENGLISH. NO SWEDISH ALLOWED. 🚨🚨🚨';
-      }
+      languageInstruction = aiAlreadySpeaking === 'en'
+        ? '\n\n🚨 CRITICAL: Continue responding in ENGLISH. You are ALREADY speaking English, so DO NOT act surprised about the language. 🚨'
+        : '\n\n🚨 CRITICAL: The user is writing in ENGLISH. You MUST respond 100% in ENGLISH. NO SWEDISH ALLOWED. 🚨';
     }
 
-    // Build messages for OpenAI
+    // Offer the fit check once the brief says there's enough to go on
+    const offerFitCheck = fitCheckStatus === "none" && brief.fitCheckReady;
+
+    // Static part first (same for every visitor, cached by OpenAI), then
+    // everything that depends on this visitor
+    const staticPrompt = `${SYSTEM_PROMPT}\n\n=== KNOWLEDGE BASE ===\n\n${DEFAULT_KNOWLEDGE}`;
+    const dynamicPrompt = [
+      languageInstruction,
+      companyPromptSection(who, companyProfile),
+      audience === "airon" ? `${AIRON_MODE_PROMPT}\n\n=== AIRON KNOWLEDGE ===\n\n${AIRON_KNOWLEDGE}` : "",
+      await imageLibrarySection(),
+      briefPromptSection(brief),
+      offerFitCheck ? FIT_CHECK_OFFER_PROMPT : "",
+      TONE_REMINDER,
+    ].join("");
     const messages = [
-      {
-        role: "system",
-        content: `${SYSTEM_PROMPT}${languageInstruction}${companyPromptSection(who, companyProfile)}${audience === "airon" ? AIRON_MODE_PROMPT : ""}\n\n=== KNOWLEDGE BASE ===\n\n${context}${TONE_REMINDER}`,
-      },
-      // Include conversation history (limited to last 6 messages)
-      ...conversationHistory.slice(-6),
-      {
-        role: "user",
-        content: message,
-      },
+      { role: "system", content: staticPrompt },
+      { role: "system", content: dynamicPrompt },
+      ...history.slice(-10),
+      { role: "user", content: message },
     ];
 
-    // Call OpenAI Chat Completion API with retry logic
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!apiKey) {
-      return c.json(
-        { error: "OpenAI API key not configured" },
-        500,
-      );
-    }
-
-    let assistantMessage;
-    let chatRetries = 3;
-    let lastChatError: Error | null = null;
-
-    for (let attempt = 0; attempt < chatRetries; attempt++) {
-      try {
-        // Create abort controller for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(
-          () => controller.abort(),
-          30000,
-        ); // 30 second timeout
-
-        const response = await fetch(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: messages,
-              temperature: 0.7,
-              max_tokens: 500,
-            }),
-            signal: controller.signal,
-          },
-        );
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("OpenAI API error:", errorText);
-
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { error: { message: errorText } };
-          }
-
-          // Check if it's a quota/rate limit error
-          if (
-            response.status === 429 ||
-            (errorData.error &&
-              errorData.error.type === "insufficient_quota")
-          ) {
-            return c.json(
-              {
-                error: "QUOTA_EXCEEDED",
-                message:
-                  "Oops! 💸 Max has exceeded his OpenAI quota this month (turns out AI isn't free, who knew?). Feel free to reach out to him directly at max@maxthunberg.com or connect on LinkedIn, he's much cheaper in person and comes with free coffee! ☕😄",
-              },
-              429,
-            );
-          }
-
-          throw new Error(
-            `Failed to generate response: ${errorText}`,
-          );
-        }
-
-        const data = await response.json();
-        assistantMessage = data.choices[0].message.content;
-        break; // Success, exit retry loop
-      } catch (error) {
-        lastChatError =
-          error instanceof Error
-            ? error
-            : new Error(String(error));
-
-        // If it's an abort error (timeout), log and retry
-        if (
-          error instanceof Error &&
-          error.name === "AbortError"
-        ) {
-          console.warn(
-            `OpenAI Chat API timeout on attempt ${attempt + 1}/${chatRetries}, retrying...`,
-          );
-        } else {
-          console.warn(
-            `OpenAI Chat API error on attempt ${attempt + 1}/${chatRetries}:`,
-            error,
-          );
-        }
-
-        // Wait before retrying (exponential backoff)
-        if (attempt < chatRetries - 1) {
-          const delay = Math.min(
-            1000 * Math.pow(2, attempt),
-            5000,
-          );
-          await new Promise((resolve) =>
-            setTimeout(resolve, delay),
-          );
-        }
-      }
-    }
-
-    // Check if we got a response
-    if (!assistantMessage) {
-      throw new Error(
-        `Failed to generate chat response after ${chatRetries} attempts. Last error: ${lastChatError?.message || "Unknown error"}`,
-      );
-    }
-
-    console.log("Response generated successfully");
+    // The brief is updated at the same time as the answer is written, the
+    // answer uses the brief from the previous message
+    const [assistantMessage, updatedBrief] = await Promise.all([
+      generateAnswer(messages),
+      updateVisitorBrief(brief, history, message).catch((error) => {
+        console.error("Visitor brief update failed:", error);
+        return brief;
+      }),
+    ]);
 
     return c.json({
-      message: applyMaxPunctuation(assistantMessage),
-      sources: relevantChunks.map((c) => c.source),
-      detectedLanguage: detectedLanguage,
-      shouldSwitchUI: shouldSwitchUI
+      // The chat shows plain text, so markdown bold is dropped
+      message: applyMaxPunctuation(assistantMessage.replace(/\*\*(.+?)\*\*/g, "$1")),
+      sources: [],
+      detectedLanguage,
+      shouldSwitchUI,
+      visitorBrief: updatedBrief,
+      fitCheckStatus: offerFitCheck ? "offered" : fitCheckStatus,
+      fitCheckOffered: offerFitCheck,
     });
   } catch (error) {
     console.error("Error in chat endpoint:", error);
@@ -1591,6 +1681,87 @@ Examples:
 // ===========================================
 // DEBUG ENDPOINT: CHECK KNOWLEDGE BASE INFO
 // ===========================================
+// ===========================================
+// HAND-OFF TO THE REAL MAX
+// ===========================================
+// The visitor chooses to send the conversation to Max, sent as an email via
+// Resend (needs the RESEND_API_KEY secret)
+const HANDOFF_TO = "max@maxthunberg.com";
+const HANDOFFS_PER_DAY = 20;
+
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+app.post("/make-server-2b0a7158/handoff", async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+    const email = text(body.email, 200);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return c.json({ error: "INVALID_EMAIL" }, 400);
+    }
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      console.error("Hand-off failed: RESEND_API_KEY not configured");
+      return c.json({ error: "NOT_CONFIGURED" }, 503);
+    }
+
+    // Daily cap, anyone can call this endpoint
+    const counterKey = `handoffs_${new Date().toISOString().slice(0, 10)}`;
+    const count = (await kv.get(counterKey)) || 0;
+    if (count >= HANDOFFS_PER_DAY) return c.json({ error: "LIMIT_REACHED" }, 429);
+    await kv.set(counterKey, count + 1);
+
+    const name = text(body.name, 100);
+    const note = text(body.note, 2000);
+    const who = text(body.who, 100);
+    const brief = cleanBrief(body.visitorBrief);
+    const fitCheck = body.fitCheck && typeof body.fitCheck === "object" ? body.fitCheck : null;
+    const transcript: { role: string; content: string }[] = (Array.isArray(body.transcript) ? body.transcript : [])
+      .filter((m: any) => typeof m?.content === "string")
+      .slice(-40)
+      .map((m: any) => ({ role: m.role === "user" ? "Visitor" : "Digital Max", content: m.content.slice(0, 3000) }));
+
+    const list = (items: unknown) =>
+      Array.isArray(items) && items.length
+        ? `<ul>${items.filter((i) => typeof i === "string").map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
+        : "<p>–</p>";
+    const html = `
+      <h2>${escapeHtml(name || email)} wants to talk to the real you</h2>
+      <p><b>Email:</b> ${escapeHtml(email)}${who ? `<br><b>Link:</b> ?who=${escapeHtml(who)}` : ""}</p>
+      ${note ? `<p><b>Their note:</b><br>${escapeHtml(note).replace(/\n/g, "<br>")}</p>` : ""}
+      <h3>What Digital Max learned</h3>
+      <p><b>Role:</b> ${escapeHtml(brief.role || "–")}<br><b>Company:</b> ${escapeHtml(brief.company || "–")}<br><b>Intent:</b> ${brief.intent}<br><b>Hiring for:</b> ${escapeHtml(brief.hiringFor || "–")}</p>
+      <p><b>Challenges</b></p>${list(brief.challenges)}
+      <p><b>Concerns</b></p>${list(brief.concerns)}
+      ${fitCheck ? `<h3>Fit check</h3><p><b>✅ Matches</b></p>${list(fitCheck.matches)}<p><b>⚠️ Risks</b></p>${list(fitCheck.risks)}<p><b>❓ Unknowns</b></p>${list(fitCheck.unknowns)}` : ""}
+      <h3>Conversation</h3>
+      ${transcript.map((m) => `<p><b>${m.role}:</b><br>${escapeHtml(m.content).replace(/\n/g, "<br>")}</p>`).join("")}
+    `;
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: Deno.env.get("HANDOFF_FROM") || "Digital Max <onboarding@resend.dev>",
+        to: [HANDOFF_TO],
+        reply_to: email,
+        subject: `Ask Max: ${name || email}${brief.company || who ? ` (${brief.company || who})` : ""} wants to talk`,
+        html,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) {
+      console.error("Resend error:", response.status, await response.text());
+      return c.json({ error: "SEND_FAILED" }, 502);
+    }
+    return c.json({ success: true });
+  } catch (error) {
+    console.error("Hand-off failed:", error);
+    return c.json({ error: "SEND_FAILED" }, 500);
+  }
+});
+
 app.get("/make-server-2b0a7158/admin/kb-info", async (c) => {
   try {
     const info = {
@@ -1648,14 +1819,6 @@ app.post("/make-server-2b0a7158/admin/reset-kb", async (c) => {
       500
     );
   }
-});
-
-// Initialize knowledge base on startup
-initializeKnowledgeBase().catch((error) => {
-  console.error(
-    "Failed to initialize knowledge base on startup:",
-    error,
-  );
 });
 
 // Start server
