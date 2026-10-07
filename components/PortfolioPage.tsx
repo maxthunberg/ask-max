@@ -175,7 +175,6 @@ export function PortfolioPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
-  const [showResetModal, setShowResetModal] = useState(false);
   const [quotaErrorCount, setQuotaErrorCount] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [language, setLanguage] = useState<'en' | 'sv'>('en');
@@ -316,10 +315,6 @@ export function PortfolioPage() {
       subtitle: "Currently UX Lead at Volvo Group",
       placeholder: "Ask me about UX, leadership or whatever you feel like",
       disclaimer: "Just like the real Max, my digital twin can also make mistakes.",
-      modalTitle: "Start over?",
-      modalDescription: "This will clear your current conversation and return you to the home screen.",
-      modalKeepChatting: "Keep chatting",
-      modalStartOver: "Start over",
       // Coming Soon Modal
       comingSoonTitle: "Coming soon",
       comingSoonDescription: "Here's what I'm planning to improve in the future:",
@@ -342,10 +337,6 @@ export function PortfolioPage() {
       subtitle: "För närvarande UX Lead på Volvo Group",
       placeholder: "Fråga mig om UX, ledarskap eller vad du vill",
       disclaimer: "Precis som den riktiga Max kan min digitala tvilling också göra misstag.",
-      modalTitle: "Börja om?",
-      modalDescription: "Detta kommer att rensa din nuvarande konversation och ta dig tillbaka till startsidan.",
-      modalKeepChatting: "Fortsätt chatta",
-      modalStartOver: "Börja om",
       // Coming Soon Modal
       comingSoonTitle: "Kommer snart",
       comingSoonDescription: "Här är vad jag planerar att förbättra i framtiden:",
@@ -816,14 +807,16 @@ export function PortfolioPage() {
     window.open('https://maxthunberg.com', '_blank');
   };
 
+  // Back to the start page right away: the conversation is saved and can be
+  // picked up again from the "Continue the conversation" card
   const handleHomeClick = () => {
     if (isChatMode && messages.length > 0) {
-      setShowResetModal(true);
+      goToStartPage();
     }
   };
 
-  const handleResetConfirm = () => {
-    console.log('🔄 handleResetConfirm called - current language state:', language);
+  const goToStartPage = () => {
+    console.log('🔄 Back to start page - current language state:', language);
     console.log('🔄 Current navbar/search/disclaimer languages:', navbarLanguage, searchLanguage, disclaimerLanguage);
     
     // Track chat end event before resetting
@@ -840,7 +833,6 @@ export function PortfolioPage() {
     setMessages([]);
     setQuestion('');
     setIsChatMode(false);
-    setShowResetModal(false);
     setQuotaErrorCount(0); // Reset quota error counter
     setIsLoading(false); // Reset loading state in case they were in infinite loading
     setIsLanguageTransitioning(false); // Reset language transition state
@@ -858,17 +850,10 @@ export function PortfolioPage() {
     console.log(`🔄 Reset conversation, keeping ${language === 'sv' ? 'Swedish' : 'English'} language`);
   };
 
-  const handleResetCancel = () => {
-    setShowResetModal(false);
-  };
-
   // Close modals on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (showResetModal) {
-          handleResetCancel();
-        }
         if (showUpcomingPlansModal) {
           setShowUpcomingPlansModal(false);
         }
@@ -876,7 +861,7 @@ export function PortfolioPage() {
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [showResetModal, showUpcomingPlansModal]);
+  }, [showUpcomingPlansModal]);
 
   // Keep compatibility with older API responses that still include the
   // suggestion heading inside the message body. The card section owns that
@@ -1507,93 +1492,6 @@ export function PortfolioPage() {
       </div>
 
       <div aria-hidden="true" className="absolute border-[0px_0px_1px] border-[rgba(255,255,255,0.15)] border-dashed inset-0 pointer-events-none" />
-
-      {/* Reset Confirmation Modal */}
-      <AnimatePresence>
-        {showResetModal && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={handleResetCancel}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
-              aria-hidden="true"
-            />
-
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed left-1/2 top-1/2 z-[101] w-[calc(100%-2rem)] sm:w-[440px] max-w-[440px]"
-              style={{ x: '-50%', y: '-50%' }}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="modal-title"
-              aria-describedby="modal-description"
-            >
-              <div className="rounded-[16px] overflow-hidden transition-colors duration-300" style={{ backgroundColor: colors.cardBg }}>
-                <div aria-hidden="true" className="absolute border border-solid inset-0 pointer-events-none rounded-[16px] transition-colors duration-300" style={{ borderColor: colors.border }} />
-                
-                {/* Content */}
-                <div className="p-[24px] sm:p-[32px] flex flex-col gap-[24px]">
-                  {/* Header */}
-                  <div className="flex flex-col gap-[8px]">
-                    <h2 id="modal-title" className="font-semibold text-[18px] sm:text-[20px] leading-[26px] sm:leading-[28px] transition-colors duration-300" style={{ color: colors.textPrimary }}>
-                      {t.modalTitle}
-                    </h2>
-                    <p id="modal-description" className="font-normal text-[14px] leading-[20px] transition-colors duration-300" style={{ color: colors.textSecondary }}>
-                      {t.modalDescription}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-[12px] sm:justify-end">
-                    <button
-                      onClick={handleResetCancel}
-                      className="relative px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-opacity-50 min-h-[44px] overflow-hidden"
-                      style={{ 
-                        backgroundColor: theme === 'light' ? '#e8e8ed' : '#21123c',
-                        color: colors.textPrimary
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#dcdce0' : '#271641'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : '#21123c'}
-                    >
-                      <div 
-                        aria-hidden="true" 
-                        className="absolute border border-solid inset-0 pointer-events-none rounded-[8px] transition-colors duration-200" 
-                        style={{ borderColor: theme === 'light' ? 'rgba(0, 0, 0, 0.15)' : '#4d4164' }}
-                      />
-                      <span className="relative z-10">{t.modalKeepChatting}</span>
-                    </button>
-                    <button
-                      onClick={handleResetConfirm}
-                      className="relative px-[20px] py-[12px] sm:py-[10px] rounded-[8px] font-medium text-[14px] leading-[20px] active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-opacity-50 min-h-[44px] overflow-hidden"
-                      style={{ 
-                        backgroundColor: theme === 'light' ? '#e8e8ed' : '#21123c',
-                        color: colors.textPrimary
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#dcdce0' : '#271641'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : '#21123c'}
-                    >
-                      <div 
-                        aria-hidden="true" 
-                        className="absolute border border-solid inset-0 pointer-events-none rounded-[8px] transition-colors duration-200" 
-                        style={{ borderColor: theme === 'light' ? 'rgba(0, 0, 0, 0.15)' : '#4d4164' }}
-                      />
-                      <span className="relative z-10">{t.modalStartOver}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Upcoming Plans Modal */}
       <AnimatePresence>
