@@ -697,26 +697,30 @@ Design context: ${profile.designContext || "unknown"}`,
   return applyMaxPunctuation((data.choices?.[0]?.message?.content ?? "").trim());
 }
 
-async function writeLinkReasons(profile: Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">): Promise<Partial<Record<LinkId, string>>> {
-  const links = HIRE_LINKS.map((link) => `- ${link.id}: ${link.label} (${link.domain}). What it is: ${link.about}`).join("\n");
+async function writeLinkCards(profile: Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">): Promise<LinkCard[]> {
+  const links = HIRE_LINKS.map((link) => `- ${link.id}: default title "${link.label}" (${link.domain}). What it is: ${link.about}`).join("\n");
   const data = await openaiJson("https://api.openai.com/v1/chat/completions", {
     model: "gpt-4.1",
     temperature: 0.8,
-    max_tokens: 300,
+    max_tokens: 450,
     response_format: { type: "json_object" },
     messages: [
       {
         role: "system",
-        content: `Max Thunberg, a UX Design Lead, shows link cards to someone from ${profile.name} under "Want to dig deeper? Here's where to look:". For each link, write one short reason (max 16 words) in first person as Max, telling them why that link is worth a look for ${profile.name} specifically. Every reason must tie the link to something concrete about ${profile.name}: their products, their users, their market or a likely UX challenge they have. A reason that would fit any company is wrong.
+        content: `Max Thunberg, a UX Design Lead, shows link cards to someone from ${profile.name} under "Want to dig deeper? Here's where to look:". Tailor the cards to ${profile.name}:
+1. Order: put the link most relevant to ${profile.name} first and the least relevant last. E.g. a brand or consumer product company cares more about visual craft, an engineering or B2B company more about complex tools and leadership.
+2. Title: a short card title (2 to 4 words) that says what the link is, angled towards what ${profile.name} would care about. It must still make clear what the link is, e.g. "CV/Resume" could become "My UX lead track record", never something vague.
+3. Reason: one short reason (max 16 words) in first person as Max, why that link is worth a look for ${profile.name} specifically. Tie it to something concrete about ${profile.name}: their products, their users, their market or a likely UX challenge they have. A reason that would fit any company is wrong.
 
 Links:
 ${links}
 
 Rules:
+- Include all ${HIRE_LINKS.length} links exactly once.
 - Casual, direct, plain spoken English. No corporate filler ("leverage", "seamless", "passionate", "innovative", "journey").
 - Only use what "What it is" says about the link. Never invent projects, metrics or claim Max worked with ${profile.name}.
 - No dashes as separators, no emojis.
-Reply with ONLY a JSON object: {"portfolio": "...", "cv": "...", "branding": "...", "askmax": "..."}`,
+Reply with ONLY a JSON object: {"cards": [{"id": "...", "title": "...", "reason": "..."}, ...]} in your chosen order.`,
       },
       {
         role: "user",
@@ -728,11 +732,15 @@ Design context: ${profile.designContext || "unknown"}`,
     ],
   });
   const json = extractJson(data.choices?.[0]?.message?.content ?? "");
-  const reasons: Partial<Record<LinkId, string>> = {};
-  for (const { id } of HIRE_LINKS) {
-    if (typeof json[id] === "string" && json[id].trim()) reasons[id] = applyMaxPunctuation(json[id].trim().slice(0, 160));
+  const text = (v: unknown, max: number) => (typeof v === "string" ? applyMaxPunctuation(v.trim().slice(0, max)) : "");
+  const cards: LinkCard[] = [];
+  for (const card of Array.isArray(json.cards) ? json.cards : []) {
+    const id = HIRE_LINKS.find((link) => link.id === card?.id)?.id;
+    if (!id || cards.some((c) => c.id === id)) continue;
+    cards.push({ id, title: text(card.title, 40), reason: text(card.reason, 160) });
   }
-  return reasons;
+  if (!cards.length) throw new Error("No link cards in response");
+  return cards;
 }
 
 async function lookupCompany(who: string, key: string): Promise<CompanyProfile | null> {
@@ -749,7 +757,7 @@ async function lookupCompany(who: string, key: string): Promise<CompanyProfile |
   const profile: CompanyProfile = {
     ...research,
     hireTweak: research.found ? await writeHireTweak(research) : "",
-    linkReasons: research.found ? await writeLinkReasons(research).catch(() => undefined) : undefined,
+    linkCards: research.found ? await writeLinkCards(research).catch(() => undefined) : undefined,
     fetchedAt: new Date().toISOString(),
   };
   // Not-found results are cached too, so junk names cost one lookup only
@@ -763,13 +771,13 @@ async function getCompanyProfile(who: string): Promise<CompanyProfile | null> {
   const key = companyCacheKey(who);
   const cached: CompanyProfile | null = await kv.get(key);
   if (cached) {
-    // Profiles cached before the tailored link reasons existed get them once
-    if (cached.found && !hasTailoredReasons(cached.linkReasons)) {
+    // Profiles cached before the tailored link cards existed get them once
+    if (cached.found && !cached.linkCards?.length) {
       try {
-        cached.linkReasons = await writeLinkReasons(cached);
+        cached.linkCards = await writeLinkCards(cached);
         await kv.set(key, cached);
       } catch (error) {
-        console.error(`Link reasons failed for "${who}":`, error);
+        console.error(`Link cards failed for "${who}":`, error);
       }
     }
     return cached;
@@ -1209,7 +1217,7 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
         sources: [],
         detectedLanguage: "en",
         shouldSwitchUI: false,
-        suggestions: hireSuggestions(isWhoCompany ? companyProfile.linkReasons : undefined),
+        suggestions: hireSuggestions(isWhoCompany ? companyProfile.linkCards : undefined),
       });
     }
 

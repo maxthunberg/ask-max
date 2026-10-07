@@ -996,7 +996,7 @@ export function PortfolioPage() {
                           <p className="mb-[10px] text-[16px] font-semibold leading-[24px]" style={{ color: colors.textPrimary }}>
                             Want to dig deeper? Here's where to look:
                           </p>
-                          <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-2">
+                          <div className="flex flex-col gap-[8px]">
                             {message.suggestions.map((suggestion) => (
                               <a
                                 key={suggestion.url}
