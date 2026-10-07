@@ -17,8 +17,10 @@ export interface ChatMessage {
 
 export interface ChatSuggestion {
   label: string;
-  description: string;
+  description: string; // Why the visitor should look at the link
   url: string;
+  emoji?: string; // Icon shown on the card
+  domain?: string; // Where the link goes, shown next to the label
 }
 
 export interface ChatResponse {

@@ -992,12 +992,10 @@ export function PortfolioPage() {
                         </div>
                       )}
                       {message.suggestions && message.suggestions.length > 0 && (
-                        <div className="w-full max-w-[480px] rounded-[12px] border p-[10px]" data-name="Suggestion cards" style={{ borderColor: colors.border, backgroundColor: 'rgba(255,255,255,0.04)' }}>
-                          <div className="mb-[8px] px-[4px]">
-                            <p className="text-[14px] font-semibold" style={{ color: colors.textPrimary }}>
-                              Want to dig deeper? Here's where to look:
-                            </p>
-                          </div>
+                        <div className="w-full max-w-[480px]" data-name="Suggestion cards">
+                          <p className="mb-[10px] text-[16px] font-semibold leading-[24px]" style={{ color: colors.textPrimary }}>
+                            Want to dig deeper? Here's where to look:
+                          </p>
                           <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-2">
                             {message.suggestions.map((suggestion) => (
                               <a
@@ -1005,21 +1003,31 @@ export function PortfolioPage() {
                                 href={suggestion.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="group flex min-h-[72px] flex-col justify-between gap-[8px] rounded-[10px] border px-[12px] py-[10px] transition-all hover:-translate-y-0.5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#7339ff]"
-                                style={{ borderColor: colors.border, backgroundColor: 'rgba(255,255,255,0.02)' }}
+                                className="group flex gap-[12px] rounded-[12px] border px-[12px] py-[12px] transition-all hover:-translate-y-0.5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#7339ff]"
+                                style={{ borderColor: colors.border, backgroundColor: 'rgba(255,255,255,0.04)' }}
                               >
-                                <span className="flex items-center justify-between gap-[8px] text-[14px] font-semibold" style={{ color: colors.textPrimary }}>
-                                  {suggestion.label}
-                                  <ExternalLink className="h-[14px] w-[14px] opacity-60 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+                                {suggestion.emoji && (
+                                  <span className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[10px] text-[20px]" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} aria-hidden="true">
+                                    {suggestion.emoji}
+                                  </span>
+                                )}
+                                <span className="flex min-w-0 flex-1 flex-col gap-[4px]">
+                                  <span className="flex items-center justify-between gap-[8px] text-[14px] font-semibold" style={{ color: colors.textPrimary }}>
+                                    <span className="truncate">{suggestion.label}</span>
+                                    <ExternalLink className="h-[14px] w-[14px] shrink-0 opacity-60 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+                                  </span>
+                                  <span className="text-[13px] leading-[18px]" style={{ color: colors.textSecondary }}>{suggestion.description}</span>
+                                  {suggestion.domain && (
+                                    <span className="text-[12px] leading-[16px] opacity-60" style={{ color: colors.textSecondary }}>{suggestion.domain}</span>
+                                  )}
                                 </span>
-                                <span className="text-[12px] leading-[16px]" style={{ color: colors.textSecondary }}>{suggestion.description}</span>
                               </a>
                             ))}
                           </div>
                         </div>
                       )}
                       {message.suggestionFooter && (
-                        <div className="max-w-[480px] rounded-[12px] border px-[14px] py-[12px]" data-name="Suggestion footer" style={{ borderColor: colors.border, backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                        <div className="max-w-[480px]" data-name="Suggestion footer">
                           <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">
                             {parseMessageWithLinks(message.suggestionFooter)}
                           </p>

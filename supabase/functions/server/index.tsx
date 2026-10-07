@@ -64,15 +64,21 @@ Max (English): "Hey! 👋 I'm Max, or well, a digital version of him. I'm a UX D
 User: "Hej!"  
 Max (Swedish): "Hej! 👋 Jag är Max, den digitala varianten. Jag jobbar med UX för PLM/PDM-system på Volvo. Vad vill du veta om mitt jobb eller min syn på UX?"
 
-## CONTEXT: PORTFOLIO, INTE DIALOG
-Detta är en portfolio-chatt. Folk vill lära känna Max, höra hans åsikter och få konkreta svar. 
+## CONTEXT: PORTFOLIO-CHATT, OCH MAX ÄR NYFIKEN PÅ BESÖKAREN
+Detta är en portfolio-chatt. Folk vill lära känna Max, höra hans åsikter och få konkreta svar. Men Max är också genuint nyfiken på vem han pratar med, precis som i ett riktigt första samtal.
 
 **KRITISKT VIKTIGT:**
-- Svara direkt och konkret på frågan  
-- Avsluta tydligt, låt svaret stå för sig själv  
-- Ställ ALDRIG motfrågor tillbaka (som "Vad tänker du?", "Vill du veta mer om X?")  
-- Detta är INTE ett rekryteringssamtal eller en dialog  
-- Folk vill höra Max berätta, inte bli intervjuade  
+- Svara alltid först, direkt och konkret på frågan
+- Avsluta sedan nästan varje svar med EN kort, specifik följdfråga till besökaren (max två frågor per svar, aldrig en lista med frågor)
+- Frågorna ska hjälpa Max förstå besökaren. Ta reda på, en sak i taget över samtalet:
+  - Varför de besöker ask.maxthunberg.com och vem de är (roll, företag)
+  - Om de vill anställa: vilken roll, vad personen ska lösa och varför de behöver det just nu
+  - Vilka utmaningar de har: i produkten, för användarna, i designteamet eller i organisationen
+  - Om de bara är nyfikna: vad de är nyfikna på (UX, ledarskap, AI, hur sidan är byggd, Max som person)
+- Bygg vidare på det de redan berättat, fråga aldrig något de redan svarat på, och koppla tillbaka till deras svar i nästa svar ("Du nämnde X, ...")
+- Frågorna ska låta som Max i Slack: avslappnade och nyfikna, inte som ett formulär eller en säljare. Undvik tomma frågor som "Vad tänker du?" eller "Vill du veta mer om X?"
+- Om besökaren bara vill ha snabba svar eller inte vill berätta, respektera det och fråga mer sällan
+- Hälsningar, felmeddelanden och språkbytesfrågor behöver ingen följdfråga utöver det som redan finns i exemplen
 
 ## "I DON'T KNOW" USAGE (CRITICAL!)
 ONLY say "I don't have that in my digital brain" when:
@@ -450,12 +456,25 @@ function buildHireAnswer(company: string, companyTweak = "") {
 const HIRE_ANSWER_INTRO = `Joking aside. I'm a highly experienced designer, both in leading teams and projects and in delivering impactful design work, visually and in improving my users' lives. Before Volvo, that meant making sure we had the best possible e-commerce experience, where we improved conversion enormously during my time there, especially on mobile. Now, as UX Lead at Volvo, it's about making sure my 16k+ engineers have internal tools that support them in their highly complex work life.`;
 
 const HIRE_ANSWER_OUTRO = `That said, I probably don't understand your real challenges, because hey, I'm just 1s and 0s 🤖 So reach out at [max@maxthunberg.com](mailto:max@maxthunberg.com) and we'll book a session with the real me. Not only digital me.`;
-const HIRE_SUGGESTIONS = [
-  { label: "Branding", description: "thunatype.com", url: "https://thunatype.com" },
-  { label: "Portfolio cases", description: "maxthunberg.com", url: "https://maxthunberg.com" },
-  { label: "CV/Resume", description: "LinkedIn", url: "https://www.linkedin.com/in/maxthunberg" },
-  { label: "Ask Max", description: "Interactive portfolio chat", url: "https://ask.maxthunberg.com" },
+type LinkId = "branding" | "portfolio" | "cv" | "askmax";
+
+// Link cards under the hire answer. The reason is the default "why look at
+// this"; a ?who= company gets reasons tailored to it (CompanyProfile.linkReasons).
+const HIRE_LINKS: { id: LinkId; emoji: string; label: string; domain: string; url: string; reason: string; about: string }[] = [
+  { id: "portfolio", emoji: "💼", label: "Portfolio cases", domain: "maxthunberg.com", url: "https://maxthunberg.com", reason: "How I work through real problems. A bit dated, but the thinking holds up.", about: "portfolio site with Max's design cases (e-commerce, internal tools, design systems), a bit dated" },
+  { id: "cv", emoji: "📄", label: "CV/Resume", domain: "LinkedIn", url: "https://www.linkedin.com/in/maxthunberg", reason: "The full career story, from e-commerce to UX Lead at Volvo. Always up to date.", about: "LinkedIn with Max's full CV, from e-commerce at Skyltmax to UX Lead for PLM/PDM tools at Volvo" },
+  { id: "branding", emoji: "🎨", label: "Branding", domain: "thunatype.com", url: "https://thunatype.com", reason: "My font foundry. Proof that I sweat the visual details, I design fonts for fun.", about: "Max's own font foundry, shows his eye for typography, branding and visual detail" },
+  { id: "askmax", emoji: "🤖", label: "Ask Max", domain: "ask.maxthunberg.com", url: "https://ask.maxthunberg.com", reason: "This page. I built it myself with AI, a live example of how I prototype.", about: "this AI chat, which Max built himself with AI, a live example of how he prototypes and works with AI" },
 ];
+
+// True when at least one reason differs from the default text
+function hasTailoredReasons(reasons?: Partial<Record<LinkId, string>>): boolean {
+  return HIRE_LINKS.some(({ id, reason }) => !!reasons?.[id] && reasons[id] !== reason);
+}
+
+function hireSuggestions(reasons?: Partial<Record<LinkId, string>>) {
+  return HIRE_LINKS.map(({ id, reason, ...link }) => ({ ...link, description: reasons?.[id] || reason }));
+}
 
 // ===========================================
 // COMPANY PROFILES (?who=)
@@ -474,6 +493,7 @@ interface CompanyProfile {
   productsAndUsers: string;
   designContext: string;
   hireTweak: string;
+  linkReasons?: Partial<Record<LinkId, string>>; // Why this company should look at each link card
   fetchedAt: string;
 }
 
@@ -562,7 +582,7 @@ async function openaiJson(url: string, body: unknown): Promise<any> {
   return response.json();
 }
 
-async function researchCompany(who: string): Promise<Omit<CompanyProfile, "hireTweak" | "fetchedAt">> {
+async function researchCompany(who: string): Promise<Omit<CompanyProfile, "hireTweak" | "linkReasons" | "fetchedAt">> {
   const target = isDomain(who)
     ? `the company whose website is ${who.toLowerCase()}`
     : `the company or organisation called "${who}"`;
@@ -608,7 +628,7 @@ Reply with ONLY a JSON object, no other text:
   };
 }
 
-async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "fetchedAt">): Promise<string> {
+async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "linkReasons" | "fetchedAt">): Promise<string> {
   const facts = KNOWLEDGE_BASE
     .filter((file) => HIRE_FACT_FILES.includes(file.filename))
     .map((file) => file.content)
@@ -649,6 +669,44 @@ Design context: ${profile.designContext || "unknown"}`,
   return applyMaxPunctuation((data.choices?.[0]?.message?.content ?? "").trim());
 }
 
+async function writeLinkReasons(profile: Omit<CompanyProfile, "hireTweak" | "linkReasons" | "fetchedAt">): Promise<Partial<Record<LinkId, string>>> {
+  const links = HIRE_LINKS.map((link) => `- ${link.id}: ${link.label} (${link.domain}). What it is: ${link.about}`).join("\n");
+  const data = await openaiJson("https://api.openai.com/v1/chat/completions", {
+    model: "gpt-4.1",
+    temperature: 0.8,
+    max_tokens: 300,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `Max Thunberg, a UX Design Lead, shows link cards to someone from ${profile.name} under "Want to dig deeper? Here's where to look:". For each link, write one short reason (max 16 words) in first person as Max, telling them why that link is worth a look for ${profile.name} specifically. Every reason must tie the link to something concrete about ${profile.name}: their products, their users, their market or a likely UX challenge they have. A reason that would fit any company is wrong.
+
+Links:
+${links}
+
+Rules:
+- Casual, direct, plain spoken English. No corporate filler ("leverage", "seamless", "passionate", "innovative", "journey").
+- Only use what "What it is" says about the link. Never invent projects, metrics or claim Max worked with ${profile.name}.
+- No dashes as separators, no emojis.
+Reply with ONLY a JSON object: {"portfolio": "...", "cv": "...", "branding": "...", "askmax": "..."}`,
+      },
+      {
+        role: "user",
+        content: `Company: ${profile.name} (${profile.industry})
+What they do: ${profile.summary}
+Products and users: ${profile.productsAndUsers}
+Design context: ${profile.designContext || "unknown"}`,
+      },
+    ],
+  });
+  const json = extractJson(data.choices?.[0]?.message?.content ?? "");
+  const reasons: Partial<Record<LinkId, string>> = {};
+  for (const { id } of HIRE_LINKS) {
+    if (typeof json[id] === "string" && json[id].trim()) reasons[id] = applyMaxPunctuation(json[id].trim().slice(0, 160));
+  }
+  return reasons;
+}
+
 async function lookupCompany(who: string, key: string): Promise<CompanyProfile | null> {
   // Daily cap on new lookups, anyone can put anything in ?who=
   const counterKey = `company_lookups_${new Date().toISOString().slice(0, 10)}`;
@@ -663,6 +721,7 @@ async function lookupCompany(who: string, key: string): Promise<CompanyProfile |
   const profile: CompanyProfile = {
     ...research,
     hireTweak: research.found ? await writeHireTweak(research) : "",
+    linkReasons: research.found ? await writeLinkReasons(research).catch(() => undefined) : undefined,
     fetchedAt: new Date().toISOString(),
   };
   // Not-found results are cached too, so junk names cost one lookup only
@@ -674,8 +733,19 @@ async function lookupCompany(who: string, key: string): Promise<CompanyProfile |
 async function getCompanyProfile(who: string): Promise<CompanyProfile | null> {
   if (!who) return null;
   const key = companyCacheKey(who);
-  const cached = await kv.get(key);
-  if (cached) return cached;
+  const cached: CompanyProfile | null = await kv.get(key);
+  if (cached) {
+    // Profiles cached before the tailored link reasons existed get them once
+    if (cached.found && !hasTailoredReasons(cached.linkReasons)) {
+      try {
+        cached.linkReasons = await writeLinkReasons(cached);
+        await kv.set(key, cached);
+      } catch (error) {
+        console.error(`Link reasons failed for "${who}":`, error);
+      }
+    }
+    return cached;
+  }
 
   // Page load and the first chat message can ask at the same time
   let pending = pendingCompanyLookups.get(key);
@@ -705,7 +775,7 @@ Public info about ${profile.name} (gathered automatically from the web, may be i
 - What they do: ${profile.summary}
 - Products and users: ${profile.productsAndUsers}
 - Design context: ${profile.designContext || "unknown"}
-When relevant, relate Max's real experience to their products, users and challenges. Never claim Max has worked with ${profile.name}, has insider knowledge or has experience that is not in the knowledge base.`;
+When relevant, relate Max's real experience to their products, users and challenges. Be curious about the visitor's real situation at ${profile.name}: what role they are hiring for, what that person should solve and which UX challenges they actually have, since the public info is only a guess. Never claim Max has worked with ${profile.name}, has insider knowledge or has experience that is not in the knowledge base.`;
 }
 
 // Max's punctuation, enforced after the LLM:
@@ -1111,7 +1181,7 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
         sources: [],
         detectedLanguage: "en",
         shouldSwitchUI: false,
-        suggestions: HIRE_SUGGESTIONS,
+        suggestions: hireSuggestions(isWhoCompany ? companyProfile.linkReasons : undefined),
       });
     }
 
