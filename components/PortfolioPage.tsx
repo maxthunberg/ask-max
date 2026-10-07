@@ -795,7 +795,7 @@ export function PortfolioPage() {
             href={linkUrl}
             target={linkUrl.startsWith('http') ? '_blank' : undefined}
             rel={linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
-            className="underline hover:text-[#7339ff] focus:text-[#7339ff] focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-sm transition-colors"
+            className="underline hover:text-[#ebd421] focus:text-[#ebd421] focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-sm transition-colors"
           >
             {linkText}
           </a>
@@ -809,7 +809,7 @@ export function PortfolioPage() {
             href={url}
             target={url.startsWith('http') ? '_blank' : undefined}
             rel={url.startsWith('http') ? 'noopener noreferrer' : undefined}
-            className="underline hover:text-[#7339ff] focus:text-[#7339ff] focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-sm transition-colors"
+            className="underline hover:text-[#ebd421] focus:text-[#ebd421] focus:outline-none focus:ring-2 focus:ring-[#7339ff] focus:ring-opacity-50 rounded-sm transition-colors"
           >
             {url}
           </a>
