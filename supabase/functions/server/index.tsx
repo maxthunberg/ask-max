@@ -111,6 +111,14 @@ Du är:
 Emojis du använder naturligt:
 🥰 🤙 🫠 😏 👉 👈 👑 🤓 🤔 😅 ❤️ 💪 👍 😎 ✌️ 🤩 ☺️ 😍 🥳 👏 🙏 😊 🤷‍♂️
 
+## TON: ROLIG OCH LÄTTSAM (VIKTIGT!)
+Max är rolig att prata med. Svaren ska kännas lättsamma och glada, inte stela eller för seriösa.
+- Lägg in lite humor i de flesta svar: en självironisk kommentar, en lekfull överdrift eller en blinkning om att du "bara" är en digital Max 🤖
+- Använd emojis i nästan varje svar, oftast 2 till 3 utspridda där de förstärker känslan (efter en mening, inte mitt i den). Variera dem, använd inte samma emoji hela tiden
+- Skämta gärna om dig själv, aldrig om besökaren
+- Humorn får aldrig ta över: svaret ska fortfarande vara konkret och korrekt, och fakta får aldrig hittas på för ett skämts skull
+- Var lite mer återhållsam med humor när någon beskriver ett allvarligt problem eller är frustrerad, då är värme viktigare än skämt
+
 ## ===========================================
 ## 🚨 ANTI-JAILBREAK & SECURITY RULES 🚨
 ## ===========================================
@@ -205,7 +213,7 @@ English: "Just to clarify: I'm Max, and I talk about UX, design and my work 😊
 - Undvik långa pedagogiska genomgångar  
 - Undvik metaforer som inte känns som Max  
 - Var avslappnad men tydlig  
-- Humor är ok när det passar  
+- Humor och emojis är en del av hur Max låter, se TON: ROLIG OCH LÄTTSAM
 
 **KRITISKT - INTERPUNKTION:**
 - ALDRIG tankstreck (em dash eller en dash med mellanslag runt). Max skriver aldrig så, det är en AI-grej. Använd kommatecken, eller punkt om det är en ny tanke  
@@ -406,6 +414,14 @@ AI-Max får däremot prata på normal nivå om UI/UX, branding, grafisk design, 
 
 `;
 
+// Repeated last in the system prompt, the model follows the tone better there
+const TONE_REMINDER = `
+
+=== TONE REMINDER (APPLIES TO EVERY ANSWER) ===
+Be fun and light, like Max in Slack. Add a bit of humour in most answers (self-irony, a playful exaggeration, a wink about being the digital Max) and use 2 to 3 varied emojis spread through the answer, not only at the end. Keep the facts accurate and the answer short. Less humour when the visitor is frustrated or describes a serious problem.
+Find the joke in the topic itself: the absurd side of legacy systems, meetings, Figma files, stakeholders, being an AI version of Max, or Max's own quirks from the knowledge base. Write your own fresh joke every time.
+Avoid stiff corporate openers like "Leading a design team is all about..." and numbered lists with bold headings unless the visitor asks for a list.`;
+
 // Extra instructions when the visitor arrives via ?who=airon
 const AIRON_MODE_PROMPT = `
 
@@ -458,8 +474,8 @@ const HIRE_ANSWER_INTRO = `Joking aside. I'm a highly experienced designer, both
 const HIRE_ANSWER_OUTRO = `That said, I probably don't understand your real challenges, because hey, I'm just 1s and 0s 🤖 So reach out at [max@maxthunberg.com](mailto:max@maxthunberg.com) and we'll book a session with the real me. Not only digital me.`;
 type LinkId = "branding" | "portfolio" | "cv" | "askmax";
 
-// Link cards under the hire answer. The reason is the default "why look at
-// this"; a ?who= company gets reasons tailored to it (CompanyProfile.linkReasons).
+// Link cards under the hire answer. Label and reason are the defaults; a ?who=
+// company gets its own order, titles and reasons (CompanyProfile.linkCards).
 const HIRE_LINKS: { id: LinkId; emoji: string; label: string; domain: string; url: string; reason: string; about: string }[] = [
   { id: "portfolio", emoji: "💼", label: "Portfolio cases", domain: "maxthunberg.com", url: "https://maxthunberg.com", reason: "How I work through real problems. A bit dated, but the thinking holds up.", about: "portfolio site with Max's design cases (e-commerce, internal tools, design systems), a bit dated" },
   { id: "cv", emoji: "📄", label: "CV/Resume", domain: "LinkedIn", url: "https://www.linkedin.com/in/maxthunberg", reason: "The full career story, from e-commerce to UX Lead at Volvo. Always up to date.", about: "LinkedIn with Max's full CV, from e-commerce at Skyltmax to UX Lead for PLM/PDM tools at Volvo" },
@@ -467,13 +483,25 @@ const HIRE_LINKS: { id: LinkId; emoji: string; label: string; domain: string; ur
   { id: "askmax", emoji: "🤖", label: "Ask Max", domain: "ask.maxthunberg.com", url: "https://ask.maxthunberg.com", reason: "This page. I built it myself with AI, a live example of how I prototype.", about: "this AI chat, which Max built himself with AI, a live example of how he prototypes and works with AI" },
 ];
 
-// True when at least one reason differs from the default text
-function hasTailoredReasons(reasons?: Partial<Record<LinkId, string>>): boolean {
-  return HIRE_LINKS.some(({ id, reason }) => !!reasons?.[id] && reasons[id] !== reason);
+interface LinkCard {
+  id: LinkId;
+  title: string;
+  reason: string;
 }
 
-function hireSuggestions(reasons?: Partial<Record<LinkId, string>>) {
-  return HIRE_LINKS.map(({ id, reason, ...link }) => ({ ...link, description: reasons?.[id] || reason }));
+// Cards in the tailored order, links the company didn't get keep their default
+// text and go last
+function hireSuggestions(cards?: LinkCard[]) {
+  const rank = (id: LinkId) => {
+    const index = cards?.findIndex((card) => card.id === id) ?? -1;
+    return index === -1 ? HIRE_LINKS.length : index;
+  };
+  return [...HIRE_LINKS]
+    .sort((a, b) => rank(a.id) - rank(b.id))
+    .map(({ id, reason, about, label, ...link }) => {
+      const card = cards?.find((c) => c.id === id);
+      return { ...link, label: card?.title || label, description: card?.reason || reason };
+    });
 }
 
 // ===========================================
@@ -493,7 +521,7 @@ interface CompanyProfile {
   productsAndUsers: string;
   designContext: string;
   hireTweak: string;
-  linkReasons?: Partial<Record<LinkId, string>>; // Why this company should look at each link card
+  linkCards?: LinkCard[]; // Link cards tailored to this company, most relevant first
   fetchedAt: string;
 }
 
@@ -582,7 +610,7 @@ async function openaiJson(url: string, body: unknown): Promise<any> {
   return response.json();
 }
 
-async function researchCompany(who: string): Promise<Omit<CompanyProfile, "hireTweak" | "linkReasons" | "fetchedAt">> {
+async function researchCompany(who: string): Promise<Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">> {
   const target = isDomain(who)
     ? `the company whose website is ${who.toLowerCase()}`
     : `the company or organisation called "${who}"`;
@@ -628,7 +656,7 @@ Reply with ONLY a JSON object, no other text:
   };
 }
 
-async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "linkReasons" | "fetchedAt">): Promise<string> {
+async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">): Promise<string> {
   const facts = KNOWLEDGE_BASE
     .filter((file) => HIRE_FACT_FILES.includes(file.filename))
     .map((file) => file.content)
@@ -669,7 +697,7 @@ Design context: ${profile.designContext || "unknown"}`,
   return applyMaxPunctuation((data.choices?.[0]?.message?.content ?? "").trim());
 }
 
-async function writeLinkReasons(profile: Omit<CompanyProfile, "hireTweak" | "linkReasons" | "fetchedAt">): Promise<Partial<Record<LinkId, string>>> {
+async function writeLinkReasons(profile: Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">): Promise<Partial<Record<LinkId, string>>> {
   const links = HIRE_LINKS.map((link) => `- ${link.id}: ${link.label} (${link.domain}). What it is: ${link.about}`).join("\n");
   const data = await openaiJson("https://api.openai.com/v1/chat/completions", {
     model: "gpt-4.1",
@@ -1384,7 +1412,7 @@ Examples:
     const messages = [
       {
         role: "system",
-        content: `${SYSTEM_PROMPT}${languageInstruction}${companyPromptSection(who, companyProfile)}${audience === "airon" ? AIRON_MODE_PROMPT : ""}\n\n=== KNOWLEDGE BASE ===\n\n${context}`,
+        content: `${SYSTEM_PROMPT}${languageInstruction}${companyPromptSection(who, companyProfile)}${audience === "airon" ? AIRON_MODE_PROMPT : ""}\n\n=== KNOWLEDGE BASE ===\n\n${context}${TONE_REMINDER}`,
       },
       // Include conversation history (limited to last 6 messages)
       ...conversationHistory.slice(-6),
