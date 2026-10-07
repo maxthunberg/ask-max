@@ -39,7 +39,7 @@ const STATUS_LINES = {
       "Reflecting 🪞",
       "Removing the bullshit 🧹",
       "Figuring out the meaning of life 🌌",
-      "42, what is that? 🤖",
+      "Breathing 🌬️",
     ],
   },
   sv: {
@@ -74,7 +74,7 @@ const STATUS_LINES = {
       "Reflekterar 🪞",
       "Tar bort bullshiten 🧹",
       "Listar ut meningen med livet 🌌",
-      "42, vad är det? 🤖",
+      "Andas 🌬️",
     ],
   },
 };
