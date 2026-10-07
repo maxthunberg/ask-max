@@ -43,6 +43,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* The hero photo is the first thing that should load */}
+        <link rel="preload" as="image" href="/images/max-profile.png" fetchPriority="high" />
+      </head>
       <body>{children}</body>
     </html>
   );

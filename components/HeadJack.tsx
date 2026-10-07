@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { RefObject, useEffect, useRef } from 'react';
 
 // Metal jack sitting in Max's scalp where the cable leaves his head. Drawn on
 // top of the hero photo; the cable itself is drawn behind the photo and
@@ -21,8 +21,101 @@ export const JACK_TOP = {
 
 // Drawn at twice the size it's shown, for finer detail
 const GROOVES = [24, 31, 38, 45];
+// Plugging in, three phases that hand over at the same speed so nothing stops:
+// 1. Glide: from 64px out (along its own tilt) to 16px, always moving and
+//    slowly speeding up, drifting once right and once left with a slight
+//    tilt that settles so it's lined up.
+// 2. Snap: the last 16px with a hard acceleration, it really goes in.
+// 3. Seat: pressed a little too far, springs back with a small damped
+//    rebound and sits still, while the light in the collar flashes.
+const JACK_START = 64; // Screen px
+const JACK_SNAP = 16;
+const GLIDE_DURATION = 1800; // ms
+const SNAP_DURATION = 140;
+const SEAT_DURATION = 260;
+const JACK_PLUG_DURATION = GLIDE_DURATION + SNAP_DURATION + SEAT_DURATION;
+const SWAY = 2.5; // Screen px
+const TILT = 1.5; // Degrees
+const OVERSHOOT = 2.4; // Screen px into the scalp
 
-export function HeadJack() {
+// "waiting": out at the start, "plugging": on its way in, "plugged": in
+export type JackPhase = 'waiting' | 'plugging' | 'plugged';
+
+interface HeadJackProps {
+  phase?: JackPhase;
+  onPlugged?: () => void;
+  // Marks where the cable leaves the jack, HeadCable follows it every frame
+  exitRef?: RefObject<SVGCircleElement>;
+}
+
+// SVG units are half a screen pixel (drawn at twice the size)
+const pose = (x: number, y: number, rotate: number) => `translate(${x * 2}px, ${-y * 2}px) rotate(${rotate}deg)`;
+
+// Glide, u from 0 to 1: distance left, sway and tilt
+function glide(u: number) {
+  // Always moving, a bit faster towards the end
+  const progress = 0.6 * u + 0.4 * u * u;
+  // One gentle swing right then left, gone by the end
+  const settle = 1 - u;
+  return {
+    distance: JACK_START - (JACK_START - JACK_SNAP) * progress,
+    x: SWAY * Math.sin(2 * Math.PI * u) * settle,
+    rotate: TILT * Math.sin(2 * Math.PI * u + 0.6) * settle,
+  };
+}
+
+// Where the jack is, t ms into plugging in
+function plugPose(t: number): { x: number; distance: number; rotate: number; flash: number } {
+  if (t < GLIDE_DURATION) return { ...glide(t / GLIDE_DURATION), flash: 0 };
+  t -= GLIDE_DURATION;
+  if (t < SNAP_DURATION) {
+    // Starts at the glide's end speed and accelerates hard
+    const s = t / SNAP_DURATION;
+    const glideEndSpeed = (JACK_START - JACK_SNAP) * 1.4 * (SNAP_DURATION / GLIDE_DURATION);
+    return { x: 0, rotate: 0, distance: JACK_SNAP - (glideEndSpeed * s + (JACK_SNAP - glideEndSpeed) * s * s), flash: 0 };
+  }
+  t -= SNAP_DURATION;
+  // Pressed in a little too far, then a small damped rebound
+  const v = Math.min(1, t / SEAT_DURATION);
+  return { x: 0, rotate: 0, distance: -OVERSHOOT * Math.sin(3 * Math.PI * v) * Math.exp(-4 * v), flash: 1 - v };
+}
+
+export function HeadJack({ phase = 'plugged', onPlugged, exitRef }: HeadJackProps) {
+  const plugged = phase === 'plugged';
+  const jackRef = useRef<SVGGElement>(null);
+  const shadowRef = useRef<SVGGElement>(null);
+  const glowRef = useRef<SVGCircleElement>(null);
+  const contactShadowRef = useRef<SVGEllipseElement>(null);
+  const onPluggedRef = useRef(onPlugged);
+  onPluggedRef.current = onPlugged;
+
+  useEffect(() => {
+    if (phase !== 'plugging') return;
+    let frame = 0;
+    const startedAt = performance.now();
+    const tick = (now: number) => {
+      const elapsed = now - startedAt;
+      const { x, distance, rotate, flash } = plugPose(elapsed);
+      jackRef.current?.style.setProperty('transform', pose(x, distance, rotate));
+      if (shadowRef.current) shadowRef.current.style.opacity = String(0.25 + 0.75 * (1 - Math.max(0, distance) / JACK_START));
+      // The tight contact shadow builds up during the snap, full as it hits
+      contactShadowRef.current?.setAttribute('opacity', String(0.6 * Math.min(1, Math.max(0, 1 - distance / JACK_SNAP))));
+      // The collar lights up as it goes in
+      if (glowRef.current) {
+        glowRef.current.setAttribute('r', String(7 + 6 * flash));
+        glowRef.current.style.opacity = String(1 + flash);
+      }
+      if (elapsed >= JACK_PLUG_DURATION) {
+        onPluggedRef.current?.();
+        return;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [phase]);
+
+  const resting = glide(0);
   return (
     <svg
       aria-hidden="true"
@@ -68,10 +161,23 @@ export function HeadJack() {
         </filter>
       </defs>
 
-      {/* Shadow on the scalp, falling down to the left away from the light */}
-      <ellipse cx="11" cy="58" rx="17" ry="4" fill="#0b0618" opacity="0.5" filter="url(#jack-shadow-blur)" />
-      {/* Tight contact shadow where it goes into the skin */}
-      <ellipse cx="15" cy="57" rx="14" ry="2.2" fill="#0b0618" opacity="0.6" />
+      {/* Shadow on the scalp, falling down to the left away from the light.
+          Softer and fainter while the jack hovers above */}
+      <g ref={shadowRef} style={{ opacity: plugged ? 1 : 0.25 }}>
+        <ellipse cx="11" cy="58" rx="17" ry="4" fill="#0b0618" opacity="0.5" filter="url(#jack-shadow-blur)" />
+        {/* Tight contact shadow where it goes into the skin, only once plugged in */}
+        <ellipse ref={contactShadowRef} cx="15" cy="57" rx="14" ry="2.2" fill="#0b0618" opacity={plugged ? 0.6 : 0} />
+      </g>
+
+      {/* The jack itself */}
+      <g
+        ref={jackRef}
+        style={{
+          // Turns around the tip that goes into the scalp
+          transformOrigin: '16px 56px',
+          transform: plugged ? pose(0, 0, 0) : pose(resting.x, resting.distance, resting.rotate),
+        }}
+      >
 
       {/* Flange sitting on the skin */}
       <rect x="3" y="50" width="26" height="6" fill="url(#jack-metal)" />
@@ -96,7 +202,9 @@ export function HeadJack() {
       <ellipse cx="16" cy="4" rx="6" ry="1.6" fill="url(#jack-cap)" />
       {/* The hole, with the cable's light coming out of it */}
       <ellipse cx="16" cy="4" rx="3.2" ry="0.9" fill="#120a26" />
-      <circle cx="16" cy="3" r="7" fill="url(#jack-glow)" />
+      <circle ref={glowRef} cx="16" cy="3" r="7" fill="url(#jack-glow)" />
+      <circle ref={exitRef} cx="16" cy="4" r="0.5" fill="none" />
+      </g>
     </svg>
   );
 }

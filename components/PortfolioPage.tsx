@@ -5,7 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-sevsv6x2yc";
 // Using Cloudinary hosted image
 const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Mask image
-const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909/max-profil/max-profil.png?_i=AA";  // Main image
+// Main image, compressed (about 580 KB) and served from the site itself.
+// 1052px wide, twice the 526px it's shown at for sharp screens. Preloaded in
+// app/layout.tsx so it's the first thing the browser fetches.
+const imgMaxT13 = "/images/max-profile.png";
 import { sendChatMessage, sendHandoff, fetchCompanyProfile, ChatMessage, ChatSuggestion, CompanyProfile, FitCheck, FitCheckStatus, VisitorBrief } from '../utils/chat-api';
 import { FitCheckCard } from './FitCheckCard';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
@@ -13,7 +16,7 @@ import { ThinkingStatus } from './ThinkingStatus';
 import { LuminousFilaments } from './LuminousFilaments';
 import { EyeGlow } from './EyeGlow';
 import { HeadCable } from './HeadCable';
-import { HeadJack, JACK_TOP } from './HeadJack';
+import { HeadJack, JACK_TOP, type JackPhase } from './HeadJack';
 import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag';
@@ -181,6 +184,16 @@ export function PortfolioPage() {
   const [whoName, setWhoName] = useState<string | null>(null);
   // The hero photo, the background cables start at the head
   const heroImageRef = useRef<HTMLDivElement>(null);
+  // First load: only the background shows until the fonts and the hero photo
+  // have loaded, then text, photo and cables fade in together
+  const [pageVisible, setPageVisible] = useState(false);
+  // If the photo arrives after the page has faded in, it fades in on its own
+  const [photoLoaded, setPhotoLoaded] = useState(false);
+  // The head jack hovers above the head while the page fades in, then plugs
+  // in; the cable's signals start once it's in
+  const [jackPhase, setJackPhase] = useState<JackPhase>('waiting');
+  const jackPlugged = jackPhase === 'plugged';
+  const jackExitRef = useRef<SVGCircleElement>(null);
   // The hero search field, the cable from the head plugs into it
   const heroSearchRef = useRef<HTMLDivElement>(null);
   // The chat input, a short piece of cable plugs into it while chatting
@@ -594,6 +607,39 @@ export function PortfolioPage() {
     setConversationMenu(null);
   };
 
+  // Ready once the fonts and the hero photo (when it's shown) have loaded,
+  // never waiting more than a couple of seconds
+  useEffect(() => {
+    let cancelled = false;
+    const fonts = document.fonts?.ready ?? Promise.resolve();
+    const photo = heroImageRef.current?.querySelector('img');
+    const photoReady = !photo || (photo.complete && photo.naturalWidth > 0)
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => {
+          photo.addEventListener('load', () => resolve(), { once: true });
+          photo.addEventListener('error', () => resolve(), { once: true });
+        });
+    photoReady.then(() => { if (!cancelled) setPhotoLoaded(true); });
+    // Hidden on small screens, nothing to wait for there
+    const photoLoadedOrHidden = photo && !photo.offsetParent ? Promise.resolve() : photoReady;
+    const minimum = new Promise((resolve) => setTimeout(resolve, 250));
+    const maximum = new Promise((resolve) => setTimeout(resolve, 3000));
+    Promise.race([Promise.all([fonts, photoLoadedOrHidden, minimum]), maximum]).then(() => {
+      if (!cancelled) setPageVisible(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // The jack starts moving in as soon as the page fades in; the signals start
+  // when it's in (HeadJack reports it). Already plugged when coming back later.
+  useEffect(() => {
+    if (!pageVisible) return;
+    setJackPhase((phase) => (phase === 'waiting' ? 'plugging' : phase));
+    // In case the jack never shows (the photo failed to load), start anyway
+    const fallback = setTimeout(() => setJackPhase('plugged'), 4000);
+    return () => clearTimeout(fallback);
+  }, [pageVisible]);
+
   const handleContinueConversation = () => {
     if (!savedConversation || isLoading) return;
     const newSessionId = generateSessionId();
@@ -962,6 +1008,11 @@ export function PortfolioPage() {
       }}
       data-name="Front Page"
     >
+      {/* Everything fades in together once loaded. The hide rule is !important
+          so it also wins over elements with their own opacity (the cables);
+          the transition rule stays so removing it animates */}
+      <style dangerouslySetInnerHTML={{ __html: `[data-name="Front Page"] > * { transition: opacity 1.4s ease; }` }} />
+      {!pageVisible && <style dangerouslySetInnerHTML={{ __html: `[data-name="Front Page"] > * { opacity: 0 !important; }` }} />}
 
       
       {/* Cables from the head in the hero photo, dark mode only */}
@@ -969,7 +1020,7 @@ export function PortfolioPage() {
       {/* Cable into the search field, dark mode only. With the filaments off it
           runs all the way from the head (route="all") */}
       {theme === 'dark' && !isChatMode && (
-        <HeadCable headRef={heroImageRef} fieldRef={heroSearchRef} route={SHOW_HEAD_FILAMENTS ? 'field' : 'all'} headX={JACK_TOP.x} headY={JACK_TOP.y} />
+        <HeadCable headRef={heroImageRef} fieldRef={heroSearchRef} route={SHOW_HEAD_FILAMENTS ? 'field' : 'all'} headX={JACK_TOP.x} headY={JACK_TOP.y} headAnchorRef={jackExitRef} started={SHOW_HEAD_FILAMENTS ? pageVisible : jackPlugged} />
       )}
       {theme === 'dark' && isChatMode && (
         <HeadCable headRef={heroImageRef} fieldRef={chatSearchRef} route="chat" />
@@ -1441,8 +1492,7 @@ export function PortfolioPage() {
                 {/* Image container - Right side */}
                 <AnimatePresence>
                   <motion.div
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={false}
                     exit={{ opacity: 0, x: 50 }}
                     transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                     className="basis-0 hidden lg:flex grow h-full items-end min-h-px min-w-px relative shrink-0" 
@@ -1452,11 +1502,15 @@ export function PortfolioPage() {
                     <div ref={heroImageRef} className="relative shrink-0" data-name="Image">
                       <img 
                         alt="Max Thunberg, UX Lead" 
-                        className="h-[701px] w-[526px] object-cover pointer-events-none" 
+                        className="h-[701px] w-[526px] object-cover pointer-events-none transition-opacity duration-1000" 
+                        style={{ opacity: photoLoaded ? 1 : 0 }}
+                        onLoad={() => setPhotoLoaded(true)}
+                        fetchPriority="high"
+                        loading="eager"
                         src={imgMaxT13} 
                       />
                       {/* Metal jack the cable comes out of, when the cable runs from the head */}
-                      {theme === 'dark' && !SHOW_HEAD_FILAMENTS && <HeadJack />}
+                      {theme === 'dark' && !SHOW_HEAD_FILAMENTS && photoLoaded && <HeadJack phase={jackPhase} onPlugged={() => setJackPhase('plugged')} exitRef={jackExitRef} />}
                       {/* Eyes glow like the cables, dark mode only */}
                       {SHOW_EYE_GLOW && theme === 'dark' && <EyeGlow />}
                     </div>

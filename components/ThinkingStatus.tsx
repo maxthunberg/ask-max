@@ -4,8 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThinkingSpinner } from './ThinkingSpinner';
 
-// Status lines shown while Digital Max writes an answer. The first two always
-// come first, the rest are shuffled so repeat visitors don't see the same order.
+// Status lines shown while Digital Max writes an answer. It always starts with
+// one of the two opening lines, picked at random, then everything else
+// (including the other opening line) in random order.
 const STATUS_LINES = {
   en: {
     opening: ['Thinking initiated 🚀', 'Starting up the brain 🧠'],
@@ -91,8 +92,15 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 export function ThinkingStatus({ language, color }: { language: 'en' | 'sv'; color: string }) {
-  // Shuffled once per answer, as indexes so a language switch keeps the order
-  const [order] = useState(() => shuffle(STATUS_LINES.en.rest.map((_, i) => i)));
+  // Shuffled once per answer, as indexes into opening + rest so a language
+  // switch keeps the order
+  const [order] = useState(() => {
+    const openingCount = STATUS_LINES.en.opening.length;
+    const all = STATUS_LINES.en.opening.length + STATUS_LINES.en.rest.length;
+    const first = Math.floor(Math.random() * openingCount);
+    const others = Array.from({ length: all }, (_, i) => i).filter((i) => i !== first);
+    return [first, ...shuffle(others)];
+  });
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -101,10 +109,9 @@ export function ThinkingStatus({ language, color }: { language: 'en' | 'sv'; col
   }, []);
 
   const { opening, rest } = STATUS_LINES[language];
-  // After the opening lines, loop through the shuffled rest
-  const line = step < opening.length
-    ? opening[step]
-    : rest[order[(step - opening.length) % order.length]];
+  const lines = [...opening, ...rest];
+  // Loops back through the order on a very long wait
+  const line = lines[order[step % order.length]];
 
   return (
     <div className="flex items-center gap-[10px]" role="status" aria-live="polite">

@@ -19,6 +19,12 @@ interface HeadCableProps {
   // search field (when the filaments above the head are shown instead);
   // "chat" = a short piece up from the bottom into the chat input
   route?: 'all' | 'field' | 'chat';
+  // Signals start once this turns true (the page has faded in), the first
+  // ones fired from the head
+  started?: boolean;
+  // Element marking where the cable leaves the head jack, followed every frame
+  // (the jack animates). Falls back to headX/headY on the photo.
+  headAnchorRef?: RefObject<Element | null>;
   headX?: number; // Where the cable leaves the head, share of the photo's size
   headY?: number;
   opacity?: number;
@@ -190,8 +196,10 @@ function measure(points: Point[], start: number): Part {
   return { points, distances, start, length: distances[distances.length - 1] };
 }
 
-export function HeadCable({ headRef, fieldRef, route = 'all', headX = 0.52, headY = 0.17, opacity = 0.9 }: HeadCableProps) {
+export function HeadCable({ headRef, fieldRef, route = 'all', started = true, headAnchorRef, headX = 0.52, headY = 0.17, opacity = 0.9 }: HeadCableProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const startedRef = useRef(started);
+  startedRef.current = started;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -215,14 +223,14 @@ export function HeadCable({ headRef, fieldRef, route = 'all', headX = 0.52, head
     // Signals currently on the cable
     type Signal = { pos: number; speed: number; length: number; strength: number };
     let signals: Signal[] = [];
-    let prefilled = false;
+    let kickedOff = false;
     let nextSpawn = 0.5;
     let pendingBurst = 0;
     let burstTimer = 0;
     const spawn = (pos = 0) => {
       signals.push({
         pos,
-        speed: 140 + Math.random() * 160, // px per second
+        speed: 280 + Math.random() * 320, // px per second
         length: 40 + Math.random() * 110,
         strength: 0.6 + Math.random() * 0.6,
       });
@@ -306,9 +314,12 @@ export function HeadCable({ headRef, fieldRef, route = 'all', headX = 0.52, head
       if (!fieldRect || !onScreen || visible < 0.01) return;
 
       // The visible parts, in screen pixels
-      const head = photoRect
-        ? { x: photoRect.left + photoRect.width * headX, y: photoRect.top + photoRect.height * headY }
-        : { x: 0, y: 0 };
+      const anchorRect = headAnchorRef?.current?.getBoundingClientRect();
+      const head = anchorRect && anchorRect.width > 0
+        ? { x: anchorRect.left + anchorRect.width / 2, y: anchorRect.top + anchorRect.height / 2 }
+        : photoRect
+          ? { x: photoRect.left + photoRect.width * headX, y: photoRect.top + photoRect.height * headY }
+          : { x: 0, y: 0 };
       const plug = { x: fieldRect.left + 2, y: fieldRect.top + fieldRect.height / 2 };
       // Up out of the head with a gentle bow to the right and a slow sway
       const sway = reducedMotion ? 0 : Math.sin(time / 2200) * 4;
@@ -391,10 +402,16 @@ export function HeadCable({ headRef, fieldRef, route = 'all', headX = 0.52, head
       drawJack(ctx, plug.x, plug.y, breathe);
 
       if (!reducedMotion) {
-        // On page load the whole cable already carries signals
-        if (!prefilled) {
-          prefilled = true;
-          for (let pos = 80 + Math.random() * 120; pos < total; pos += 180 + Math.random() * 260) spawn(pos);
+        // Nothing moves until the page has faded in, then a first burst
+        // leaves the head
+        if (!startedRef.current) {
+          ctx.globalAlpha = 1;
+          return;
+        }
+        if (!kickedOff) {
+          kickedOff = true;
+          pendingBurst = 3;
+          nextSpawn = 0.6;
         }
 
         // New signals now and then, sometimes a quick burst of three
@@ -402,13 +419,13 @@ export function HeadCable({ headRef, fieldRef, route = 'all', headX = 0.52, head
         if (nextSpawn <= 0) {
           if (Math.random() < 0.2) pendingBurst += 3;
           else spawn();
-          nextSpawn = 0.8 + Math.random() * 2.2;
+          nextSpawn = 0.4 + Math.random() * 1.1;
         }
         burstTimer -= dt;
         if (pendingBurst > 0 && burstTimer <= 0) {
           spawn();
           pendingBurst--;
-          burstTimer = 0.22;
+          burstTimer = 0.12;
         }
 
         // Move them along and draw each with a fading tail
