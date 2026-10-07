@@ -11,6 +11,9 @@ import { FitCheckCard } from './FitCheckCard';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
 import { ThinkingStatus } from './ThinkingStatus';
 import { LuminousFilaments } from './LuminousFilaments';
+import { EyeGlow } from './EyeGlow';
+import { HeadCable } from './HeadCable';
+import { HeadJack, JACK_TOP } from './HeadJack';
 import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag';
@@ -19,6 +22,11 @@ import { trackChatMessage, trackChatStarted, trackChatEnd, trackChatError, detec
 import { saveLanguagePreference, getLanguagePreference } from '../utils/language-cookie';
 
 // App version
+// Glowing purple eyes on the hero photo (components/EyeGlow.tsx), set to true to turn on
+const SHOW_EYE_GLOW = false;
+// Glowing filaments fanning up from the head (components/LuminousFilaments.tsx), set to true to turn on
+const SHOW_HEAD_FILAMENTS = false;
+
 const APP_VERSION = 'v1.3.2';
 
 // Loading messages for the ?who= lookup (research, logo and pitch, roughly 5-10s
@@ -172,7 +180,14 @@ export function PortfolioPage() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [language, setLanguage] = useState<'en' | 'sv'>('en');
   const [whoName, setWhoName] = useState<string | null>(null);
-  const [showFilaments, setShowFilaments] = useState(false);
+  // The hero photo, the background cables start at the head
+  const heroImageRef = useRef<HTMLDivElement>(null);
+  // The hero search field, the cable from the head plugs into it
+  const heroSearchRef = useRef<HTMLDivElement>(null);
+  // The chat input, a short piece of cable plugs into it while chatting
+  const chatSearchRef = useRef<HTMLDivElement>(null);
+  // Right-click menu on the "Continue the conversation" card
+  const [conversationMenu, setConversationMenu] = useState<{ x: number; y: number } | null>(null);
   const [whoCompany, setWhoCompany] = useState<CompanyProfile | null>(null);
   const [whoLogoFailed, setWhoLogoFailed] = useState(false);
   const [whoReady, setWhoReady] = useState(false);
@@ -218,7 +233,6 @@ export function PortfolioPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setWhoName(parseWhoParam(params.get('who')));
-    setShowFilaments(params.get('bg') === 'filaments');
   }, []);
 
   // Lookup + logo preload; the card shows a loading state until both are done.
@@ -567,6 +581,27 @@ export function PortfolioPage() {
       localStorage.setItem(SAVED_CONVERSATION_KEY, JSON.stringify({ messages: toSave, savedAt: Date.now(), visitorBrief, fitCheckStatus }));
     } catch {}
   }, [messages, visitorBrief, fitCheckStatus]);
+
+  useEffect(() => {
+    if (!conversationMenu) return;
+    const close = () => setConversationMenu(null);
+    const closeOnEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('pointerdown', close);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('pointerdown', close);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [conversationMenu]);
+
+  // Hidden helper for Max: forget the saved conversation
+  const handleDeleteSavedConversation = () => {
+    try { localStorage.removeItem(SAVED_CONVERSATION_KEY); } catch {}
+    setSavedConversation(null);
+    setConversationMenu(null);
+  };
 
   const handleContinueConversation = () => {
     if (!savedConversation || isLoading) return;
@@ -944,8 +979,36 @@ export function PortfolioPage() {
     >
 
       
-      {/* Test background, only with ?bg=filaments and in dark mode */}
-      {showFilaments && theme === 'dark' && <LuminousFilaments />}
+      {/* Cables from the head in the hero photo, dark mode only */}
+      {SHOW_HEAD_FILAMENTS && theme === 'dark' && <LuminousFilaments anchorRef={heroImageRef} />}
+      {/* Cable into the search field, dark mode only. With the filaments off it
+          runs all the way from the head (route="all") */}
+      {theme === 'dark' && !isChatMode && (
+        <HeadCable headRef={heroImageRef} fieldRef={heroSearchRef} route={SHOW_HEAD_FILAMENTS ? 'field' : 'all'} headX={JACK_TOP.x} headY={JACK_TOP.y} />
+      )}
+      {theme === 'dark' && isChatMode && (
+        <HeadCable headRef={heroImageRef} fieldRef={chatSearchRef} route="chat" />
+      )}
+
+      {conversationMenu && (
+        <div
+          role="menu"
+          className="fixed z-[300] min-w-[200px] rounded-[10px] border p-[4px] shadow-lg"
+          style={{ left: conversationMenu.x, top: conversationMenu.y, backgroundColor: theme === 'light' ? '#ffffff' : '#21123c', borderColor: colors.border }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            autoFocus
+            onClick={handleDeleteSavedConversation}
+            className="w-full rounded-[6px] px-[10px] py-[8px] text-left text-[14px] transition-colors duration-150 hover:bg-[rgba(255,255,255,0.08)] focus:outline-none focus-visible:bg-[rgba(255,255,255,0.08)]"
+            style={{ color: theme === 'light' ? '#c4291c' : '#ff9a9a' }}
+          >
+            {language === 'sv' ? '🗑️ Ta bort konversationen' : '🗑️ Delete conversation'}
+          </button>
+        </div>
+      )}
 
       {/* Skip to main content link for screen readers */}
       <a 
@@ -1188,7 +1251,7 @@ export function PortfolioPage() {
               </AnimatePresence>
 
               {/* Search input - fixed at bottom */}
-              <div className="box-border flex flex-col gap-[8px] items-start pb-[16px] pt-0 px-[12px] md:px-[16px] relative shrink-0 w-full max-w-[768px] mx-auto transition-colors duration-300" data-name="Search input" style={{ backgroundColor: theme === 'light' ? '#f5f5f7' : '#130521' }}>
+              <div ref={chatSearchRef} className="box-border flex flex-col gap-[8px] items-start pb-[16px] pt-0 px-[12px] md:px-[16px] relative shrink-0 w-full max-w-[768px] mx-auto transition-colors duration-300" data-name="Search input" style={{ backgroundColor: theme === 'light' ? '#f5f5f7' : 'transparent' }}>
                 <SearchInput
                   ref={searchInputRef}
                   value={question}
@@ -1248,7 +1311,7 @@ export function PortfolioPage() {
                 </main>
 
                   {/* Search input */}
-                  <div className="flex flex-col gap-[8px] items-start relative shrink-0 w-full max-w-[640px]" data-name="Search input">
+                  <div ref={heroSearchRef} className="flex flex-col gap-[8px] items-start relative shrink-0 w-full max-w-[640px]" data-name="Search input">
                     <SearchInput
                       ref={searchInputRef}
                       value={question}
@@ -1358,6 +1421,10 @@ export function PortfolioPage() {
                           <button
                             type="button"
                             onClick={handleContinueConversation}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              setConversationMenu({ x: e.clientX, y: e.clientY });
+                            }}
                             disabled={isLoading}
                             className="relative overflow-hidden flex items-center gap-[12px] min-w-[220px] max-w-full rounded-[16px] px-[16px] py-[12px] text-left transition-colors duration-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff]"
                             style={{ backgroundColor: colors.messageBg }}
@@ -1397,12 +1464,16 @@ export function PortfolioPage() {
                     data-name="Image container"
                   >
                     {/* Image */}
-                    <div className="relative shrink-0" data-name="Image">
+                    <div ref={heroImageRef} className="relative shrink-0" data-name="Image">
                       <img 
                         alt="Max Thunberg, UX Lead" 
                         className="h-[701px] w-[526px] object-cover pointer-events-none" 
                         src={imgMaxT13} 
                       />
+                      {/* Metal jack the cable comes out of, when the cable runs from the head */}
+                      {theme === 'dark' && !SHOW_HEAD_FILAMENTS && <HeadJack />}
+                      {/* Eyes glow like the cables, dark mode only */}
+                      {SHOW_EYE_GLOW && theme === 'dark' && <EyeGlow />}
                     </div>
 
                     {/* Image details */}
