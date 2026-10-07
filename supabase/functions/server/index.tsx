@@ -283,6 +283,9 @@ Svenska:
 Engelska:  
 “I don’t have that in my digital brain right now, so I can’t answer that based on the material 🙂”
 
+## LÄNKA TILL RÄTT CASE
+När du pratar om ett case från portfolion, eller någon vill se exempel på ditt arbete, länka till det specifika caset (URL:en står i case-filen) i stället för bara startsidan maxthunberg.com. Välj det case som passar besökarens fråga bäst. Startsidan bara när de vill se allt. Säg gärna att casen är några år gamla.
+
 ## KONTAKTINFORMATION
 När någon frågar hur man kommer i kontakt med Max, ge följande information:
 
@@ -728,7 +731,19 @@ interface LinkCard {
   id: LinkId;
   title: string;
   reason: string;
+  caseId?: string; // Portfolio card only: the case it links to, "all" for the start page
 }
+
+// Cases on maxthunberg.com. The portfolio card links to the one that fits the
+// ?who= company best, or the start page when none really does.
+const PORTFOLIO_CASES: { id: string; url: string; about: string }[] = [
+  { id: "checkout", url: "https://maxthunberg.com/projects/checkout-page-optimisation/", about: "Skyltmax e-commerce checkout optimisation with A/B tests: checkout conversion +6.91%, mobile +18.85%" },
+  { id: "image-archive", url: "https://maxthunberg.com/projects/image-archive-discoverability/", about: "Skyltmax search and discoverability in an online design tool across 20 markets: search coverage 40% to 80%+, conversion +18.92%" },
+  { id: "product-preview", url: "https://maxthunberg.com/projects/make-product-preview-better/", about: "Skyltmax product preview on mobile, helping customers understand size and trust what they buy" },
+  { id: "express-delivery", url: "https://maxthunberg.com/projects/express-delivery-website-redesign/", about: "B2B logistics website redesign in six languages, built on IBM's Carbon Design System" },
+  { id: "sendify", url: "https://maxthunberg.com/projects/sendify-logistics-illustration-design/", about: "Illustration system explaining shipping services in a logistics startup's app" },
+  { id: "miranda-sans", url: "https://maxthunberg.com/projects/miranda-sans/", about: "Miranda Sans, a typeface Max designed, free on Google Fonts" },
+];
 
 // Cards in the tailored order, links the company didn't get keep their default
 // text and go last
@@ -741,7 +756,13 @@ function hireSuggestions(cards?: LinkCard[]) {
     .sort((a, b) => rank(a.id) - rank(b.id))
     .map(({ id, reason, about, label, ...link }) => {
       const card = cards?.find((c) => c.id === id);
-      return { ...link, label: card?.title || label, description: card?.reason || reason };
+      const portfolioCase = PORTFOLIO_CASES.find((c) => c.id === card?.caseId);
+      return {
+        ...link,
+        ...(portfolioCase ? { url: portfolioCase.url } : {}),
+        label: card?.title || label,
+        description: card?.reason || reason,
+      };
     });
 }
 
@@ -952,16 +973,20 @@ async function writeLinkCards(profile: Omit<CompanyProfile, "hireTweak" | "linkC
 1. Order: put the link most relevant to ${profile.name} first and the least relevant last. E.g. a brand or consumer product company cares more about visual craft, an engineering or B2B company more about complex tools and leadership.
 2. Title: a short card title (2 to 4 words) that says what the link is, angled towards what ${profile.name} would care about. It must still make clear what the link is, e.g. "CV/Resume" could become "My UX lead track record", never something vague.
 3. Reason: one short reason (max 16 words) in first person as Max, why that link is worth a look for ${profile.name} specifically. Tie it to something concrete about ${profile.name}: their products, their users, their market or a likely UX challenge they have. A reason that would fit any company is wrong.
+4. Portfolio case: the portfolio card can link straight to one case instead of the start page. Set "caseId" on the portfolio card to the case most relevant to ${profile.name}, or "all" when no single case clearly fits better than the overview. When you pick a case, the title and reason should be about that case (e.g. title "Checkout case: +18.85% mobile").
 
 Links:
 ${links}
+
+Portfolio cases:
+${PORTFOLIO_CASES.map((c) => `- ${c.id}: ${c.about}`).join("\n")}
 
 Rules:
 - Include all ${HIRE_LINKS.length} links exactly once.
 - Casual, direct, plain spoken English. No corporate filler ("leverage", "seamless", "passionate", "innovative", "journey").
 - Only use what "What it is" says about the link. Never invent projects, metrics or claim Max worked with ${profile.name}.
 - No dashes as separators, no emojis.
-Reply with ONLY a JSON object: {"cards": [{"id": "...", "title": "...", "reason": "..."}, ...]} in your chosen order.`,
+Reply with ONLY a JSON object: {"cards": [{"id": "...", "title": "...", "reason": "...", "caseId": "only on the portfolio card"}, ...]} in your chosen order.`,
       },
       {
         role: "user",
@@ -978,7 +1003,10 @@ Design context: ${profile.designContext || "unknown"}`,
   for (const card of Array.isArray(json.cards) ? json.cards : []) {
     const id = HIRE_LINKS.find((link) => link.id === card?.id)?.id;
     if (!id || cards.some((c) => c.id === id)) continue;
-    cards.push({ id, title: text(card.title, 40), reason: text(card.reason, 160) });
+    const caseId = id === "portfolio"
+      ? (PORTFOLIO_CASES.some((c) => c.id === card.caseId) ? card.caseId : "all")
+      : undefined;
+    cards.push({ id, title: text(card.title, 40), reason: text(card.reason, 160), ...(caseId ? { caseId } : {}) });
   }
   if (!cards.length) throw new Error("No link cards in response");
   return cards;
@@ -1013,7 +1041,7 @@ async function getCompanyProfile(who: string): Promise<CompanyProfile | null> {
   const cached: CompanyProfile | null = await kv.get(key);
   if (cached) {
     // Profiles cached before the tailored link cards existed get them once
-    if (cached.found && !cached.linkCards?.length) {
+    if (cached.found && !cached.linkCards?.some((card) => card.caseId)) {
       try {
         cached.linkCards = await writeLinkCards(cached);
         await kv.set(key, cached);

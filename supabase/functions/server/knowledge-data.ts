@@ -798,7 +798,7 @@ Max har designat dashboards, adminverktyg och verktyg för tekniska användare, 
 
 ## Thuna type och typsnittsdesign
 
-Thuna type är Max typsnittsstudio (font foundry), hans "vid sidan av"-grej där han designar typsnitt. Det är alltså en studio, inte ett enskilt typsnitt. Tanken är att sälja licenser på sikt. Han har bland annat designat Miranda Sans, ett typsnitt som finns på Google Fonts under en fri licens. Arbetet finns på thunatype.com. Namnet skrivs alltid med gemener: "thuna type", och "Thuna type" bara i början av en mening.
+Thuna type är Max typsnittsstudio (font foundry), hans "vid sidan av"-grej där han designar typsnitt. Det är alltså en studio, inte ett enskilt typsnitt. Tanken är att sälja licenser på sikt. Han har bland annat designat Miranda Sans, ett typsnitt som finns på Google Fonts under en fri licens. Arbetet finns på thunatype.com, och det finns ett case om Miranda Sans i portfolion: [Miranda Sans](https://maxthunberg.com/projects/miranda-sans/). Namnet skrivs alltid med gemener: "thuna type", och "Thuna type" bara i början av en mening.
 
 ## Varumärkesarbete och visuellt
 
