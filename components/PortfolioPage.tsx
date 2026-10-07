@@ -187,6 +187,9 @@ export function PortfolioPage() {
   // First load: only the background shows until the fonts and the hero photo
   // have loaded, then text, photo and cables fade in together
   const [pageVisible, setPageVisible] = useState(false);
+  // The fade-in rule is removed once done, so it can't fight other animations
+  // (the coming soon modal etc. animate their own opacity)
+  const [pageFadeDone, setPageFadeDone] = useState(false);
   // If the photo arrives after the page has faded in, it fades in on its own
   const [photoLoaded, setPhotoLoaded] = useState(false);
   // The head jack hovers above the head while the page fades in, then plugs
@@ -634,6 +637,12 @@ export function PortfolioPage() {
   // when it's in (HeadJack reports it). Already plugged when coming back later.
   useEffect(() => {
     if (!pageVisible) return;
+    const fadeDone = setTimeout(() => setPageFadeDone(true), 1500);
+    return () => clearTimeout(fadeDone);
+  }, [pageVisible]);
+
+  useEffect(() => {
+    if (!pageVisible) return;
     setJackPhase((phase) => (phase === 'waiting' ? 'plugging' : phase));
     // In case the jack never shows (the photo failed to load), start anyway
     const fallback = setTimeout(() => setJackPhase('plugged'), 4000);
@@ -1011,7 +1020,7 @@ export function PortfolioPage() {
       {/* Everything fades in together once loaded. The hide rule is !important
           so it also wins over elements with their own opacity (the cables);
           the transition rule stays so removing it animates */}
-      <style dangerouslySetInnerHTML={{ __html: `[data-name="Front Page"] > * { transition: opacity 1.4s ease; }` }} />
+      {!pageFadeDone && <style dangerouslySetInnerHTML={{ __html: `[data-name="Front Page"] > * { transition: opacity 1.4s ease; }` }} />}
       {!pageVisible && <style dangerouslySetInnerHTML={{ __html: `[data-name="Front Page"] > * { opacity: 0 !important; }` }} />}
 
       
