@@ -9,7 +9,7 @@ const imgMaxT13 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909
 import { sendChatMessage, sendHandoff, fetchCompanyProfile, ChatMessage, ChatSuggestion, CompanyProfile, FitCheck, FitCheckStatus, VisitorBrief } from '../utils/chat-api';
 import { FitCheckCard } from './FitCheckCard';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
-import { ThinkingSpinner } from './ThinkingSpinner';
+import { ThinkingStatus } from './ThinkingStatus';
 import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag';
@@ -1173,9 +1173,7 @@ export function PortfolioPage() {
                       className="flex flex-col gap-[10px] items-start relative w-full"
                       aria-label="Loading response"
                     >
-                      <div style={{ color: colors.textPrimary }}>
-                        <ThinkingSpinner />
-                      </div>
+                      <ThinkingStatus language={language} color={colors.textSecondary} />
                     </motion.div>
                   )}
                   </div>
