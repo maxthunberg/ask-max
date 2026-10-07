@@ -10,6 +10,7 @@ import { sendChatMessage, sendHandoff, fetchCompanyProfile, ChatMessage, ChatSug
 import { FitCheckCard } from './FitCheckCard';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
 import { ThinkingStatus } from './ThinkingStatus';
+import { LuminousFilaments } from './LuminousFilaments';
 import { BrainIllustration, ImageIllustration, BookIllustration } from './ComingSoonIcons';
 import { SearchInput, SearchInputRef } from './SearchInput';
 import BetaTag from '../imports/BetaTag';
@@ -171,6 +172,7 @@ export function PortfolioPage() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [language, setLanguage] = useState<'en' | 'sv'>('en');
   const [whoName, setWhoName] = useState<string | null>(null);
+  const [showFilaments, setShowFilaments] = useState(false);
   const [whoCompany, setWhoCompany] = useState<CompanyProfile | null>(null);
   const [whoLogoFailed, setWhoLogoFailed] = useState(false);
   const [whoReady, setWhoReady] = useState(false);
@@ -214,7 +216,9 @@ export function PortfolioPage() {
   }, []);
 
   useEffect(() => {
-    setWhoName(parseWhoParam(new URLSearchParams(window.location.search).get('who')));
+    const params = new URLSearchParams(window.location.search);
+    setWhoName(parseWhoParam(params.get('who')));
+    setShowFilaments(params.get('bg') === 'filaments');
   }, []);
 
   // Lookup + logo preload; the card shows a loading state until both are done.
@@ -940,6 +944,9 @@ export function PortfolioPage() {
     >
 
       
+      {/* Test background, only with ?bg=filaments and in dark mode */}
+      {showFilaments && theme === 'dark' && <LuminousFilaments />}
+
       {/* Skip to main content link for screen readers */}
       <a 
         href="#main-content" 
