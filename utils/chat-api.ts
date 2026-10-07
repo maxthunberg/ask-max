@@ -24,6 +24,7 @@ export interface ChatSuggestion {
 export interface ChatResponse {
   message: string;
   suggestions?: ChatSuggestion[]; // Link cards shown under the answer
+  suggestionFooter?: string; // Closing text shown after the suggestion cards
   sources: string[];
   detectedLanguage?: 'en' | 'sv' | 'other'; // Language detected from user's message
   shouldSwitchUI?: boolean; // Whether UI should switch language

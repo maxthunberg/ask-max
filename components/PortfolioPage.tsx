@@ -129,7 +129,7 @@ const SARCASTIC_QUOTA_MESSAGES = {
 
 export function PortfolioPage() {
   const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<Array<{ type: 'user' | 'assistant' | 'error' | 'system'; content: string; suggestions?: ChatSuggestion[] }>>([]);
+  const [messages, setMessages] = useState<Array<{ type: 'user' | 'assistant' | 'error' | 'system'; content: string; suggestions?: ChatSuggestion[]; suggestionFooter?: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -618,7 +618,12 @@ export function PortfolioPage() {
       }
       
       // Add AI message
-      setMessages(prev => [...prev, { type: 'assistant', content: result.message, suggestions: result.suggestions }]);
+      setMessages(prev => [...prev, {
+        type: 'assistant',
+        content: result.message,
+        suggestions: result.suggestions,
+        suggestionFooter: result.suggestionFooter,
+      }]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       const lowerMessage = errorMessage.toLowerCase();
@@ -740,6 +745,15 @@ export function PortfolioPage() {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [showResetModal, showUpcomingPlansModal]);
+
+  // Keep compatibility with older API responses that still include the
+  // suggestion heading inside the message body. The card section owns that
+  // heading now, so it must not be rendered twice.
+  const getMessageContent = (content: string) => {
+    const suggestionHeading = /Want to dig deeper\? Here's where to look:/i;
+    const headingIndex = content.search(suggestionHeading);
+    return headingIndex >= 0 ? content.slice(0, headingIndex).trim() : content;
+  };
 
   // Helper function to parse markdown-style links and images in messages
   const parseMessageWithLinks = (content: string) => {
@@ -963,7 +977,7 @@ export function PortfolioPage() {
                         >
                           <div className="box-border flex gap-[10px] items-center justify-center overflow-clip relative rounded-[inherit]">
                             <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">
-                              {parseMessageWithLinks(message.content)}
+                              {parseMessageWithLinks(getMessageContent(message.content))}
                             </p>
                           </div>
                           <div 
@@ -978,23 +992,37 @@ export function PortfolioPage() {
                         </div>
                       )}
                       {message.suggestions && message.suggestions.length > 0 && (
-                        <div className="flex flex-wrap gap-[8px] w-full max-w-[480px]" data-name="Suggestion cards">
-                          {message.suggestions.map((suggestion) => (
-                            <a
-                              key={suggestion.url}
-                              href={suggestion.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group flex flex-1 min-w-[140px] flex-col gap-[2px] rounded-[12px] border px-[14px] py-[10px] transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#7339ff]"
-                              style={{ borderColor: colors.border }}
-                            >
-                              <span className="flex items-center justify-between gap-[8px] text-[14px] font-semibold" style={{ color: colors.textPrimary }}>
-                                {suggestion.label}
-                                <ExternalLink className="h-[14px] w-[14px] opacity-60 transition-opacity group-hover:opacity-100" aria-hidden="true" />
-                              </span>
-                              <span className="text-[13px]" style={{ color: colors.textSecondary }}>{suggestion.description}</span>
-                            </a>
-                          ))}
+                        <div className="w-full max-w-[480px] rounded-[12px] border p-[10px]" data-name="Suggestion cards" style={{ borderColor: colors.border, backgroundColor: 'rgba(255,255,255,0.04)' }}>
+                          <div className="mb-[8px] px-[4px]">
+                            <p className="text-[14px] font-semibold" style={{ color: colors.textPrimary }}>
+                              Want to dig deeper? Here's where to look:
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-2">
+                            {message.suggestions.map((suggestion) => (
+                              <a
+                                key={suggestion.url}
+                                href={suggestion.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group flex min-h-[72px] flex-col justify-between gap-[8px] rounded-[10px] border px-[12px] py-[10px] transition-all hover:-translate-y-0.5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#7339ff]"
+                                style={{ borderColor: colors.border, backgroundColor: 'rgba(255,255,255,0.02)' }}
+                              >
+                                <span className="flex items-center justify-between gap-[8px] text-[14px] font-semibold" style={{ color: colors.textPrimary }}>
+                                  {suggestion.label}
+                                  <ExternalLink className="h-[14px] w-[14px] opacity-60 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+                                </span>
+                                <span className="text-[12px] leading-[16px]" style={{ color: colors.textSecondary }}>{suggestion.description}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {message.suggestionFooter && (
+                        <div className="max-w-[480px] rounded-[12px] border px-[14px] py-[12px]" data-name="Suggestion footer" style={{ borderColor: colors.border, backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                          <p className="font-normal leading-[24px] relative text-[16px] text-white whitespace-pre-wrap">
+                            {parseMessageWithLinks(message.suggestionFooter)}
+                          </p>
                         </div>
                       )}
                     </motion.div>

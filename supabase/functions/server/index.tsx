@@ -435,33 +435,26 @@ function getHiringCompany(message: string, who: string): string {
   return who;
 }
 
-// Template: opener + company paragraph (or the generic intro when the company
-// is unknown) + links with reasons + outro pointing to the real Max
-function buildHireAnswer(company: string, companyTweak = ""): string {
+// Template: opener + company paragraph + the deeper-links prompt, followed by
+// cards and the closing text about reaching the real Max.
+function buildHireAnswer(company: string, companyTweak = "") {
   const opener = company
     ? `Well, there are just sooo many reasons why ${company} should hire me, right? 😉`
     : "Well, there are just sooo many reasons, right? 😉";
-  return [opener, companyTweak || HIRE_ANSWER_INTRO, HIRE_ANSWER_LINKS, HIRE_ANSWER_OUTRO]
-    .join("\n\n");
+  return {
+    message: [opener, companyTweak || HIRE_ANSWER_INTRO].join("\n\n"),
+    suggestionFooter: HIRE_ANSWER_OUTRO,
+  };
 }
 
 const HIRE_ANSWER_INTRO = `Joking aside. I'm a highly experienced designer, both in leading teams and projects and in delivering impactful design work, visually and in improving my users' lives. Before Volvo, that meant making sure we had the best possible e-commerce experience, where we improved conversion enormously during my time there, especially on mobile. Now, as UX Lead at Volvo, it's about making sure my 16k+ engineers have internal tools that support them in their highly complex work life.`;
-
-const HIRE_ANSWER_LINKS = `Want to dig deeper? Here's where to look:
-
-[LinkedIn](https://www.linkedin.com/in/maxthunberg) for my CV and the full career story. It's always up to date ☺️💪
-
-[maxthunberg.com](https://maxthunberg.com) for portfolio cases. A bit dated, but the thinking holds up.
-
-[thunatype.com](https://thunatype.com), my font foundry. Proof that I sweat the visual details, I design fonts for fun 😎
-
-[ask.maxthunberg.com](https://ask.maxthunberg.com), this page. I built it myself with AI, so it's a live example of how I prototype and work with AI. Keep asking me stuff here!`;
 
 const HIRE_ANSWER_OUTRO = `That said, I probably don't understand your real challenges, because hey, I'm just 1s and 0s 🤖 So reach out at [max@maxthunberg.com](mailto:max@maxthunberg.com) and we'll book a session with the real me. Not only digital me.`;
 const HIRE_SUGGESTIONS = [
   { label: "Branding", description: "thunatype.com", url: "https://thunatype.com" },
   { label: "Portfolio cases", description: "maxthunberg.com", url: "https://maxthunberg.com" },
   { label: "CV/Resume", description: "LinkedIn", url: "https://www.linkedin.com/in/maxthunberg" },
+  { label: "Ask Max", description: "Interactive portfolio chat", url: "https://ask.maxthunberg.com" },
 ];
 
 // ===========================================
@@ -1112,8 +1105,9 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
       const isWhoCompany = companyProfile?.found &&
         [who.toLowerCase(), companyProfile.name.toLowerCase()].includes(company.toLowerCase());
       if (isWhoCompany) company = companyProfile.name;
+      const hireAnswer = buildHireAnswer(company, isWhoCompany ? companyProfile.hireTweak : "");
       return c.json({
-        message: buildHireAnswer(company, isWhoCompany ? companyProfile.hireTweak : ""),
+        ...hireAnswer,
         sources: [],
         detectedLanguage: "en",
         shouldSwitchUI: false,
