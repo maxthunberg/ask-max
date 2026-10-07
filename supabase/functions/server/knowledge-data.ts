@@ -930,6 +930,79 @@ Koden till Ask Max är skriven av AI. Max har byggt den med Claude Code, Codex, 
 ## Verktyg
 
 Mest Figma, Microsoft-sviten och olika AI-verktyg som Figma Make, Claude och Copilot.`
+  },
+  {
+    filename: 'case-skyltmax-checkout.md',
+    content: `# Case: Skyltmax checkout optimisation (2020)
+
+Source: portfolio case at [maxthunberg.com](https://maxthunberg.com/projects/checkout-page-optimisation/). A few years old.
+
+Skyltmax is an e-commerce company that has sold millions of customised signs online since 2008, in around 20 markets. Max was UX designer there.
+
+## Problem
+Big conversion gap between desktop and mobile. The checkout had friction that made people abandon their carts, especially on mobile, which was the fastest growing group.
+
+## What Max did
+Test-driven work: user analysis and feedback, simpler design with clearer instructions, trust signals, fewer and auto-filled form fields, then lots of A/B tests and iterations. Mobile first, since that is where the gap was.
+
+## Learning from failure
+We added an address search field to auto-fill the address. In theory great, fewer fields. In practice the service was not 100% reliable, so we rolled it back. Fewer fields isn't always better, reliability wins. "If you're wrong: great! You've learned what doesn't work."
+
+## Results
+- Checkout conversion rate up +6.91% overall since the start
+- +22.17% from the worst period (the address search field) to today
+- Mobile users +18.85%, which had been a big focus
+With millions of visitors, that is a lot of extra revenue and a lot less frustration.`
+  },
+  {
+    filename: 'case-skyltmax-image-archive.md',
+    content: `# Case: Skyltmax image archive discoverability (2022)
+
+Source: portfolio case at [maxthunberg.com](https://maxthunberg.com/projects/image-archive-discoverability/). A few years old.
+
+Skyltmax customers design their own signs in an online design tool, where they can add images from an image archive. Max was UX designer.
+
+## Problem
+People could not find relevant images while designing. Bad discoverability in the archive hurt conversion in the design tool and made customers frustrated.
+
+## What Max did
+Search curation in four steps, repeated over time:
+1. Found the most common search terms that gave zero results
+2. Got translations of those terms for all ~20 markets
+3. Tagged existing images, or added new ones, using the translations
+4. Searches that used to show nothing now gave results
+
+Search result coverage went from about 40% to over 80%.
+Categories were also reworked: sorted by how often they are used, and the images inside each category sorted by their own usage.
+
+## Results
+- +18.92% conversion rate among users who used the image archive
+- Less frustration finding the right image
+- Skyltmax got insights into what customers want and which themes are trending`
+  },
+  {
+    filename: 'case-skyltmax-product-preview.md',
+    content: `# Case: Skyltmax product preview (2020)
+
+Source: portfolio case at [maxthunberg.com](https://maxthunberg.com/projects/make-product-preview-better/). A few years old, no published numbers.
+
+## Problem
+"How can customers trust the products when they can't even preview them properly?" The product preview worked badly on mobile and made it hard to understand size. Many customers read mm as cm, so their sign arrived ten times smaller than they expected.
+
+## What Max did
+Redesigned the preview for all devices with relational scale: showing the sign next to everyday objects or a hand, so on-screen size translates to real life. Clearer difference between units. Goal: less confusion, less hesitation before buying and more trust.`
+  },
+  {
+    filename: 'case-agrowth-sendify-express-delivery.md',
+    content: `# Cases from the Agrowth agency years (2018)
+
+Source: portfolio cases at [maxthunberg.com](https://maxthunberg.com). Old work, about 8 years ago. No published numbers.
+
+## Express Delivery Sweden: website redesign
+Gothenburg logistics company for international businesses that wanted to go from a startup look to a more mature, professional brand. Max was Digital Designer and Frontend Developer at Agrowth. Built in WordPress with ACF and IBM's Carbon Design System: hero, service cards, CTAs, FAQ, industry pages, blog and custom transport icons. Phase two: six languages (Swedish, Norwegian, Danish, Finnish, English and German). "In the end, a happy client and a happy me."
+
+## Sendify: illustrations
+Sendify is a shipping platform connecting carriers like DHL, TNT, FedEx, DSV and UPS. Max was Digital Designer at Agrowth (design lead Oscar Lund) and made illustrations that explain the different transport services in the app, for example TNT Express 09.00, 10.00 and 12.00 and DHL Parti, Stycke, Pall, Paket and Service Point. Rule: every illustration uses the same perspective, so they read as one system. They helped users understand the services and backed up Sendify's image as a modern, design focused startup.`
   }
 ] as const;
 

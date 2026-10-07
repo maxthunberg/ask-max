@@ -127,9 +127,28 @@ const SARCASTIC_QUOTA_MESSAGES = {
   ]
 };
 
+// The last conversation is kept in localStorage so a visitor can pick it up
+// again from the hero ("Continue the conversation")
+const SAVED_CONVERSATION_KEY = 'askmax-conversation';
+const SAVED_CONVERSATION_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
+
+type ChatEntry = { type: 'user' | 'assistant' | 'error' | 'system'; content: string; suggestions?: ChatSuggestion[]; suggestionFooter?: string };
+type SavedConversation = { messages: ChatEntry[]; savedAt: number };
+
+function loadSavedConversation(): SavedConversation | null {
+  try {
+    const saved: SavedConversation = JSON.parse(localStorage.getItem(SAVED_CONVERSATION_KEY) || 'null');
+    if (!saved?.messages?.some((m) => m.type === 'user')) return null;
+    if (Date.now() - saved.savedAt > SAVED_CONVERSATION_MAX_AGE) return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
 export function PortfolioPage() {
   const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<Array<{ type: 'user' | 'assistant' | 'error' | 'system'; content: string; suggestions?: ChatSuggestion[]; suggestionFooter?: string }>>([]);
+  const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isChatMode, setIsChatMode] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -144,6 +163,7 @@ export function PortfolioPage() {
   const [whoLoadingStep, setWhoLoadingStep] = useState(0);
   // Official name from the lookup (e.g. ?who=volvocars.com -> Volvo Cars)
   const whoDisplayName = (whoCompany?.found && whoCompany.name) || whoName;
+  const [savedConversation, setSavedConversation] = useState<SavedConversation | null>(null);
   const [isLanguageTransitioning, setIsLanguageTransitioning] = useState(false);
   const [skeletonStage, setSkeletonStage] = useState<'navbar' | 'search' | 'disclaimer' | null>(null);
   
@@ -514,6 +534,31 @@ export function PortfolioPage() {
     }
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    setSavedConversation(loadSavedConversation());
+  }, []);
+
+  // Save the conversation as it goes, errors are left out
+  useEffect(() => {
+    const toSave = messages.filter((m) => m.type !== 'error');
+    if (!toSave.some((m) => m.type === 'user')) return;
+    try {
+      localStorage.setItem(SAVED_CONVERSATION_KEY, JSON.stringify({ messages: toSave, savedAt: Date.now() }));
+    } catch {}
+  }, [messages]);
+
+  const handleContinueConversation = () => {
+    if (!savedConversation || isLoading) return;
+    const newSessionId = generateSessionId();
+    setSessionId(newSessionId);
+    setMessages(savedConversation.messages);
+    setMessageNumber(savedConversation.messages.length);
+    setIsChatMode(true);
+    setHasAnimated(true);
+    setChatStartTime(Date.now());
+    trackChatStarted(newSessionId, language, language);
+  };
+
   const handleSubmit = async (overrideMessage?: string) => {
     const userMessage = overrideMessage ?? question;
     if (!userMessage.trim() || isLoading) return;
@@ -707,6 +752,7 @@ export function PortfolioPage() {
     // This prevents race conditions where the language was just changed but cookie not yet saved
     saveLanguagePreference(language);
     
+    setSavedConversation(loadSavedConversation());
     setMessages([]);
     setQuestion('');
     setIsChatMode(false);
@@ -1136,8 +1182,9 @@ export function PortfolioPage() {
                       showDisclaimerSkeleton={skeletonStage === 'disclaimer'}
                       showVoiceButton={true}
                     />
-                    {whoName && (
+                    {(whoName || savedConversation) && (
                       <div className="flex flex-wrap gap-[12px] w-full pt-[8px]" data-name="Prompt suggestions">
+                        {whoName && (
                         <button
                           type="button"
                           onClick={() => handleSubmit(`Why should ${whoDisplayName} hire me?`)}
@@ -1222,6 +1269,34 @@ export function PortfolioPage() {
                             aria-hidden="true"
                           />
                         </button>
+                        )}
+                        {savedConversation && (
+                          <button
+                            type="button"
+                            onClick={handleContinueConversation}
+                            disabled={isLoading}
+                            className="relative overflow-hidden flex items-center gap-[12px] min-w-[220px] max-w-full rounded-[16px] px-[16px] py-[12px] text-left transition-colors duration-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7339ff]"
+                            style={{ backgroundColor: colors.messageBg }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme === 'light' ? '#e8e8ed' : 'rgba(255, 255, 255, 0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.messageBg}
+                          >
+                            <span
+                              className="w-[32px] h-[32px] shrink-0 rounded-[8px] flex items-center justify-center text-[18px] leading-none"
+                              style={{ backgroundColor: theme === 'light' ? '#dcdce2' : 'rgba(255, 255, 255, 0.12)' }}
+                              aria-hidden="true"
+                            >
+                              💬
+                            </span>
+                            <span className="flex flex-col gap-[2px] min-w-0">
+                              <span className="font-semibold text-[14px] leading-[20px] truncate" style={{ color: colors.textPrimary }}>
+                                {language === 'sv' ? 'Fortsätt konversationen' : 'Continue the conversation'}
+                              </span>
+                              <span className="block text-[13px] leading-[18px] truncate max-w-[260px]" style={{ color: colors.textSecondary }}>
+                                “{[...savedConversation.messages].reverse().find((m) => m.type === 'user')?.content}”
+                              </span>
+                            </span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
