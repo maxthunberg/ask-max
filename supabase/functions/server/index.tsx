@@ -419,7 +419,7 @@ const TONE_REMINDER = `
 === TONE REMINDER (APPLIES TO EVERY ANSWER) ===
 Be fun and light, like Max in Slack. Add a bit of humour in most answers (self-irony, a playful exaggeration, a wink about being the digital Max) and use 2 to 3 varied emojis spread through the answer, not only at the end. Keep the facts accurate and the answer short. Less humour when the visitor is frustrated or describes a serious problem.
 Find the joke in the topic itself: the absurd side of legacy systems, meetings, Figma files, stakeholders, being an AI version of Max, or Max's own quirks from the knowledge base. Write your own fresh joke every time.
-Write plain text: no markdown bold, italics or headings (links and images are fine).
+Formatting: **bold** works for a few key words, use it sparingly. No headings or italics.
 Avoid stiff corporate openers like "Leading a design team is all about..." and numbered lists with bold headings unless the visitor asks for a list.`;
 
 // Extra instructions when the visitor arrives via ?who=airon
@@ -1563,6 +1563,21 @@ Examples:
       shouldSwitchUI = false;
     }
 
+    if (!userLanguage) {
+      const wordCount = message.trim().split(/\s+/).length;
+      // Short replies ("yes", "Right!", "ok") never change the language of an
+      // ongoing conversation, Swedes throw in English words all the time
+      if (aiAlreadySpeaking && wordCount <= 3) {
+        detectedLanguage = aiAlreadySpeaking;
+      }
+      // The UI follows the language the conversation is actually in, also
+      // when an old conversation in another language is continued
+      if (detectedLanguage !== 'other') {
+        shouldSwitchUI = detectedLanguage !== currentUILanguage &&
+          (wordCount > 3 || aiAlreadySpeaking === detectedLanguage || (!aiAlreadySpeaking && shouldSwitchUI));
+      }
+    }
+
     if (detectedLanguage === 'other') {
       return c.json({
         message: "I only speak English and Swedish, sorry! 🇬🇧🇸🇪\n\nPlease try again in one of these languages.",
@@ -1638,8 +1653,7 @@ Examples:
     ]);
 
     return c.json({
-      // The chat shows plain text, so markdown bold is dropped
-      message: applyMaxPunctuation(assistantMessage.replace(/\*\*(.+?)\*\*/g, "$1")),
+      message: applyMaxPunctuation(assistantMessage),
       sources: [],
       detectedLanguage,
       shouldSwitchUI,

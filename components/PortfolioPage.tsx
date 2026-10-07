@@ -18,7 +18,7 @@ import { trackChatMessage, trackChatStarted, trackChatEnd, trackChatError, detec
 import { saveLanguagePreference, getLanguagePreference } from '../utils/language-cookie';
 
 // App version
-const APP_VERSION = 'v1.3.1';
+const APP_VERSION = 'v1.3.2';
 
 // Loading messages for the ?who= lookup (research, logo and pitch, roughly 5-10s
 // uncached). Shown in order, then the stalling ones loop until the lookup is done.
@@ -568,6 +568,16 @@ export function PortfolioPage() {
     if (!savedConversation || isLoading) return;
     const newSessionId = generateSessionId();
     setSessionId(newSessionId);
+    // The UI takes the language the conversation was in
+    const lastAnswer = [...savedConversation.messages].reverse().find((m) => m.type === 'assistant');
+    if (lastAnswer) {
+      const conversationLanguage = /[åäöÅÄÖ]/.test(lastAnswer.content) ? 'sv' : 'en';
+      setLanguage(conversationLanguage);
+      setNavbarLanguage(conversationLanguage);
+      setSearchLanguage(conversationLanguage);
+      setDisclaimerLanguage(conversationLanguage);
+      saveLanguagePreference(conversationLanguage);
+    }
     setMessages(savedConversation.messages);
     setVisitorBrief(savedConversation.visitorBrief);
     setFitCheckStatus(savedConversation.fitCheckStatus ?? 'none');
@@ -838,14 +848,14 @@ export function PortfolioPage() {
     return headingIndex >= 0 ? content.slice(0, headingIndex).trim() : content;
   };
 
-  // Helper function to parse markdown-style links and images in messages
-  const parseMessageWithLinks = (content: string) => {
-    const parts = [];
+  // Helper function to parse markdown-style links, images and **bold** in messages
+  const parseMessageWithLinks = (content: string): React.ReactNode => {
+    const parts: React.ReactNode[] = [];
     let lastIndex = 0;
-    
-    // Create a combined pattern to find markdown images, markdown links, and plain URLs
+
+    // Create a combined pattern to find markdown images, markdown links, plain URLs and **bold**
     // Order matters: images MUST come before links (since images start with !)
-    const combinedPattern = /(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))|(https?:\/\/[^\s]+|mailto:[^\s]+)/g;
+    const combinedPattern = /(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))|(https?:\/\/[^\s]+|mailto:[^\s]+)|(\*\*([^*\n]+?)\*\*)/g;
     let match;
 
     while ((match = combinedPattern.exec(content)) !== null) {
@@ -897,6 +907,13 @@ export function PortfolioPage() {
           >
             {url}
           </a>
+        );
+      } else if (match[8]) {
+        // Bold **text**, which can itself contain links
+        parts.push(
+          <strong key={match.index} className="font-semibold">
+            {parseMessageWithLinks(match[9])}
+          </strong>
         );
       }
       
@@ -1023,7 +1040,7 @@ export function PortfolioPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                  className="custom-scrollbar basis-0 box-border grow min-h-px min-w-px overflow-x-clip overflow-y-auto py-[16px] relative shrink-0 w-screen ml-[calc(50%-50vw)]"
+                  className="custom-scrollbar basis-0 box-border grow min-h-px min-w-px overflow-x-clip overflow-y-auto pt-[16px] relative shrink-0 w-screen ml-[calc(50%-50vw)]"
                   data-name="Chat"
                   role="log"
                   aria-live="polite"
@@ -1031,7 +1048,7 @@ export function PortfolioPage() {
                   id="main-content"
                 >
                   {/* Content keeps max width while the scrollbar sits at the screen edge */}
-                  <div className="flex flex-col gap-[16px] items-center w-full max-w-[768px] mx-auto px-[12px] md:px-[16px]">
+                  <div className="flex flex-col gap-[16px] items-center w-full max-w-[768px] mx-auto px-[12px] md:px-[16px] pb-[24px]">
                   {messages.map((message, index) => (
                     <motion.div
                       key={index}
