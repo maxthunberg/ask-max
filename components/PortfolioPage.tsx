@@ -1048,7 +1048,7 @@ export function PortfolioPage() {
                   id="main-content"
                 >
                   {/* Content keeps max width while the scrollbar sits at the screen edge */}
-                  <div className="flex flex-col gap-[16px] items-center w-full max-w-[768px] mx-auto px-[12px] md:px-[16px] pb-[24px]">
+                  <div className="flex flex-col gap-[16px] items-center w-full max-w-[768px] mx-auto px-[12px] md:px-[16px] pb-[40px]">
                   {messages.map((message, index) => (
                     <motion.div
                       key={index}
