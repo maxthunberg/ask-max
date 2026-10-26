@@ -41,6 +41,8 @@ export interface ChatOptions {
   visitorBrief?: VisitorBrief;
   fitCheckStatus?: FitCheckStatus;
   runFitCheck?: boolean; // Visitor clicked "do the fit check"
+  companyProfile?: CompanyProfile; // From fetchCompanyProfile, sent back since the server never stores it
+  role?: WhoRole;
 }
 
 export interface ChatResponse {
@@ -134,20 +136,38 @@ export async function initializeKnowledgeBase(
     throw new Error(error.error || 'Failed to initialize knowledge base');
   }
 }
+// ?role= on the link: a hands-on designer role or a lead role
+export type WhoRole = 'designer' | 'lead';
+
+export interface WhoParams {
+  who?: string; // ?who=, company name or domain
+  listing?: string; // ?listing=, URL to the job listing
+  role?: WhoRole;
+}
+
+// The server's profile also holds the prompt texts (pitch, link cards, listing
+// summary), kept as is and sent back with each chat message
 export interface CompanyProfile {
   found: boolean;
   name?: string;
   domain?: string;
   logoUrl?: string;
+  listing?: { title?: string; company?: string };
+  [key: string]: unknown;
 }
 
 /**
- * Look up the ?who= company (name, logo). First call per company runs a web search server side.
+ * Look up the company, job listing and role. Runs a web search server side on
+ * every call, the server stores nothing.
  */
-export async function fetchCompanyProfile(who: string): Promise<CompanyProfile> {
+export async function fetchCompanyProfile({ who, listing, role }: WhoParams): Promise<CompanyProfile> {
+  const params = new URLSearchParams();
+  if (who) params.set('who', who);
+  if (listing) params.set('listing', listing);
+  if (role) params.set('role', role);
   const response = await fetch(
-    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/company?who=${encodeURIComponent(who)}`,
-    { headers: { 'Authorization': `Bearer ${publicAnonKey}` } }
+    `https://${projectId}.supabase.co/functions/v1/make-server-2b0a7158/company?${params}`,
+    { headers: { 'Authorization': `Bearer ${publicAnonKey}` }, cache: 'no-store' }
   );
   if (!response.ok) return { found: false };
   return response.json();
@@ -158,6 +178,8 @@ export interface HandoffRequest {
   name?: string;
   note?: string;
   who?: string;
+  listing?: string;
+  role?: WhoRole;
   visitorBrief?: VisitorBrief;
   fitCheck?: FitCheck;
   transcript: ChatMessage[];

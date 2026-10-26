@@ -9,7 +9,7 @@ const imgMaxT12 = "https://res.cloudinary.com/maxthunberg-com/images/v1764675909
 // 1052px wide, twice the 526px it's shown at for sharp screens. Preloaded in
 // app/layout.tsx so it's the first thing the browser fetches.
 const imgMaxT13 = "/images/max-profile.png";
-import { sendChatMessage, sendHandoff, fetchCompanyProfile, ChatMessage, ChatSuggestion, CompanyProfile, FitCheck, FitCheckStatus, VisitorBrief } from '../utils/chat-api';
+import { sendChatMessage, sendHandoff, fetchCompanyProfile, ChatMessage, ChatSuggestion, CompanyProfile, FitCheck, FitCheckStatus, VisitorBrief, WhoRole } from '../utils/chat-api';
 import { FitCheckCard } from './FitCheckCard';
 import { ExternalLink, Sun, Moon, Menu, X, Brain, Image as ImageIcon, BookOpen, Mic } from 'lucide-react';
 import { ThinkingStatus } from './ThinkingStatus';
@@ -32,10 +32,11 @@ const SHOW_HEAD_FILAMENTS = false;
 
 const APP_VERSION = 'v1.3.2';
 
-// Loading messages for the ?who= lookup (research, logo and pitch, roughly 5-10s
-// uncached). Shown in order, then the stalling ones loop until the lookup is done.
+// Loading messages for the ?who= lookup (research, logo and pitch, roughly 5-10s,
+// runs on every visit). Shown in order, then the stalling ones loop until the lookup is done.
 const WHO_LOADING_STEP_MS = 1800;
-const WHO_LOADING_MESSAGES = (who: string) => [
+const WHO_LOADING_MESSAGES = (who: string, hasListing: boolean) => [
+  ...(hasListing ? ['Reading the job listing…', 'Noting what you need…'] : []),
   `Researching ${who}…`,
   `Reading up on what ${who} does…`,
   `Looking at ${who}'s products…`,
@@ -54,8 +55,8 @@ const WHO_STALLING_MESSAGES = [
   'Any second now…',
   'Good things take time…',
 ];
-function whoLoadingMessage(who: string, step: number): string {
-  const messages = WHO_LOADING_MESSAGES(who);
+function whoLoadingMessage(who: string, hasListing: boolean, step: number): string {
+  const messages = WHO_LOADING_MESSAGES(who, hasListing);
   return step < messages.length
     ? messages[step]
     : WHO_STALLING_MESSAGES[(step - messages.length) % WHO_STALLING_MESSAGES.length];
@@ -70,6 +71,22 @@ function parseWhoParam(raw: string | null): string | null {
   return cleaned === cleaned.toLowerCase()
     ? cleaned.replace(/(^|[\s-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase())
     : cleaned;
+}
+
+// The ?who= profile is kept in this browser only, per company + listing + role
+const WHO_PROFILE_CACHE_PREFIX = 'askmax-who-profile:';
+const WHO_PROFILE_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
+
+// ?listing=<url> is the job listing, ?role=designer|lead the kind of role.
+// The server validates the URL, this only drops obvious junk.
+function parseListingParam(raw: string | null): string | null {
+  const url = (raw ?? '').trim();
+  return /^https?:\/\/\S+$/i.test(url) ? url.slice(0, 500) : null;
+}
+
+function parseRoleParam(raw: string | null): WhoRole | null {
+  const role = (raw ?? '').trim().toLowerCase();
+  return role === 'designer' || role === 'lead' ? role : null;
 }
 
 const QUOTA_EXCEEDED_MESSAGES = {
@@ -207,8 +224,14 @@ export function PortfolioPage() {
   const [whoLogoFailed, setWhoLogoFailed] = useState(false);
   const [whoReady, setWhoReady] = useState(false);
   const [whoLoadingStep, setWhoLoadingStep] = useState(0);
-  // Official name from the lookup (e.g. ?who=volvocars.com -> Volvo Cars)
-  const whoDisplayName = (whoCompany?.found && whoCompany.name) || whoName;
+  const [whoListing, setWhoListing] = useState<string | null>(null);
+  const [whoRole, setWhoRole] = useState<WhoRole | null>(null);
+  // The lookup runs once per visit, the chat waits for it before sending
+  const whoLookupRef = useRef<Promise<CompanyProfile | null> | null>(null);
+  const hasWhoCard = !!(whoName || whoListing);
+  // Official name from the lookup (e.g. ?who=volvocars.com -> Volvo Cars). A
+  // listing link without ?who= reads "Why should you hire me?" until it's known.
+  const whoDisplayName = (whoCompany?.found && whoCompany.name) || whoName || 'you';
   const [savedConversation, setSavedConversation] = useState<SavedConversation | null>(null);
   // What Digital Max has learned about the visitor, updated by the server
   const [visitorBrief, setVisitorBrief] = useState<VisitorBrief | undefined>(undefined);
@@ -248,24 +271,36 @@ export function PortfolioPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setWhoName(parseWhoParam(params.get('who')));
+    setWhoListing(parseListingParam(params.get('listing')));
+    setWhoRole(parseRoleParam(params.get('role')));
+    // Old cache from before ?listing= and ?role=, keyed on the company only
+    try {
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith('who_profile_'))
+        .forEach((key) => localStorage.removeItem(key));
+    } catch {}
   }, []);
 
   // Lookup + logo preload; the card shows a loading state until both are done.
-  // Found profiles are cached in localStorage so repeat visits are instant.
+  // The server never stores the answer, so a new visitor always watches it
+  // being written. Only this browser keeps it, so repeat visits are instant.
   useEffect(() => {
-    if (!whoName) return;
+    if (!whoName && !whoListing) return;
     let cancelled = false;
-    const cacheKey = `who_profile_${whoName.toLowerCase()}`;
-    const finish = (profile: CompanyProfile | null) => {
-      if (cancelled) return;
-      if (profile) setWhoCompany(profile);
-      setWhoReady(true);
-    };
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) return finish(JSON.parse(cached));
-    } catch {}
-    fetchCompanyProfile(whoName)
+    const cacheKey = `${WHO_PROFILE_CACHE_PREFIX}${[whoName, whoListing, whoRole].map((v) => (v ?? '').toLowerCase()).join('|')}`;
+    if (!whoLookupRef.current) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        if (cached?.profile && Date.now() - cached.savedAt < WHO_PROFILE_MAX_AGE) {
+          whoLookupRef.current = Promise.resolve(cached.profile as CompanyProfile);
+        }
+      } catch {}
+    }
+    whoLookupRef.current ??= fetchCompanyProfile({
+      who: whoName ?? undefined,
+      listing: whoListing ?? undefined,
+      role: whoRole ?? undefined,
+    })
       .then((profile) => new Promise<CompanyProfile>((resolve) => {
         if (!profile.logoUrl) return resolve(profile);
         const img = new Image();
@@ -275,23 +310,28 @@ export function PortfolioPage() {
       }))
       .then((profile) => {
         if (profile.found) {
-          try { localStorage.setItem(cacheKey, JSON.stringify(profile)); } catch {}
+          try { localStorage.setItem(cacheKey, JSON.stringify({ profile, savedAt: Date.now() })); } catch {}
         }
-        finish(profile);
+        return profile;
       })
       .catch((error) => {
         console.warn('Company lookup failed:', error);
-        finish(null);
+        return null;
       });
+    whoLookupRef.current.then((profile) => {
+      if (cancelled) return;
+      if (profile) setWhoCompany(profile);
+      setWhoReady(true);
+    });
     return () => { cancelled = true; };
-  }, [whoName]);
+  }, [whoName, whoListing, whoRole]);
 
   // Keep the loading messages flowing until the lookup is really done
   useEffect(() => {
-    if (!whoName || whoReady) return;
+    if (!hasWhoCard || whoReady) return;
     const interval = setInterval(() => setWhoLoadingStep((step) => step + 1), WHO_LOADING_STEP_MS);
     return () => clearInterval(interval);
-  }, [whoName, whoReady]);
+  }, [hasWhoCard, whoReady]);
 
   // Save language preference to cookie when it changes
   useEffect(() => {
@@ -708,6 +748,8 @@ export function PortfolioPage() {
     sendHandoff({
       ...contact,
       who: whoName ?? undefined,
+      listing: whoListing ?? undefined,
+      role: whoRole ?? undefined,
       visitorBrief,
       fitCheck: [...messages].reverse().find((m) => m.fitCheck)?.fitCheck,
       transcript: messages
@@ -727,6 +769,10 @@ export function PortfolioPage() {
           content: entryToHistoryText(m),
         }));
 
+      // The server never stores the company profile, so it goes with every
+      // message. A message sent before the lookup is done waits for it.
+      const companyProfile = (await whoLookupRef.current) ?? undefined;
+
       // Send current UI language so backend can make smart decision about switching
       const result = await sendChatMessage(
         userMessage,
@@ -735,7 +781,7 @@ export function PortfolioPage() {
         language,
         whoName?.toLowerCase() === 'airon' ? 'airon' : undefined,
         whoName ?? undefined,
-        { visitorBrief, fitCheckStatus, runFitCheck }
+        { visitorBrief, fitCheckStatus, runFitCheck, companyProfile, role: whoRole ?? undefined }
       );
       if (result.visitorBrief) setVisitorBrief(result.visitorBrief);
       if (result.fitCheckStatus) setFitCheckStatus(result.fitCheckStatus);
@@ -1374,9 +1420,9 @@ export function PortfolioPage() {
                       showDisclaimerSkeleton={skeletonStage === 'disclaimer'}
                       showVoiceButton={true}
                     />
-                    {(whoName || savedConversation) && (
+                    {(hasWhoCard || savedConversation) && (
                       <div className="flex flex-wrap gap-[12px] w-full pt-[8px]" data-name="Prompt suggestions">
-                        {whoName && (
+                        {hasWhoCard && (
                         <button
                           type="button"
                           onClick={() => handleSubmit(`Why should ${whoDisplayName} hire me?`)}
@@ -1401,7 +1447,7 @@ export function PortfolioPage() {
                                   style={{ backgroundColor: theme === 'light' ? '#dcdce2' : 'rgba(255, 255, 255, 0.12)', color: colors.textSecondary }}
                                   aria-hidden="true"
                                 >
-                                  {whoName.charAt(0).toUpperCase()}
+                                  {(whoName ?? '?').charAt(0).toUpperCase()}
                                 </motion.span>
                               ) : whoCompany?.logoUrl && !whoLogoFailed ? (
                                 <motion.img
@@ -1444,7 +1490,7 @@ export function PortfolioPage() {
                                 >
                                   {whoReady
                                     ? <>Quick pitch, portfolio &amp; CV</>
-                                    : whoLoadingMessage(whoName, whoLoadingStep)}
+                                    : whoLoadingMessage(whoName ?? 'the company', !!whoListing, whoLoadingStep)}
                                 </motion.span>
                               </AnimatePresence>
                             </span>

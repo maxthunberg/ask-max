@@ -628,6 +628,8 @@ async function writeFitCheck(
   history: { role: string; content: string }[],
   company: string,
   language: "en" | "sv",
+  listing?: JobListing,
+  role?: RoleFocus | "",
 ): Promise<FitCheck> {
   const transcript = history
     .slice(-12)
@@ -643,7 +645,7 @@ async function writeFitCheck(
         role: "system",
         content: `You are Digital Max, an AI version of Max Thunberg, UX Design Lead. Write an honest fit check for the visitor${company ? ` from ${company}` : ""}: how well Max fits what they are looking for. Write in first person as Max, talking to them ("you"), in ${language === "sv" ? "Swedish" : "English"}. Fun and light like Max in Slack, but honest. Honesty is the point: name real gaps, it makes the matches more believable.
 
-Base everything only on MAX KNOWLEDGE and what the visitor said. Never invent experience, projects or numbers. Tie each point to something the visitor said.
+Base everything only on MAX KNOWLEDGE, what the visitor said and the job listing if there is one. Never invent experience, projects or numbers. Tie each point to something the visitor said or the listing asks for.
 
 Reply with ONLY a JSON object:
 {
@@ -660,7 +662,12 @@ ${DEFAULT_KNOWLEDGE}`,
       },
       {
         role: "user",
-        content: `What we know about the visitor:\n${JSON.stringify(brief)}\n\nConversation so far:\n${transcript}`,
+        content: [
+          `What we know about the visitor:\n${JSON.stringify(brief)}`,
+          role ? `Role Max sent the link for: ${ROLE_FOCUS[role].prompt}` : "",
+          listing ? listingText(listing) : "",
+          `Conversation so far:\n${transcript}`,
+        ].filter(Boolean).join("\n\n"),
       },
     ],
   });
@@ -767,11 +774,53 @@ function hireSuggestions(cards?: LinkCard[]) {
 }
 
 // ===========================================
-// COMPANY PROFILES (?who=)
+// COMPANY PROFILES (?who=&listing=&role=)
 // ===========================================
-// The ?who= company is looked up once with web search, then cached in kv:
-// a short profile for the system prompt, a logo domain and the tailored
-// paragraph for the hire answer.
+// The ?who= company (and the ?listing= job ad) is looked up with web search on
+// every visit and never stored: a short profile for the system prompt, a logo
+// domain and the tailored paragraph for the hire answer. The browser keeps it
+// in memory for the visit and sends it back with each chat message.
+
+// ?role= says what kind of role the link is for
+type RoleFocus = "designer" | "lead";
+
+const ROLE_FOCUS: Record<RoleFocus, { title: string; prompt: string }> = {
+  designer: {
+    title: "a senior hands-on product designer",
+    prompt: "a hands-on senior or principal UX/product designer role, where Max does the design work himself: research, flows, prototypes and polished UI",
+  },
+  lead: {
+    title: "a UX lead",
+    prompt: "a UX lead or design lead role, where Max leads designers, sets direction, raises UX maturity and works closely with stakeholders",
+  },
+};
+
+function parseRole(raw: unknown): RoleFocus | "" {
+  const role = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  return role === "designer" || role === "lead" ? role : "";
+}
+
+// Only public http(s) pages, never IPs or internal hosts
+function parseListingUrl(raw: unknown): string {
+  if (typeof raw !== "string" || !raw.trim()) return "";
+  try {
+    const url = new URL(raw.trim());
+    if (!/^https?:$/.test(url.protocol)) return "";
+    if (!url.hostname.includes(".") || /^[\d.]+$|^\[|localhost|\.local$|\.internal$/i.test(url.hostname)) return "";
+    return url.toString().slice(0, 500);
+  } catch {
+    return "";
+  }
+}
+
+interface JobListing {
+  url: string;
+  company: string;
+  title: string;
+  summary: string;
+  responsibilities: string[];
+  requirements: string[];
+}
 
 interface CompanyProfile {
   found: boolean;
@@ -784,12 +833,13 @@ interface CompanyProfile {
   designContext: string;
   hireTweak: string;
   linkCards?: LinkCard[]; // Link cards tailored to this company, most relevant first
-  fetchedAt: string;
+  listing?: JobListing; // From ?listing=
+  role?: RoleFocus; // From ?role=
 }
 
-const COMPANY_CACHE_PREFIX = "company_v8_";
-const COMPANY_LOOKUPS_PER_DAY = 40;
-const pendingCompanyLookups = new Map<string, Promise<CompanyProfile | null>>();
+type CompanyResearch = Omit<CompanyProfile, "hireTweak" | "linkCards" | "listing" | "role">;
+
+const COMPANY_LOOKUPS_PER_DAY = 60;
 
 // Max facts the tailored hire paragraph may draw from
 const HIRE_FACT_FILES = [
@@ -798,10 +848,6 @@ const HIRE_FACT_FILES = [
   "max-career-and-ownership.md",
   "ux-leadership.md",
 ];
-
-function companyCacheKey(who: string): string {
-  return COMPANY_CACHE_PREFIX + who.toLowerCase().replace(/[^\p{L}\p{N}.]+/gu, "-");
-}
 
 function isDomain(who: string): boolean {
   return /^[\p{L}\p{N}-]+(\.[\p{L}\p{N}-]+)+$/u.test(who);
@@ -872,7 +918,93 @@ async function openaiJson(url: string, body: unknown): Promise<any> {
   return response.json();
 }
 
-async function researchCompany(who: string): Promise<Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">> {
+function responseText(data: any): string {
+  return (data.output ?? [])
+    .filter((item: any) => item.type === "message")
+    .flatMap((item: any) => item.content ?? [])
+    .map((part: any) => part.text ?? "")
+    .join("");
+}
+
+// The listing page as plain text. Many job sites render with JavaScript and
+// return almost nothing, then web search has to find the listing instead.
+async function fetchPageText(url: string): Promise<string> {
+  try {
+    const response = await fetch(url, {
+      redirect: "follow",
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; AskMax/1.0)", Accept: "text/html,text/plain" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok || !/text\/(html|plain)/.test(response.headers.get("content-type") ?? "")) return "";
+    const html = (await response.text()).slice(0, 600_000);
+    return html
+      .replace(/<(script|style|noscript|svg|nav|footer)[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&#?\w+;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 12_000);
+  } catch {
+    return "";
+  }
+}
+
+async function researchListing(url: string): Promise<JobListing> {
+  const pageText = await fetchPageText(url);
+  const source = pageText.length > 400
+    ? `Here is the text of the job listing at ${url}:\n"""\n${pageText}\n"""`
+    : `The job listing is at ${url}, but the page could not be read directly. Use web search to find this listing (or the same role at the same company) and read it.`;
+  const data = await openaiJson("https://api.openai.com/v1/responses", {
+    model: MODELS.lookup,
+    tools: [{ type: "web_search" }],
+    input: `${source}
+
+Summarise the job listing. Reply with ONLY a JSON object, no other text:
+{
+  "company": "the hiring company's short brand name, empty string if unknown",
+  "title": "the job title",
+  "summary": "1 to 2 sentences on what the role is about",
+  "responsibilities": ["up to 5 main responsibilities, short phrases"],
+  "requirements": ["up to 6 main requirements or qualifications, short phrases"]
+}`,
+  });
+  const json = extractJson(responseText(data));
+  const str = (v: unknown, max = 300) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
+  const list = (v: unknown, max: number) => (Array.isArray(v) ? v.map((item) => str(item, 160)).filter(Boolean).slice(0, max) : []);
+  return {
+    url,
+    company: sanitizeCompany(str(json.company, 60)),
+    title: str(json.title, 100),
+    summary: str(json.summary, 400),
+    responsibilities: list(json.responsibilities, 5),
+    requirements: list(json.requirements, 6),
+  };
+}
+
+function listingText(listing: JobListing): string {
+  return [
+    `Job listing: ${listing.title || "untitled"}${listing.company ? ` at ${listing.company}` : ""}`,
+    listing.summary && `About the role: ${listing.summary}`,
+    listing.responsibilities.length && `Responsibilities: ${listing.responsibilities.join("; ")}`,
+    listing.requirements.length && `Requirements: ${listing.requirements.join("; ")}`,
+  ].filter(Boolean).join("\n");
+}
+
+// What the writers get about the company, the listing and the role
+function companyBrief(profile: CompanyResearch, listing?: JobListing, role?: RoleFocus | ""): string {
+  return [
+    `Company: ${profile.name} (${profile.industry})`,
+    `What they do: ${profile.summary}`,
+    `Products and users: ${profile.productsAndUsers}`,
+    `Design context: ${profile.designContext || "unknown"}`,
+    role ? `Role they are considering Max for: ${ROLE_FOCUS[role].prompt}` : "",
+    listing ? `\n${listingText(listing)}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+async function researchCompany(who: string): Promise<CompanyResearch> {
   const target = isDomain(who)
     ? `the company whose website is ${who.toLowerCase()}`
     : `the company or organisation called "${who}"`;
@@ -893,12 +1025,7 @@ Reply with ONLY a JSON object, no other text:
   "designContext": "1 to 2 sentences on anything public about their digital product, UX, design or tech focus right now, empty string if unknown"
 }`,
   });
-  const text = (data.output ?? [])
-    .filter((item: any) => item.type === "message")
-    .flatMap((item: any) => item.content ?? [])
-    .map((part: any) => part.text ?? "")
-    .join("");
-  const json = extractJson(text);
+  const json = extractJson(responseText(data));
   const str = (v: unknown, max = 600) => (typeof v === "string" ? v.trim().slice(0, max) : "");
   const name = sanitizeCompany(
     str(json.name, 60).replace(/(\s+(group|holding|plc|ab|publ|inc|ltd|llc|gmbh|as|asa|oyj|corp|corporation|co)\.?)+$/i, ""),
@@ -918,11 +1045,20 @@ Reply with ONLY a JSON object, no other text:
   };
 }
 
-async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">): Promise<string> {
+async function writeHireTweak(profile: CompanyResearch, listing?: JobListing, role?: RoleFocus | ""): Promise<string> {
   const facts = KNOWLEDGE_BASE
     .filter((file) => HIRE_FACT_FILES.includes(file.filename))
     .map((file) => file.content)
     .join("\n\n");
+  const roleTitle = role ? ROLE_FOCUS[role].title : "a UX lead or principal UX designer";
+  // With a listing the paragraph is about the role they posted, not guesses
+  const structure = listing
+    ? `1. Start with "After reading your ${listing.title || "job"} listing, my understanding is that you're looking for ..." and say in plain words what the role is about and the context (product, users, market).
+2. Pick the 2 needs or challenges from the listing that matter most and that Max can speak to. Refer to them as what the listing asks for, not as guesses.
+3. Say how Max, as ${roleTitle}, would take them on, tying in ONE concrete thing Max has actually done (e.g. growing e-commerce conversion on mobile, internal tools for 16k+ engineers, untangling complex PLM/PDM data, design systems, leading design teams). Pick what fits the listing best.`
+    : `1. Start with "After looking at ${profile.name}, my understanding is that you work within ..." and name their context (industry, B2C/B2B, market) and their main product or service in plain words.
+2. Guess 2 typical UX challenges a company like that usually has, framed as guesses ("I'd guess...", "my bet is..."), specific to their product and users, not generic UX buzz.
+3. Say how Max, as ${roleTitle}, would help solve them, tying in ONE concrete thing Max has actually done (e.g. growing e-commerce conversion on mobile, internal tools for 16k+ engineers, untangling complex PLM/PDM data, design systems, leading design teams). Pick what fits this company best.`;
   const content = await chatCompletion({
     model: MODELS.writing,
     maxTokens: 2000,
@@ -933,14 +1069,12 @@ async function writeHireTweak(profile: Omit<CompanyProfile, "hireTweak" | "linkC
         content: `You write one paragraph for Max Thunberg's answer to "Why should ${profile.name} hire me?". It comes right after his joke opener ("Well, there are just sooo many reasons why ${profile.name} should hire me, right? 😉") and before his links, so do not greet, do not repeat the joke and do not mention links or contact details.
 
 Write in first person as Max, talking directly to someone from ${profile.name} ("you"). Casual, direct, a bit playful, plain spoken English. 3 to 4 sentences, max 90 words. Follow this structure:
-1. Start with "After looking at ${profile.name}, my understanding is that you work within ..." and name their context (industry, B2C/B2B, market) and their main product or service in plain words.
-2. Guess 2 typical UX challenges a company like that usually has, framed as guesses ("I'd guess...", "my bet is..."), specific to their product and users, not generic UX buzz.
-3. Say how Max, as a UX lead or principal UX designer, would help solve them, tying in ONE concrete thing Max has actually done (e.g. growing e-commerce conversion on mobile, internal tools for 16k+ engineers, untangling complex PLM/PDM data, design systems, leading design teams). Pick what fits this company best.
+${structure}
 
 Rules:
 - No corporate filler: never use words like "extensive", "leverage", "seamless", "resonate", "thrive", "passionate", "mission", "innovative", "user-centered solutions", "translates well", "landscape", "journey".
 - Only use facts about Max from MAX FACTS. Never invent projects, metrics, clients or skills.
-- Never claim Max has worked with or for ${profile.name}, or knows their internal situation. The challenges are guesses, keep them sounding like guesses.
+- Never claim Max has worked with or for ${profile.name}, or knows their internal situation.${listing ? "" : " The challenges are guesses, keep them sounding like guesses."}
 - Be honest that the experience is transferable when the domain differs.
 - No dashes as separators, use commas. No Oxford comma. No emojis.
 
@@ -949,17 +1083,14 @@ ${facts}`,
       },
       {
         role: "user",
-        content: `Company: ${profile.name} (${profile.industry})
-What they do: ${profile.summary}
-Products and users: ${profile.productsAndUsers}
-Design context: ${profile.designContext || "unknown"}`,
+        content: companyBrief(profile, listing, role),
       },
     ],
   });
   return applyMaxPunctuation(content);
 }
 
-async function writeLinkCards(profile: Omit<CompanyProfile, "hireTweak" | "linkCards" | "fetchedAt">): Promise<LinkCard[]> {
+async function writeLinkCards(profile: CompanyResearch, listing?: JobListing, role?: RoleFocus | ""): Promise<LinkCard[]> {
   const links = HIRE_LINKS.map((link) => `- ${link.id}: default title "${link.label}" (${link.domain}). What it is: ${link.about}`).join("\n");
   const content = await chatCompletion({
     model: MODELS.writing,
@@ -974,6 +1105,7 @@ async function writeLinkCards(profile: Omit<CompanyProfile, "hireTweak" | "linkC
 2. Title: a short card title (2 to 4 words) that says what the link is, angled towards what ${profile.name} would care about. It must still make clear what the link is, e.g. "CV/Resume" could become "My UX lead track record", never something vague.
 3. Reason: one short reason (max 16 words) in first person as Max, why that link is worth a look for ${profile.name} specifically. Tie it to something concrete about ${profile.name}: their products, their users, their market or a likely UX challenge they have. A reason that would fit any company is wrong.
 4. Portfolio case: the portfolio card can link straight to one case instead of the start page. Set "caseId" on the portfolio card to the case most relevant to ${profile.name}, or "all" when no single case clearly fits better than the overview. When you pick a case, the title and reason should be about that case (e.g. title "Checkout case: +18.85% mobile").
+5. Role and listing: when the role or a job listing is given, tailor to that first. A hands-on designer role cares most about craft and cases, a lead role most about leadership and track record. Tie reasons to what the listing asks for.
 
 Links:
 ${links}
@@ -990,17 +1122,20 @@ Reply with ONLY a JSON object: {"cards": [{"id": "...", "title": "...", "reason"
       },
       {
         role: "user",
-        content: `Company: ${profile.name} (${profile.industry})
-What they do: ${profile.summary}
-Products and users: ${profile.productsAndUsers}
-Design context: ${profile.designContext || "unknown"}`,
+        content: companyBrief(profile, listing, role),
       },
     ],
   });
-  const json = extractJson(content);
+  const cards = cleanLinkCards(extractJson(content).cards);
+  if (!cards.length) throw new Error("No link cards in response");
+  return cards;
+}
+
+// Link cards come from the model, and back from the browser with each message
+function cleanLinkCards(raw: unknown): LinkCard[] {
   const text = (v: unknown, max: number) => (typeof v === "string" ? applyMaxPunctuation(v.trim().slice(0, max)) : "");
   const cards: LinkCard[] = [];
-  for (const card of Array.isArray(json.cards) ? json.cards : []) {
+  for (const card of Array.isArray(raw) ? raw : []) {
     const id = HIRE_LINKS.find((link) => link.id === card?.id)?.id;
     if (!id || cards.some((c) => c.id === id)) continue;
     const caseId = id === "portfolio"
@@ -1008,79 +1143,103 @@ Design context: ${profile.designContext || "unknown"}`,
       : undefined;
     cards.push({ id, title: text(card.title, 40), reason: text(card.reason, 160), ...(caseId ? { caseId } : {}) });
   }
-  if (!cards.length) throw new Error("No link cards in response");
   return cards;
 }
 
-async function lookupCompany(who: string, key: string): Promise<CompanyProfile | null> {
-  // Daily cap on new lookups, anyone can put anything in ?who=
+// Runs on every visit, nothing is stored. Company and listing are researched
+// at the same time; without ?who= the company comes from the listing.
+async function lookupCompany(who: string, listingUrl: string, role: RoleFocus | ""): Promise<CompanyProfile | null> {
+  // Daily cap on lookups, anyone can put anything in ?who= and ?listing=
   const counterKey = `company_lookups_${new Date().toISOString().slice(0, 10)}`;
   const lookups = (await kv.get(counterKey)) || 0;
   if (lookups >= COMPANY_LOOKUPS_PER_DAY) {
-    console.warn(`Company lookup cap reached, skipping "${who}"`);
+    console.warn(`Company lookup cap reached, skipping "${who || listingUrl}"`);
     return null;
   }
   await kv.set(counterKey, lookups + 1);
 
-  const research = await researchCompany(who);
-  const profile: CompanyProfile = {
-    ...research,
-    hireTweak: research.found ? await writeHireTweak(research) : "",
-    linkCards: research.found ? await writeLinkCards(research).catch(() => undefined) : undefined,
-    fetchedAt: new Date().toISOString(),
+  const listingLookup = listingUrl
+    ? researchListing(listingUrl).catch((error) => {
+      console.error(`Listing lookup failed for "${listingUrl}":`, error);
+      return undefined;
+    })
+    : Promise.resolve(undefined);
+  const [listing, research] = await Promise.all([
+    listingLookup,
+    who ? researchCompany(who) : listingLookup.then((l) => (l?.company ? researchCompany(l.company) : null)),
+  ]);
+  const base: CompanyResearch = research ?? {
+    found: false, name: listing?.company ?? "", domain: "", industry: "", summary: "", productsAndUsers: "", designContext: "",
   };
-  // Not-found results are cached too, so junk names cost one lookup only
-  await kv.set(key, profile);
-  console.log(`Company profile cached for "${who}": ${profile.found ? profile.name : "not found"}`);
-  return profile;
+  const [hireTweak, linkCards] = base.found
+    ? await Promise.all([
+      writeHireTweak(base, listing, role),
+      writeLinkCards(base, listing, role).catch(() => undefined),
+    ])
+    : ["", undefined];
+  console.log(`Company looked up for "${who || listingUrl}": ${base.found ? base.name : "not found"}${listing ? `, listing "${listing.title}"` : ""}`);
+  return { ...base, hireTweak, linkCards, ...(listing ? { listing } : {}), ...(role ? { role } : {}) };
 }
 
-async function getCompanyProfile(who: string): Promise<CompanyProfile | null> {
-  if (!who) return null;
-  const key = companyCacheKey(who);
-  const cached: CompanyProfile | null = await kv.get(key);
-  if (cached) {
-    // Profiles cached before the tailored link cards existed get them once
-    if (cached.found && !cached.linkCards?.some((card) => card.caseId)) {
-      try {
-        cached.linkCards = await writeLinkCards(cached);
-        await kv.set(key, cached);
-      } catch (error) {
-        console.error(`Link cards failed for "${who}":`, error);
+// The profile comes back from the browser with each chat message, so it's
+// cleaned before it reaches a prompt
+function cleanCompanyProfile(raw: any): CompanyProfile | null {
+  if (!raw || typeof raw !== "object") return null;
+  const text = (v: unknown, max = 600) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
+  const list = (v: unknown, max: number) => (Array.isArray(v) ? v.map((item) => text(item, 160)).filter(Boolean).slice(0, max) : []);
+  const listingUrl = parseListingUrl(raw.listing?.url);
+  const role = parseRole(raw.role);
+  const linkCards = cleanLinkCards(raw.linkCards);
+  return {
+    found: raw.found === true,
+    name: sanitizeCompany(text(raw.name, 60)),
+    domain: text(raw.domain, 100),
+    industry: text(raw.industry, 100),
+    summary: text(raw.summary),
+    productsAndUsers: text(raw.productsAndUsers),
+    designContext: text(raw.designContext),
+    hireTweak: text(raw.hireTweak, 1200),
+    ...(linkCards.length ? { linkCards } : {}),
+    ...(listingUrl
+      ? {
+        listing: {
+          url: listingUrl,
+          company: sanitizeCompany(text(raw.listing.company, 60)),
+          title: text(raw.listing.title, 100),
+          summary: text(raw.listing.summary, 400),
+          responsibilities: list(raw.listing.responsibilities, 5),
+          requirements: list(raw.listing.requirements, 6),
+        },
       }
-    }
-    return cached;
-  }
-
-  // Page load and the first chat message can ask at the same time
-  let pending = pendingCompanyLookups.get(key);
-  if (!pending) {
-    pending = lookupCompany(who, key)
-      .catch((error) => {
-        console.error(`Company lookup failed for "${who}":`, error);
-        return null;
-      })
-      .finally(() => pendingCompanyLookups.delete(key));
-    pendingCompanyLookups.set(key, pending);
-  }
-  return pending;
+      : {}),
+    ...(role ? { role } : {}),
+  };
 }
 
-function companyPromptSection(who: string, profile: CompanyProfile | null): string {
-  if (!who) return "";
-  if (!profile?.found) {
-    return `\n\nThe visitor opened a link made for "${who}", so they are likely from ${who} and evaluating Max as a candidate. Treat hiring and fit questions about ${who} as normal interview questions.`;
-  }
-  return `
-
-=== VISITOR'S COMPANY ===
+function companyPromptSection(who: string, profile: CompanyProfile | null, role: RoleFocus | ""): string {
+  const sections: string[] = [];
+  if (profile?.found) {
+    sections.push(`=== VISITOR'S COMPANY ===
 The visitor opened a link made for ${profile.name}, so they are likely from ${profile.name} and evaluating Max as a candidate. Treat hiring and fit questions about ${profile.name} as normal interview questions.
 Public info about ${profile.name} (gathered automatically from the web, may be imperfect):
 - Industry: ${profile.industry}
 - What they do: ${profile.summary}
 - Products and users: ${profile.productsAndUsers}
 - Design context: ${profile.designContext || "unknown"}
-When relevant, relate Max's real experience to their products, users and challenges. Be curious about the visitor's real situation at ${profile.name}: what role they are hiring for, what that person should solve and which UX challenges they actually have, since the public info is only a guess. Never claim Max has worked with ${profile.name}, has insider knowledge or has experience that is not in the knowledge base.`;
+When relevant, relate Max's real experience to their products, users and challenges. Be curious about the visitor's real situation at ${profile.name}: ${profile.listing ? "what the listing doesn't say, what that person should really solve" : "what role they are hiring for, what that person should solve"} and which UX challenges they actually have, since the public info is only a guess. Never claim Max has worked with ${profile.name}, has insider knowledge or has experience that is not in the knowledge base.`);
+  } else if (who) {
+    sections.push(`The visitor opened a link made for "${who}", so they are likely from ${who} and evaluating Max as a candidate. Treat hiring and fit questions about ${who} as normal interview questions.`);
+  }
+  if (role) {
+    sections.push(`=== ROLE ===
+Max sent this link for ${ROLE_FOCUS[role].prompt}. Frame his experience towards that kind of role and don't ask what role it is.`);
+  }
+  if (profile?.listing) {
+    sections.push(`=== JOB LISTING ===
+Max sent this link together with the job listing below (summarised automatically, may be imperfect). Relate answers to what the listing asks for when relevant. Be honest where Max doesn't meet a requirement, and don't ask about things the listing already answers.
+${listingText(profile.listing)}`);
+  }
+  return sections.map((section) => `\n\n${section}`).join("");
 }
 
 // Max's punctuation, enforced after the LLM:
@@ -1443,17 +1602,24 @@ app.post("/make-server-2b0a7158/init-kb", async (c) => {
 });
 
 /**
- * Company profile for ?who=, used for the logo and display name
+ * Company profile for ?who=&listing=&role=, looked up fresh on every visit.
+ * The browser keeps it for the visit and sends it back with each message.
  */
 app.get("/make-server-2b0a7158/company", async (c) => {
+  c.header("Cache-Control", "no-store");
   const who = sanitizeCompany(c.req.query("who") ?? "");
-  const profile = await getCompanyProfile(who);
-  if (!profile?.found) return c.json({ found: false });
+  const listingUrl = parseListingUrl(c.req.query("listing"));
+  const role = parseRole(c.req.query("role"));
+  if (!who && !listingUrl) return c.json({ found: false });
+  const profile = await lookupCompany(who, listingUrl, role).catch((error) => {
+    console.error(`Company lookup failed for "${who || listingUrl}":`, error);
+    return null;
+  });
+  if (!profile) return c.json({ found: false });
+  const { logoDomain, ...rest } = profile;
   return c.json({
-    found: true,
-    name: profile.name,
-    domain: profile.domain,
-    logoUrl: companyLogoUrl(profile.logoDomain || profile.domain),
+    ...rest,
+    logoUrl: profile.found ? companyLogoUrl(logoDomain || profile.domain) : "",
   });
 });
 
@@ -1484,14 +1650,15 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
     const { message, conversationHistory = [], userLanguage, currentUILanguage } = body;
     const audience: KnowledgeAudience | undefined =
       body.audience === "airon" ? "airon" : undefined;
-    // Company from ?who=, sanitized since it ends up in the system prompt
-    const who = typeof body.who === "string" ? sanitizeCompany(body.who) : "";
-
     if (!message || typeof message !== "string") {
       return c.json({ error: "Message is required" }, 400);
     }
 
-    const companyProfile = await getCompanyProfile(who);
+    // Profile from the page's /company lookup, never stored server side
+    const companyProfile = cleanCompanyProfile(body.companyProfile);
+    // Company from ?who= (or the listing), sanitized since it ends up in the system prompt
+    const who = (typeof body.who === "string" ? sanitizeCompany(body.who) : "") || companyProfile?.name || "";
+    const role = parseRole(body.role) || companyProfile?.role || "";
 
     if (HIRE_QUESTION.test(message)) {
       let company = getHiringCompany(message, who);
@@ -1622,7 +1789,7 @@ Examples:
     if (wantsFitCheck) {
       const company = companyProfile?.found ? companyProfile.name : who;
       const [fitCheck, updatedBrief] = await Promise.all([
-        writeFitCheck(brief, [...history, { role: "user", content: message }], company, language),
+        writeFitCheck(brief, [...history, { role: "user", content: message }], company, language, companyProfile?.listing, role),
         updateVisitorBrief(brief, history, message).catch(() => brief),
       ]);
       return c.json({
@@ -1656,7 +1823,7 @@ Examples:
     const staticPrompt = `${SYSTEM_PROMPT}\n\n=== KNOWLEDGE BASE ===\n\n${DEFAULT_KNOWLEDGE}`;
     const dynamicPrompt = [
       languageInstruction,
-      companyPromptSection(who, companyProfile),
+      companyPromptSection(who, companyProfile, role),
       audience === "airon" ? `${AIRON_MODE_PROMPT}\n\n=== AIRON KNOWLEDGE ===\n\n${AIRON_KNOWLEDGE}` : "",
       await imageLibrarySection(),
       briefPromptSection(brief),
@@ -1757,6 +1924,13 @@ app.post("/make-server-2b0a7158/handoff", async (c) => {
     const name = text(body.name, 100);
     const note = text(body.note, 2000);
     const who = text(body.who, 100);
+    const listingUrl = parseListingUrl(body.listing);
+    const role = parseRole(body.role);
+    const linkParams = [
+      who && `who=${escapeHtml(who)}`,
+      listingUrl && `listing=<a href="${escapeHtml(listingUrl)}">${escapeHtml(listingUrl)}</a>`,
+      role && `role=${role}`,
+    ].filter(Boolean).join(" &amp; ");
     const brief = cleanBrief(body.visitorBrief);
     const fitCheck = body.fitCheck && typeof body.fitCheck === "object" ? body.fitCheck : null;
     const transcript: { role: string; content: string }[] = (Array.isArray(body.transcript) ? body.transcript : [])
@@ -1770,7 +1944,7 @@ app.post("/make-server-2b0a7158/handoff", async (c) => {
         : "<p>–</p>";
     const html = `
       <h2>${escapeHtml(name || email)} wants to talk to the real you</h2>
-      <p><b>Email:</b> ${escapeHtml(email)}${who ? `<br><b>Link:</b> ?who=${escapeHtml(who)}` : ""}</p>
+      <p><b>Email:</b> ${escapeHtml(email)}${linkParams ? `<br><b>Link:</b> ?${linkParams}` : ""}</p>
       ${note ? `<p><b>Their note:</b><br>${escapeHtml(note).replace(/\n/g, "<br>")}</p>` : ""}
       <h3>What Digital Max learned</h3>
       <p><b>Role:</b> ${escapeHtml(brief.role || "–")}<br><b>Company:</b> ${escapeHtml(brief.company || "–")}<br><b>Intent:</b> ${brief.intent}<br><b>Hiring for:</b> ${escapeHtml(brief.hiringFor || "–")}</p>
