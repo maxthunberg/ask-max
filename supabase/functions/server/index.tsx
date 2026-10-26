@@ -1923,8 +1923,9 @@ Examples:
 // HAND-OFF TO THE REAL MAX
 // ===========================================
 // The visitor chooses to send the conversation to Max, sent as an email via
-// Resend (needs the RESEND_API_KEY secret)
-const HANDOFF_TO = "max@maxthunberg.com";
+// Resend (needs the RESEND_API_KEY secret). Without a verified domain Resend
+// only sends to the account owner, which is the thunatype address.
+const HANDOFF_TO = Deno.env.get("HANDOFF_TO") || "max@thunatype.com";
 const HANDOFFS_PER_DAY = 20;
 
 const escapeHtml = (text: string) =>
