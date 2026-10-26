@@ -70,7 +70,7 @@ Detta är en portfolio-chatt. Folk vill lära känna Max, höra hans åsikter oc
 **KRITISKT VIKTIGT:**
 - Svara alltid först, direkt och konkret på frågan
 - Avsluta sedan nästan varje svar med EN kort, specifik följdfråga till besökaren (max två frågor per svar, aldrig en lista med frågor)
-- Tidigt i samtalet, om du inte vet varför besökaren är här och det passar naturligt (inte om de redan ställt en tydlig fråga som förklarar det): fråga lekfullt om avsikten, till exempel "Quick question before I start bragging: are you hiring, or just checking out the guy who sent you a link? 😏" eller "Snabb fråga innan jag börjar skryta: anställer ni, eller kollar du bara in killen som skickade länken? 😏". Variera formuleringen
+- Tidigt i samtalet, om du inte vet varför besökaren är här och det passar naturligt (inte om de redan ställt en tydlig fråga som förklarar det, och inte om länken redan har ett företag, en roll eller en annons): fråga lekfullt om avsikten, till exempel "Quick question before I start bragging: are you hiring, or just checking out the guy who sent you a link? 😏" eller "Snabb fråga innan jag börjar skryta: anställer ni, eller kollar du bara in killen som skickade länken? 😏". Variera formuleringen
 - Frågorna ska hjälpa Max förstå besökaren. Ta reda på, en sak i taget över samtalet:
   - Varför de besöker ask.maxthunberg.com och vem de är (roll, företag)
   - Om de vill anställa: vilken roll, vad personen ska lösa och varför de behöver det just nu
@@ -80,6 +80,19 @@ Detta är en portfolio-chatt. Folk vill lära känna Max, höra hans åsikter oc
 - Frågorna ska låta som Max i Slack: avslappnade och nyfikna, inte som ett formulär eller en säljare. Undvik tomma frågor som "Vad tänker du?" eller "Vill du veta mer om X?"
 - Om besökaren bara vill ha snabba svar eller inte vill berätta, respektera det och fråga mer sällan
 - Hälsningar, felmeddelanden och språkbytesfrågor behöver ingen följdfråga utöver det som redan finns i exemplen
+
+## NÄR LÄNKEN ÄR GJORD FÖR ETT FÖRETAG, EN ROLL ELLER EN ANNONS
+Finns delarna VISITOR'S COMPANY, ROLE eller JOB LISTING nedan har Max själv skickat länken. Då vet du redan varför besökaren är här:
+- Fråga aldrig om de anställer, vilken roll det gäller eller vad rollen innebär, det står i länken eller annonsen
+- Ställ i stället frågor om det annonsen inte säger: varför rollen är öppen just nu, hur teamet ser ut, vad som är svårast i produkten idag, hur "lyckat" ser ut efter 6 månader
+- Koppla svaren till annonsens krav när det passar, men max en koppling per svar. Rabbla inte upp annonsen och citera den inte ordagrant
+- Lyft den erfarenhet som matchar kraven bäst först
+- Var ärlig om krav du inte uppfyller fullt ut och säg vad du har i stället (överförbar erfarenhet). Hitta aldrig på erfarenhet för att matcha
+- Annonsen är automatiskt sammanfattad och kan vara ofullständig, säg hellre "som jag läser annonsen" än att påstå något säkert
+
+Roll:
+- designer: prata som en hands-on senior designer. Lyft hantverk, egna case, research, prototyper, A/B-tester och visuell kvalitet. Nämn ledarskap bara som bonus (att du kan driva och lyfta andra), inte som huvudsak
+- lead: prata som en UX lead. Lyft teambygge, UX-mognad, prioritering, stakeholders och att sätta riktning. Visa att du fortfarande kan hantverket, men att din största effekt är genom andra
 
 ## "I DON'T KNOW" USAGE (CRITICAL!)
 ONLY say "I don't have that in my digital brain" when:
@@ -557,6 +570,19 @@ function cleanBrief(raw: any): VisitorBrief {
   };
 }
 
+// A link with a company or job listing already says why the visitor is here
+function seedBrief(brief: VisitorBrief, profile: CompanyProfile | null): VisitorBrief {
+  if (!profile) return brief;
+  const company = profile.found ? profile.name : profile.listing?.company ?? "";
+  const listingTitle = profile.listing?.title ?? "";
+  return {
+    ...brief,
+    company: brief.company || company,
+    intent: brief.intent === "unknown" && (company || listingTitle) ? "hiring" : brief.intent,
+    hiringFor: brief.hiringFor || listingTitle,
+  };
+}
+
 function briefIsEmpty(brief: VisitorBrief): boolean {
   return JSON.stringify(brief) === JSON.stringify(EMPTY_BRIEF);
 }
@@ -645,7 +671,7 @@ async function writeFitCheck(
         role: "system",
         content: `You are Digital Max, an AI version of Max Thunberg, UX Design Lead. Write an honest fit check for the visitor${company ? ` from ${company}` : ""}: how well Max fits what they are looking for. Write in first person as Max, talking to them ("you"), in ${language === "sv" ? "Swedish" : "English"}. Fun and light like Max in Slack, but honest. Honesty is the point: name real gaps, it makes the matches more believable.
 
-Base everything only on MAX KNOWLEDGE, what the visitor said and the job listing if there is one. Never invent experience, projects or numbers. Tie each point to something the visitor said or the listing asks for.
+Base everything only on MAX KNOWLEDGE, what the visitor said and the job listing if there is one. Never invent experience, projects or numbers. Tie each point to something the visitor said or the listing asks for. With a job listing, go through its requirements: matches are requirements Max clearly meets, risks are requirements he only partly meets or doesn't meet, and say "as I read the listing" rather than treating the summary as certain.
 
 Reply with ONLY a JSON object:
 {
@@ -712,15 +738,15 @@ function getHiringCompany(message: string, who: string): string {
 // cards and the closing text about reaching the real Max.
 function buildHireAnswer(company: string, companyTweak = "") {
   const opener = company
-    ? `Well, there are just sooo many reasons why ${company} should hire me, right? 😉`
-    : "Well, there are just sooo many reasons, right? 😉";
+    ? `Fair question. Here's my honest pitch for ${company} ☺️`
+    : "Fair question. Here's my honest pitch ☺️";
   return {
     message: [opener, companyTweak || HIRE_ANSWER_INTRO].join("\n\n"),
     suggestionFooter: HIRE_ANSWER_OUTRO,
   };
 }
 
-const HIRE_ANSWER_INTRO = `Joking aside. I'm a highly experienced designer, both in leading teams and projects and in delivering impactful design work, visually and in improving my users' lives. Before Volvo, that meant making sure we had the best possible e-commerce experience, where we improved conversion enormously during my time there, especially on mobile. Now, as UX Lead at Volvo, it's about making sure my 16k+ engineers have internal tools that support them in their highly complex work life.`;
+const HIRE_ANSWER_INTRO = `I'm a highly experienced designer, both in leading teams and projects and in delivering impactful design work, visually and in improving my users' lives. Before Volvo, that meant making sure we had the best possible e-commerce experience, where we improved conversion enormously during my time there, especially on mobile. Now, as UX Lead at Volvo, it's about making sure my 16k+ engineers have internal tools that support them in their highly complex work life.`;
 
 const HIRE_ANSWER_OUTRO = `That said, I probably don't understand your real challenges, because hey, I'm just 1s and 0s 🤖 So reach out at [max@maxthunberg.com](mailto:max@maxthunberg.com) and we'll book a session with the real me. Not only digital me.`;
 type LinkId = "branding" | "portfolio" | "cv" | "askmax";
@@ -1066,7 +1092,7 @@ async function writeHireTweak(profile: CompanyResearch, listing?: JobListing, ro
     messages: [
       {
         role: "system",
-        content: `You write one paragraph for Max Thunberg's answer to "Why should ${profile.name} hire me?". It comes right after his joke opener ("Well, there are just sooo many reasons why ${profile.name} should hire me, right? 😉") and before his links, so do not greet, do not repeat the joke and do not mention links or contact details.
+        content: `You write one paragraph for Max Thunberg's answer to "Why should ${profile.name} hire me?". It comes right after his opener ("Fair question. Here's my honest pitch for ${profile.name} ☺️") and before his links, so do not greet, do not repeat the opener and do not mention links or contact details.
 
 Write in first person as Max, talking directly to someone from ${profile.name} ("you"). Casual, direct, a bit playful, plain spoken English. 3 to 4 sentences, max 90 words. Follow this structure:
 ${structure}
@@ -1682,7 +1708,7 @@ app.post("/make-server-2b0a7158/chat", async (c) => {
     const history: { role: "user" | "assistant"; content: string }[] = (Array.isArray(conversationHistory) ? conversationHistory : [])
       .filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m.content === "string")
       .map((m: any) => ({ role: m.role, content: m.content.slice(0, 4000) }));
-    const brief = cleanBrief(body.visitorBrief);
+    const brief = seedBrief(cleanBrief(body.visitorBrief), companyProfile);
     const fitCheckStatus: FitCheckStatus = ["offered", "done"].includes(body.fitCheckStatus) ? body.fitCheckStatus : "none";
 
     // Detect language with the conversation as context
@@ -1815,8 +1841,11 @@ Examples:
         : '\n\n🚨 CRITICAL: The user is writing in ENGLISH. You MUST respond 100% in ENGLISH. NO SWEDISH ALLOWED. 🚨';
     }
 
-    // Offer the fit check once the brief says there's enough to go on
-    const offerFitCheck = fitCheckStatus === "none" && brief.fitCheckReady;
+    // Offer the fit check once the brief says there's enough to go on. With a
+    // job listing the needs are known up front, so it's offered from the
+    // second answer
+    const offerFitCheck = fitCheckStatus === "none" &&
+      (brief.fitCheckReady || (!!companyProfile?.listing && history.some((m) => m.role === "assistant")));
 
     // Static part first (same for every visitor, cached by OpenAI), then
     // everything that depends on this visitor
